@@ -1,0 +1,13 @@
+sudo: required
+
+services:
+  - docker
+
+before_install:
+  - docker-compose -v
+
+script:
+  - docker-compose run -e CODECLIMATE_REPO_TOKEN=$CODECLIMATE_REPO_TOKEN app
+
+notifications:
+  slack: $SLACK_INTEGRATION_DOMAIN:$SLACK_INTEGRATION_KEY

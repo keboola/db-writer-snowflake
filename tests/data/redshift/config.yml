@@ -1,0 +1,59 @@
+parameters:
+    db:
+        driver: redshift
+        host: redshift
+        port: 5439
+        database: test
+        schema: public
+        user:
+        password:
+
+    tables:
+        -
+            tableId: simple
+            dbName: simple
+            export: true
+            incremental: true
+            primaryKey: [id]
+            items:
+                -
+                    name: id
+                    dbName: id
+                    type: int
+                    size:
+                    nullable:
+                    default:
+                -
+                    name: name
+                    dbName: name
+                    type: nvarchar
+                    size: 255
+                    nullable:
+                    default:
+                -
+                    name: glasses
+                    dbName: glasses
+                    type: nvarchar
+                    size: 255
+                    nullable:
+                    default:
+
+        -
+            tableId: special
+            dbName: special
+            export: true
+            items:
+                -
+                    name: col1
+                    dbName: col1
+                    type: varchar
+                    size: 255
+                    nullable:
+                    default:
+                -
+                    name: col2
+                    dbName: col2
+                    type: varchar
+                    size: 255
+                    nullable:
+                    default:

@@ -1,0 +1,25 @@
+app:
+  build: .
+  volumes:
+    - .:/code
+  working_dir: /code
+  entrypoint: "./phpunit.sh"
+  tty: true
+  stdin_open: true
+  environment:
+    SNOWFLAKE_DB_HOST: $SNOWFLAKE_DB_HOST
+    SNOWFLAKE_DB_PORT: $SNOWFLAKE_DB_PORT
+    SNOWFLAKE_DB_USER: $SNOWFLAKE_DB_USER
+    SNOWFLAKE_DB_PASSWORD: $SNOWFLAKE_DB_PASSWORD
+    SNOWFLAKE_DB_DATABASE: $SNOWFLAKE_DB_DATABASE
+    SNOWFLAKE_DB_SCHEMA: $SNOWFLAKE_DB_SCHEMA
+#  links:
+#    - sshproxy
+#
+#sshproxy:
+#  build: ./tests/env/sshproxy
+#  volumes:
+#      - ./tests/env/sshproxy:/code
+#  working_dir: /code
+#  ports:
+#    - "2222:22"
