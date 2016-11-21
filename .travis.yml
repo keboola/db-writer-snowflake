@@ -6,8 +6,24 @@ services:
 before_install:
   - docker-compose -v
 
+install:
+  - docker-compose run --rm php composer install -n
+  - docker-compose run --rm php ./vendor/bin/phpcs --standard=psr2 --ignore=vendor -n .
+  - docker-compose run --rm -e AWS_ACCESS_KEY=$AWS_ODBC_KEY -e AWS_SECRET_KEY=$AWS_ODBC_SECRET php php docker/downloadDriver.php
+  - docker-compose build app
+
 script:
   - docker-compose run -e CODECLIMATE_REPO_TOKEN=$CODECLIMATE_REPO_TOKEN app
 
-notifications:
-  slack: $SLACK_INTEGRATION_DOMAIN:$SLACK_INTEGRATION_KEY
+after_success:
+  - docker images
+
+deploy:
+  provider: script
+  skip_cleanup: true
+  script: ./deploy.sh
+  on:
+    tags: true
+
+#notifications:
+#  slack: $SLACK_INTEGRATION_DOMAIN:$SLACK_INTEGRATION_KEY
