@@ -8,7 +8,6 @@
 
 namespace Keboola\DbWriter\Snowflake;
 
-
 class Connection
 {
     /**
@@ -205,5 +204,4 @@ class Connection
             }
         }, $bind);
     }
-
 }

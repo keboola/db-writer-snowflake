@@ -169,5 +169,4 @@ class SnowflakeTest extends BaseTest
 
         $this->assertFileEquals($expectedFilename, $resFilename);
     }
-
 }

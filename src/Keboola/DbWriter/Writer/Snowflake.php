@@ -104,7 +104,8 @@ class Snowflake extends Writer implements WriterInterface
                 )
             );
         } else {
-            return sprintf("COPY INTO %s FROM %s
+            return sprintf(
+                "COPY INTO %s FROM %s
                 CREDENTIALS = (AWS_KEY_ID = %s AWS_SECRET_KEY = %s AWS_TOKEN = %s)
                 REGION = %s
                 FILE_FORMAT = (TYPE=CSV %s)",
