@@ -17,7 +17,7 @@ RUN set -x \
 && docker-php-ext-install odbc
 
 ## install snowflake drivers
-ADD ./driver/snowflake_linux_x8664_odbc.tgz /usr/bin
+ADD snowflake_linux_x8664_odbc.tgz /usr/bin
 ADD ./driver/simba.snowflake.ini /etc/simba.snowflake.ini
 ADD ./driver/odbcinst.ini /etc/odbcinst.ini
 RUN mkdir -p  /usr/bin/snowflake_odbc/log
