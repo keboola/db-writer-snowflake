@@ -9,13 +9,14 @@
 namespace Keboola\DbWriter\Writer;
 
 use Keboola\Csv\CsvFile;
+use Keboola\DbWriter\Snowflake\Connection;
+use Keboola\DbWriter\Snowflake\Test\S3Loader;
 use Keboola\DbWriter\Test\BaseTest;
 use Keboola\StorageApi\Client;
-use Keboola\StorageApi\Options\GetFileOptions;
 
 class SnowflakeTest extends BaseTest
 {
-    const DRIVER = 'redshift';
+    const DRIVER = 'snowflake';
 
     /** @var Snowflake */
     private $writer;
@@ -31,8 +32,8 @@ class SnowflakeTest extends BaseTest
     public function setUp()
     {
         $this->config = $this->getConfig(self::DRIVER);
-        $this->config['parameters']['writer_class'] = 'Redshift';
-        $this->config['parameters']['db']['schema'] = 'public';
+        $this->config['parameters']['writer_class'] = 'Snowflake';
+        $this->config['parameters']['db']['schema'] = 'development';
         $this->config['parameters']['db']['password'] = $this->config['parameters']['db']['#password'];
         $this->writer = $this->getWriter($this->config['parameters']);
 
@@ -45,7 +46,7 @@ class SnowflakeTest extends BaseTest
             'token' => getenv('STORAGE_API_TOKEN')
         ]);
 
-        $bucketId = 'in.c-test-wr-db-redshift';
+        $bucketId = 'in.c-test-wr-db-snowflake';
         if ($this->storageApi->bucketExists($bucketId)) {
             $this->storageApi->dropBucket($bucketId, ['force' => true]);
         }
@@ -65,21 +66,20 @@ class SnowflakeTest extends BaseTest
 
     public function testDrop()
     {
+        /** @var Connection $conn */
         $conn = $this->writer->getConnection();
-        $conn->exec("CREATE TABLE dropMe (
+        $conn->query("CREATE TABLE \"dropMe\" (
           id INT PRIMARY KEY,
           firstname VARCHAR(30) NOT NULL,
           lastname VARCHAR(30) NOT NULL)");
 
         $this->writer->drop("dropMe");
 
-        $stmt = $conn->query("
+        $res = $conn->fetchAll("
             SELECT *
-            FROM information_schema.tables
-            WHERE table_schema = 'public'
-            AND table_name = 'dropMe'
+            FROM INFORMATION_SCHEMA.tables
+            WHERE table_name = 'dropMe'
         ");
-        $res = $stmt->fetchAll();
 
         $this->assertEmpty($res);
     }
@@ -93,17 +93,15 @@ class SnowflakeTest extends BaseTest
             $this->writer->create($table);
         }
 
-        /** @var \PDO $conn */
+        /** @var Connection $conn */
         $conn = $this->writer->getConnection();
-        $stmt = $conn->query("
+        $res = $conn->fetchAll("
             SELECT *
-            FROM information_schema.tables
-            WHERE table_schema = 'public'
-            AND table_name = '{$tables[0]['dbName']}'
+            FROM INFORMATION_SCHEMA.tables
+            WHERE table_name = '{$tables[0]['dbName']}'
         ");
-        $res = $stmt->fetchAll();
 
-        $this->assertEquals('simple', $res[0]['table_name']);
+        $this->assertEquals('simple', $res[0]['TABLE_NAME']);
     }
 
     public function testWriteAsync()
@@ -118,9 +116,9 @@ class SnowflakeTest extends BaseTest
         $this->writer->create($table);
         $this->writer->writeFromS3($s3manifest, $table);
 
+        /** @var Connection $conn */
         $conn = $this->writer->getConnection();
-        $stmt = $conn->query("SELECT * FROM {$table['dbName']} ORDER BY id ASC");
-        $res = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $res = $conn->fetchAll(sprintf('SELECT * FROM "%s" ORDER BY id ASC', $table['dbName']));
 
         $resFilename = tempnam('/tmp', 'db-wr-test-tmp');
         $csv = new CsvFile($resFilename);
@@ -134,6 +132,7 @@ class SnowflakeTest extends BaseTest
 
     public function testUpsert()
     {
+        /** @var Connection $conn */
         $conn = $this->writer->getConnection();
         $tables = $this->config['parameters']['tables'];
         foreach ($tables as $table) {
@@ -157,8 +156,7 @@ class SnowflakeTest extends BaseTest
 
         $this->writer->upsert($table, $targetTable['dbName']);
 
-        $stmt = $conn->query("SELECT * FROM {$targetTable['dbName']} ORDER BY id ASC");
-        $res = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $res = $conn->fetchAll("SELECT * FROM \"{$targetTable['dbName']}\" ORDER BY id ASC");
 
         $resFilename = tempnam('/tmp', 'db-wr-test-tmp');
         $csv = new CsvFile($resFilename);

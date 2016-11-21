@@ -5,3 +5,4 @@ tests/data/out/
 composer.phar
 runtests.sh
 /build
+/driver/snowflake_linux_x8664_odbc.tgz

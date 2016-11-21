@@ -1,10 +1,10 @@
 parameters:
     db:
-        driver: redshift
-        host: redshift
-        port: 5439
-        database: test
-        schema: public
+        driver: snowflake
+        host:
+        port:
+        database:
+        schema:
         user:
         password:
 

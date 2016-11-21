@@ -8,6 +8,7 @@
 
 namespace Keboola\DbWriter\Writer\Snowflake\Tests;
 
+use Keboola\DbWriter\Snowflake\Test\S3Loader;
 use Keboola\DbWriter\Test\BaseTest;
 use Keboola\StorageApi\Client;
 use Symfony\Component\Process\Process;
@@ -26,11 +27,28 @@ class FunctionalTest extends BaseTest
         // cleanup & init
         $this->defaultConfig = $this->initConfig();
         $writer = $this->getWriter($this->defaultConfig['parameters']);
+        $s3Loader = new S3Loader(
+            $this->dataDir,
+            new Client([
+                'token' => getenv('STORAGE_API_TOKEN')
+            ])
+        );
 
         $yaml = new Yaml();
         foreach ($this->defaultConfig['parameters']['tables'] as $table) {
             // clean destination DB
             $writer->drop($table['dbName']);
+
+            // upload source files to S3 - mimic functionality of docker-runner
+            $manifestPath = $this->dataDir . '/in/tables/' . $table['tableId'] . '.csv.manifest';
+            $manifestData = $yaml->parse(file_get_contents($manifestPath));
+            $manifestData['s3'] = $s3Loader->upload($table['tableId']);
+
+            unlink($manifestPath);
+            file_put_contents(
+                $manifestPath,
+                $yaml->dump($manifestData)
+            );
         }
     }
 

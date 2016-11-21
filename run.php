@@ -3,7 +3,8 @@
 use Keboola\DbWriter\Exception\ApplicationException;
 use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Logger;
-use Keboola\DbWriter\Redshift\Configuration\ConfigDefinition;
+use Keboola\DbWriter\Snowflake\Application;
+use Keboola\DbWriter\Snowflake\Configuration\ConfigDefinition;
 use Monolog\Handler\NullHandler;
 use Symfony\Component\Yaml\Yaml;
 
