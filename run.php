@@ -48,7 +48,7 @@ try {
     $logger->log('error', $e->getMessage(), (array) $e->getData());
     exit($e->getCode() > 1 ? $e->getCode(): 2);
 } catch (\Exception $e) {
-    var_dump($e->getMessage()); die;
+    var_dump($e->getMessage());
     $logger->log('error', $e->getMessage(), [
         'errFile' => $e->getFile(),
         'errLine' => $e->getLine(),
