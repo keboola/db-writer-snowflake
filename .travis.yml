@@ -19,13 +19,21 @@ script:
 
 after_success:
   - docker images
+  - echo Travis tag "$TRAVIS_TAG"
+  - if [ -z "$TRAVIS_TAG" ]; then
+        echo "Tag not set. Skipping deploy to Quay.";
+    else
+        docker login -u="$QUAY_USERNAME" -p="$QUAY_PASSWORD" quay.io;
+        docker tag dbwritersnowflake_app quay.io/keboola/db-writer-snowflake:$TRAVIS_TAG;
+        docker push quay.io/keboola/db-writer-snowflake:$TRAVIS_TAG;
+    fi
 
-deploy:
-  provider: script
-  skip_cleanup: true
-  script: ./deploy.sh
-  on:
-    tags: true
+#deploy:
+#  provider: script
+#  skip_cleanup: true
+#  script: ./deploy.sh
+#  on:
+#    tags: true
 
 #notifications:
 #  slack: $SLACK_INTEGRATION_DOMAIN:$SLACK_INTEGRATION_KEY
