@@ -7,6 +7,8 @@ RUN apt-get update \
   && apt-get install unzip git unixODBC-dev libpq-dev -y
 
 RUN docker-php-ext-install pdo_pgsql pdo_mysql
+RUN pecl install xdebug \
+  && docker-php-ext-enable xdebug
 
 # snowflake odbc - https://github.com/docker-library/php/issues/103
 RUN set -x \
