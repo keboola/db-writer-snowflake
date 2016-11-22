@@ -37,7 +37,7 @@ RUN cd \
 ADD . /code
 WORKDIR /code
 
-RUN echo "memory_limit = -1" >> /etc/php.ini
+RUN echo "memory_limit = -1" >> /usr/local/etc/php/conf.d/php.ini
 RUN composer install --no-interaction
 
 ENTRYPOINT php ./run.php --data=/data

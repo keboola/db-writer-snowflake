@@ -185,7 +185,11 @@ class Snowflake extends Writer implements WriterInterface
 
     public function create(array $table)
     {
-        $sql = "CREATE TABLE {$this->escape($table['dbName'])} (";
+        $sql = sprintf(
+            "CREATE %s TABLE %s (",
+            $table['incremental']?'TEMPORARY':'',
+            $this->escape($table['dbName'])
+        );
 
         $columns = array_filter($table['items'], function ($item) {
             return (strtolower($item['type']) !== 'ignore');
@@ -193,15 +197,20 @@ class Snowflake extends Writer implements WriterInterface
         foreach ($columns as $col) {
             $type = strtoupper($col['type']);
             if (!empty($col['size'])) {
-                $type .= "({$col['size']})";
+                $type .= sprintf("(%s)", $col['size']);
             }
             $null = $col['nullable'] ? 'NULL' : 'NOT NULL';
             $default = empty($col['default']) ? '' : "DEFAULT '{$col['default']}'";
             if ($type == 'TEXT') {
                 $default = '';
             }
-            $sql .= "{$this->escape($col['dbName'])} $type $null $default";
-            $sql .= ',';
+            $sql .= sprintf(
+                "%s %s %s %s,",
+                $this->escape($col['dbName']),
+                $type,
+                $null,
+                $default
+            );
         }
         $sql = substr($sql, 0, -1);
         $sql .= ");";
@@ -248,23 +257,21 @@ class Snowflake extends Writer implements WriterInterface
             }
             $valuesClause = implode(',', $valuesClauseArr);
 
-            $query = "
-                UPDATE {$targetTable}
-                SET {$valuesClause}
-                FROM {$sourceTable}
-                WHERE {$joinClause}
-            ";
-
-            $this->execQuery($query);
+            $this->execQuery(sprintf(
+                "UPDATE %s SET %s FROM %s WHERE %s",
+                $targetTable,
+                $valuesClause,
+                $sourceTable,
+                $joinClause
+            ));
 
             // delete updated from temp table
-            $query = "
-                DELETE FROM {$sourceTable}
-                USING {$targetTable}
-                WHERE {$joinClause}
-            ";
-
-            $this->execQuery($query);
+            $this->execQuery(sprintf(
+                "DELETE FROM %s USING %s WHERE %s",
+                $sourceTable,
+                $targetTable,
+                $joinClause
+            ));
         }
 
         // insert new data
@@ -283,12 +290,13 @@ class Snowflake extends Writer implements WriterInterface
 
     public function tableExists($tableName)
     {
-        $res = $this->db->fetchAll(
+        $res = $this->db->fetchAll(sprintf(
             "SELECT *
-            FROM INFORMATION_SCHEMA.tables
-            WHERE table_name = '?'",
-            [$tableName]
-        );
+            FROM INFORMATION_SCHEMA.TABLES
+            WHERE table_name = '%s'",
+            $tableName
+        ));
+
         return !empty($res);
     }
 
@@ -325,6 +333,6 @@ class Snowflake extends Writer implements WriterInterface
 
     public function generateTmpName($tableName)
     {
-        return '__temp_' . str_replace('.', '_', uniqid('wr-db-snowflake', true));
+        return '__temp_' . str_replace('.', '_', uniqid('wr_db_', true));
     }
 }

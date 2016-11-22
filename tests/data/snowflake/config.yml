@@ -42,6 +42,7 @@ parameters:
             tableId: special
             dbName: special
             export: true
+            incremental: false
             items:
                 -
                     name: col1

@@ -61,9 +61,6 @@ class FunctionalTest extends BaseTest
         $process = new Process('php ' . ROOT_PATH . 'run.php --data=' . $this->tmpRunDir . ' 2>&1');
         $process->run();
 
-        echo $process->getOutput() . PHP_EOL;
-        echo $process->getErrorOutput() . PHP_EOL;
-
         $this->assertEquals(0, $process->getExitCode());
     }
 
