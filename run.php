@@ -22,9 +22,10 @@ try {
     if (!isset($arguments["data"])) {
         throw new UserException('Data folder not set.');
     }
+
     $config = Yaml::parse(file_get_contents($arguments["data"] . "/config.yml"));
     $config['parameters']['data_dir'] = $arguments['data'];
-    $config['parameters']['writer_class'] = 'Redshift';
+    $config['parameters']['writer_class'] = 'Snowflake';
 
     $action = isset($config['action']) ? $config['action'] : $action;
 
@@ -47,10 +48,11 @@ try {
     $logger->log('error', $e->getMessage(), (array) $e->getData());
     exit($e->getCode() > 1 ? $e->getCode(): 2);
 } catch (\Exception $e) {
+    var_dump($e->getMessage()); die;
     $logger->log('error', $e->getMessage(), [
         'errFile' => $e->getFile(),
         'errLine' => $e->getLine(),
-        'trace' => $e->getTrace()
+//        'trace' => $e->getTrace()
     ]);
     exit(2);
 }

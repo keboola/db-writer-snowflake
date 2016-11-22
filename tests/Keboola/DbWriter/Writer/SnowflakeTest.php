@@ -77,7 +77,7 @@ class SnowflakeTest extends BaseTest
 
         $res = $conn->fetchAll("
             SELECT *
-            FROM INFORMATION_SCHEMA.tables
+            FROM INFORMATION_SCHEMA.TABLES
             WHERE table_name = 'dropMe'
         ");
 
@@ -97,7 +97,7 @@ class SnowflakeTest extends BaseTest
         $conn = $this->writer->getConnection();
         $res = $conn->fetchAll("
             SELECT *
-            FROM INFORMATION_SCHEMA.tables
+            FROM INFORMATION_SCHEMA.TABLES
             WHERE table_name = '{$tables[0]['dbName']}'
         ");
 

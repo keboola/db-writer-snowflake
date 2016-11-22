@@ -20,13 +20,16 @@ class FunctionalTest extends BaseTest
 
     protected $dataDir = ROOT_PATH . 'tests/data/functional';
 
-    protected $defaultConfig;
+    protected $tmpRunDir;
 
     public function setUp()
     {
         // cleanup & init
-        $this->defaultConfig = $this->initConfig();
-        $writer = $this->getWriter($this->defaultConfig['parameters']);
+        $this->tmpRunDir = '/tmp/' . uniqid('wr-db-snowflake_');
+        mkdir($this->tmpRunDir . '/in/tables/', 0777, true);
+        $config = $this->initConfig();
+
+        $writer = $this->getWriter($config['parameters']);
         $s3Loader = new S3Loader(
             $this->dataDir,
             new Client([
@@ -35,18 +38,19 @@ class FunctionalTest extends BaseTest
         );
 
         $yaml = new Yaml();
-        foreach ($this->defaultConfig['parameters']['tables'] as $table) {
+
+        foreach ($config['parameters']['tables'] as $table) {
             // clean destination DB
             $writer->drop($table['dbName']);
 
             // upload source files to S3 - mimic functionality of docker-runner
-            $manifestPath = $this->dataDir . '/in/tables/' . $table['tableId'] . '.csv.manifest';
-            $manifestData = $yaml->parse(file_get_contents($manifestPath));
+            $srcManifestPath = $this->dataDir . '/in/tables/' . $table['tableId'] . '.csv.manifest';
+            $manifestData = $yaml->parse(file_get_contents($srcManifestPath));
             $manifestData['s3'] = $s3Loader->upload($table['tableId']);
 
-            unlink($manifestPath);
+            $dstManifestPath = $this->tmpRunDir . '/in/tables/' . $table['tableId'] . '.csv.manifest';
             file_put_contents(
-                $manifestPath,
+                $dstManifestPath,
                 $yaml->dump($manifestData)
             );
         }
@@ -54,16 +58,18 @@ class FunctionalTest extends BaseTest
 
     public function testRun()
     {
-        $process = new Process('php ' . ROOT_PATH . 'run.php --data=' . $this->dataDir . ' 2>&1');
+        $process = new Process('php ' . ROOT_PATH . 'run.php --data=' . $this->tmpRunDir . ' 2>&1');
         $process->run();
+
+        echo $process->getOutput() . PHP_EOL;
+        echo $process->getErrorOutput() . PHP_EOL;
 
         $this->assertEquals(0, $process->getExitCode());
     }
 
-    public function testRunEmptyTable()
+    public function testRunAllIgnored()
     {
-        $config = $this->initConfig(function () {
-            $config = $this->defaultConfig;
+        $config = $this->initConfig(function ($config) {
             $tables = array_map(function ($table) {
                 $table['items'] = array_map(function ($item) {
                     $item['type'] = 'IGNORE';
@@ -80,18 +86,19 @@ class FunctionalTest extends BaseTest
 
         foreach ($config['parameters']['tables'] as $table) {
             // upload source files to S3 - mimic functionality of docker-runner
-            $manifestPath = $this->dataDir . '/in/tables/' . $table['tableId'] . '.csv.manifest';
-            $manifestData = $yaml->parse(file_get_contents($manifestPath));
+            $srcManifestPath = $this->dataDir . '/in/tables/' . $table['tableId'] . '.csv.manifest';
+            $dstManifestPath = $this->tmpRunDir . '/in/tables/' . $table['tableId'] . '.csv.manifest';
+            $manifestData = $yaml->parse(file_get_contents($srcManifestPath));
             $manifestData['columns'] = [];
 
-            unlink($manifestPath);
+            unlink($dstManifestPath);
             file_put_contents(
-                $manifestPath,
+                $dstManifestPath,
                 $yaml->dump($manifestData)
             );
         }
 
-        $process = new Process('php ' . ROOT_PATH . 'run.php --data=' . $this->dataDir);
+        $process = new Process('php ' . ROOT_PATH . 'run.php --data=' . $this->tmpRunDir);
         $process->run();
 
         $this->assertEquals(0, $process->getExitCode());
@@ -104,7 +111,7 @@ class FunctionalTest extends BaseTest
             return $config;
         });
 
-        $process = new Process('php ' . ROOT_PATH . 'run.php --data=' . $this->dataDir . ' 2>&1');
+        $process = new Process('php ' . ROOT_PATH . 'run.php --data=' . $this->tmpRunDir . ' 2>&1');
         $process->run();
 
         $this->assertEquals(0, $process->getExitCode());
@@ -118,8 +125,8 @@ class FunctionalTest extends BaseTest
     private function initConfig(callable $callback = null)
     {
         $yaml = new Yaml();
-        $configPath = $this->dataDir . '/config.yml';
-        $config = $yaml->parse(file_get_contents($configPath));
+        $dstConfigPath = $this->tmpRunDir . '/config.yml';
+        $config = $yaml->parse(file_get_contents($this->dataDir . '/config.yml'));
 
         $config['parameters']['writer_class'] = self::DRIVER;
         $config['parameters']['db']['user'] = $this->getEnv(self::DRIVER, 'DB_USER', true);
@@ -135,8 +142,8 @@ class FunctionalTest extends BaseTest
             $config = $callback($config);
         }
 
-        @unlink($configPath);
-        file_put_contents($configPath, $yaml->dump($config));
+        @unlink($dstConfigPath);
+        file_put_contents($dstConfigPath, $yaml->dump($config));
 
         return $config;
     }

@@ -50,6 +50,7 @@ class Application extends BaseApplication
                     if (!$writer->tableExists($targetTableName)) {
                         $destinationTable = $table;
                         $destinationTable['dbName'] = $targetTableName;
+
                         $writer->create($destinationTable);
                     }
                     $writer->upsert($table, $targetTableName);

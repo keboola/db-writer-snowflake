@@ -255,8 +255,6 @@ class Snowflake extends Writer implements WriterInterface
                 WHERE {$joinClause}
             ";
 
-            var_dump($query);
-
             $this->execQuery($query);
 
             // delete updated from temp table
@@ -285,7 +283,12 @@ class Snowflake extends Writer implements WriterInterface
 
     public function tableExists($tableName)
     {
-        $res = $this->db->fetchAll(sprintf("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '%s'", $tableName));
+        $res = $this->db->fetchAll(
+            "SELECT *
+            FROM INFORMATION_SCHEMA.tables
+            WHERE table_name = '?'",
+            [$tableName]
+        );
         return !empty($res);
     }
 
