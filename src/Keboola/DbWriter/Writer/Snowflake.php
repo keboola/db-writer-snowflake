@@ -28,13 +28,13 @@ class Snowflake extends Writer implements WriterInterface
         'float', 'float4', 'float8',
         'double', 'double precision', 'real',
         'boolean',
-        'char', 'character', 'varchar', 'string', 'text',
+        'char', 'character', 'varchar', 'string', 'text', 'binary',
         'date', 'time', 'timestamp', 'timestamp_ltz', 'timestamp_ntz', 'timestamp_tz'
     ];
 
     private static $typesWithSize = [
         'number', 'decimal', 'numeric',
-        'char', 'character', 'varchar', 'string', 'text',
+        'char', 'character', 'varchar', 'string', 'text', 'binary',
         'date', 'time', 'timestamp', 'timestamp_ltz', 'timestamp_ntz', 'timestamp_tz'
     ];
 
@@ -196,7 +196,7 @@ class Snowflake extends Writer implements WriterInterface
         });
         foreach ($columns as $col) {
             $type = strtoupper($col['type']);
-            if (!empty($col['size'])) {
+            if (!empty($col['size']) && in_array(strtolower($col['type']), self::$typesWithSize)) {
                 $type .= sprintf("(%s)", $col['size']);
             }
             $null = $col['nullable'] ? 'NULL' : 'NOT NULL';
