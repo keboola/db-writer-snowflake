@@ -34,8 +34,7 @@ class Snowflake extends Writer implements WriterInterface
 
     private static $typesWithSize = [
         'number', 'decimal', 'numeric',
-        'char', 'character', 'varchar', 'string', 'text', 'binary',
-        'date', 'time', 'timestamp', 'timestamp_ltz', 'timestamp_ntz', 'timestamp_tz'
+        'char', 'character', 'varchar', 'string', 'text', 'binary'
     ];
 
     /** @var Connection */
@@ -63,12 +62,7 @@ class Snowflake extends Writer implements WriterInterface
 
     public function writeFromS3($s3info, array $table)
     {
-        $command = $this->generateCopyCommand($table['dbName'], $s3info);
-        try {
-            $this->db->query($command);
-        } catch (Exception $e) {
-            throw new UserException("Import error: " . $e->getMessage(), 0, $e);
-        }
+        $this->execQuery($this->generateCopyCommand($table['dbName'], $s3info));
     }
 
     private function generateCopyCommand($tableName, $s3info)
@@ -180,7 +174,7 @@ class Snowflake extends Writer implements WriterInterface
 
     public function drop($tableName)
     {
-        $this->db->query(sprintf("DROP TABLE IF EXISTS %s;", $this->escape($tableName)));
+        $this->execQuery(sprintf("DROP TABLE IF EXISTS %s;", $this->escape($tableName)));
     }
 
     public function create(array $table)
@@ -302,8 +296,12 @@ class Snowflake extends Writer implements WriterInterface
 
     private function execQuery($query)
     {
-        $this->logger->info(sprintf("Executing query '%s'", $query));
-        $this->db->query($query);
+        $this->logger->info(sprintf("Executing query '%s'", $this->hideCredentialsInQuery($query)));
+        try {
+            $this->db->query($query);
+        } catch (\Exception $e) {
+            throw new UserException("Query execution error: " . $e->getMessage(), 0, $e);
+        }
     }
 
     public function showTables($dbName)
@@ -328,11 +326,16 @@ class Snowflake extends Writer implements WriterInterface
 
     public function testConnection()
     {
-        $this->db->query('select current_date');
+        $this->execQuery('select current_date');
     }
 
     public function generateTmpName($tableName)
     {
         return '__temp_' . str_replace('.', '_', uniqid('wr_db_', true));
+    }
+
+    private function hideCredentialsInQuery($query)
+    {
+        return preg_replace("/(AWS_[A-Z_]*\\s=\\s.)[0-9A-Za-z\\/\\+=]*./", '${1}...\'', $query);
     }
 }

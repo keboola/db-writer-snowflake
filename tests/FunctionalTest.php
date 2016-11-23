@@ -119,6 +119,19 @@ class FunctionalTest extends BaseTest
         $this->assertEquals('success', $data['status']);
     }
 
+    public function testUserException()
+    {
+        $this->initConfig(function ($config) {
+            $config['parameters']['tables'][0]['items'][1]['type'] = 'int';
+            return $config;
+        });
+
+        $process = new Process('php ' . ROOT_PATH . 'run.php --data=' . $this->tmpRunDir . ' 2>&1');
+        $process->run();
+
+        $this->assertEquals(1, $process->getExitCode());
+    }
+
     private function initConfig(callable $callback = null)
     {
         $yaml = new Yaml();
