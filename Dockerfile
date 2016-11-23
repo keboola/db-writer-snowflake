@@ -40,7 +40,7 @@ ADD . /code
 WORKDIR /code
 
 RUN echo "memory_limit = -1" >> /usr/local/etc/php/conf.d/php.ini
-RUN echo "date.timezone = "Europe/Prague" >> /usr/local/etc/php/conf.d/php.ini
+RUN echo "date.timezone = \"Europe/Prague\"" >> /usr/local/etc/php/conf.d/php.ini
 RUN composer install --no-interaction
 
 ENTRYPOINT php ./run.php --data=/data
