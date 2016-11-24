@@ -12,10 +12,10 @@ install:
   - docker-compose run --rm php composer install -n
   - docker-compose run --rm php ./vendor/bin/phpcs --standard=psr2 --ignore=vendor -n .
   - docker-compose run --rm -e AWS_ACCESS_KEY=$AWS_ODBC_KEY -e AWS_SECRET_KEY=$AWS_ODBC_SECRET php php driver/downloadDriver.php
-  - docker-compose build tests
+  - docker-compose build app
 
 script:
-  - docker-compose run -e CODECLIMATE_REPO_TOKEN=$CODECLIMATE_REPO_TOKEN tests
+  - docker-compose run -e CODECLIMATE_REPO_TOKEN=$CODECLIMATE_REPO_TOKEN app
 
 deploy:
   provider: script

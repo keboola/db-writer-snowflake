@@ -83,4 +83,4 @@ SNOWFLAKE_DB_USER=
 SNOWFLAKE_DB_PASSWORD=
 SNOWFLAKE_DB_SCHEMA=
 ```
-5. Run docker-compose, which will trigger phpunit: `docker-compose run --rm tests`
+5. Run docker-compose, which will trigger phpunit: `docker-compose run --rm app`
