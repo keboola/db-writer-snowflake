@@ -54,10 +54,7 @@ class Snowflake extends Writer implements WriterInterface
 
     public function createConnection($dbParams)
     {
-        $connection = new Connection($dbParams);
-        $connection->query(sprintf('USE SCHEMA "%s"', $dbParams['schema']));
-
-        return $connection;
+        return new Connection($dbParams);
     }
 
     public function writeFromS3($s3info, array $table)

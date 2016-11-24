@@ -37,6 +37,8 @@ class Connection
             'host',
             'user',
             'password',
+            'database',
+            'schema'
         ];
 
         $missingOptions = array_diff($requiredOptions, array_keys($options));
@@ -47,14 +49,14 @@ class Connection
         $port = isset($options['port']) ? (int) $options['port'] : 443;
         $tracing = isset($options['tracing']) ? (int) $options['tracing'] : 0;
         $maxBackoffAttempts = isset($options['maxBackoffAttempts']) ? (int) $options['maxBackoffAttempts'] : 5;
+        $loginTimeout = isset($options['loginTimeout']) ? (int) $options['loginTimeout'] : 30;
 
         $dsn = "Driver=SnowflakeDSIIDriver;Server=" . $options['host'];
         $dsn .= ";Port=" . $port;
         $dsn .= ";Tracing=" . $tracing;
-
-        if (isset($options['loginTimeout'])) {
-            $dsn .= ";Login_timeout=" . (int) $options['loginTimeout'];
-        }
+        $dsn .= ";Login_timeout=" . $loginTimeout;
+        $dsn .= ";Database=" . $this->quoteIdentifier($options['database']);
+        $dsn .= ";Schema=" . $this->quoteIdentifier($options['schema']);
 
         if (isset($options['networkTimeout'])) {
             $dsn .= ";Network_timeout=" . (int) $options['networkTimeout'];
@@ -62,10 +64,6 @@ class Connection
 
         if (isset($options['queryTimeout'])) {
             $dsn .= ";Query_timeout=" . (int) $options['queryTimeout'];
-        }
-
-        if (isset($options['database'])) {
-            $dsn .= ";Database=" . $this->quoteIdentifier($options['database']);
         }
 
         if (isset($options['warehouse'])) {
