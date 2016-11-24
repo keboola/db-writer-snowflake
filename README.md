@@ -72,15 +72,15 @@ App is developed on localhost using TDD.
 
 1. Clone from repository: `git clone git@github.com:keboola/db-writer-snowflake.git`
 2. Change directory: `cd db-writer-snowflake`
-3. Install dependencies: `composer install --no-interaction`
-4. Set up these environment variables:
+3. Install dependencies: `docker-compose run --rm php composer install -n`
+4. Create `.env` file:
 ```bash
-export STORAGE_API_TOKEN=
-export SNOWFLAKE_DB_HOST=
-export SNOWFLAKE_DB_PORT=
-export SNOWFLAKE_DB_DATABASE=
-export SNOWFLAKE_DB_USER=
-export SNOWFLAKE_DB_PASSWORD=
-export SNOWFLAKE_DB_SCHEMA=
+STORAGE_API_TOKEN=
+SNOWFLAKE_DB_HOST=
+SNOWFLAKE_DB_PORT=
+SNOWFLAKE_DB_DATABASE=
+SNOWFLAKE_DB_USER=
+SNOWFLAKE_DB_PASSWORD=
+SNOWFLAKE_DB_SCHEMA=
 ```
-5. Run docker-compose, which will trigger phpunit: `docker-compose run app`
+5. Run docker-compose, which will trigger phpunit: `docker-compose run --rm tests`

@@ -1,27 +1,29 @@
-app:
-  build: .
-  volumes:
-    - .:/code
-  working_dir: /code
-  entrypoint: "./phpunit.sh"
-  tty: true
-  stdin_open: true
-  environment:
-    STORAGE_API_TOKEN: $STORAGE_API_TOKEN
-    SNOWFLAKE_DB_HOST: $SNOWFLAKE_DB_HOST
-    SNOWFLAKE_DB_PORT: $SNOWFLAKE_DB_PORT
-    SNOWFLAKE_DB_USER: $SNOWFLAKE_DB_USER
-    SNOWFLAKE_DB_PASSWORD: $SNOWFLAKE_DB_PASSWORD
-    SNOWFLAKE_DB_DATABASE: $SNOWFLAKE_DB_DATABASE
-    SNOWFLAKE_DB_SCHEMA: $SNOWFLAKE_DB_SCHEMA
-
-php:
-  image: keboola/docker-php56-all-db
-  volumes:
+version: '2'
+services:
+  tests:
+    build: .
+    volumes:
       - .:/code
-  working_dir: /code
-  environment:
-    - AWS_ACCESS_KEY
-    - AWS_SECRET_KEY
-    - AWS_S3_BUCKET
-    - AWS_REGION
+    working_dir: /code
+    command: "./phpunit.sh"
+    tty: true
+    stdin_open: true
+    environment:
+      - STORAGE_API_TOKEN
+      - SNOWFLAKE_DB_HOST
+      - SNOWFLAKE_DB_PORT
+      - SNOWFLAKE_DB_USER
+      - SNOWFLAKE_DB_PASSWORD
+      - SNOWFLAKE_DB_DATABASE
+      - SNOWFLAKE_DB_SCHEMA
+
+  php:
+    image: keboola/docker-php56-all-db
+    volumes:
+        - .:/code
+    working_dir: /code
+    environment:
+      - AWS_ACCESS_KEY
+      - AWS_SECRET_KEY
+      - AWS_S3_BUCKET
+      - AWS_REGION
