@@ -71,28 +71,27 @@ class Snowflake extends Writer implements WriterInterface
         $csvOptions[] = sprintf("ESCAPE_UNENCLOSED_FIELD = %s", $this->quote('\\'));
 
         if ($s3info['isSliced']) {
-            $s3Bucket = 's3://' . $s3info['bucket'];
-            $downloadManifest = $this->getManifestDownloader($s3info);
+
+            // key ends with manifest
+            if (strrpos($s3info['key'], 'manifest') === strlen($s3info['key']) - strlen('manifest')) {
+                $path = substr($s3info['key'], 0, strlen($s3info['key']) - strlen('manifest'));
+                $pattern = 'PATTERN="^.*(?<!manifest)$"';
+            } else {
+                $path = $s3info['key'];
+                $pattern = '';
+            }
             return sprintf(
-                "COPY INTO %s FROM %s
-                CREDENTIALS = (AWS_KEY_ID = %s AWS_SECRET_KEY = %s AWS_TOKEN = %s)
+                "COPY INTO %s FROM %s 
+                CREDENTIALS = (AWS_KEY_ID = %s AWS_SECRET_KEY = %s  AWS_TOKEN = %s)
                 FILE_FORMAT = (TYPE=CSV %s)
-                FILES = (%s)",
+                %s",
                 $this->nameWithSchemaEscaped($tableName),
-                $this->quote($s3Bucket), // s3 bucket
+                $this->quote('s3://' . $s3info['bucket'] . "/" . $path),
                 $this->quote($s3info['credentials']['access_key_id']),
                 $this->quote($s3info['credentials']['secret_access_key']),
                 $this->quote($s3info['credentials']['session_token']),
                 implode(' ', $csvOptions),
-                implode(
-                    ', ',
-                    array_map(
-                        function ($file) use ($s3Bucket) {
-                            return $this->quote(str_replace($s3Bucket . '/', '', $file));
-                        },
-                        $downloadManifest($s3info['bucket'], $s3info['key'])
-                    )
-                )
+                $pattern
             );
         } else {
             return sprintf(
@@ -110,34 +109,6 @@ class Snowflake extends Writer implements WriterInterface
         }
     }
 
-    private function getManifestDownloader($s3info)
-    {
-        $s3Client = new S3Client([
-            'credentials' => [
-                'key' => $s3info['credentials']['access_key_id'],
-                'secret' => $s3info['credentials']['secret_access_key'],
-                'token' => $s3info['credentials']['session_token']
-            ],
-            'region' => $s3info['region'],
-            'version' => '2006-03-01',
-        ]);
-
-        return function ($bucket, $key) use ($s3Client) {
-            try {
-                $response = $s3Client->getObject([
-                    'Bucket' => $bucket,
-                    'Key' => $key,
-                ]);
-            } catch (AwsException $e) {
-                throw new Exception('Unable to download file from S3: ' . $e->getMessage());
-            }
-            $manifest = json_decode((string)$response['Body'], true);
-
-            return array_map(function ($entry) {
-                return $entry['url'];
-            }, $manifest['entries']);
-        };
-    }
 
     protected function nameWithSchemaEscaped($tableName, $schemaName = null)
     {
