@@ -117,7 +117,7 @@ class SnowflakeTest extends BaseTest
         $this->writer->writeFromS3($s3manifest, $table);
 
         /** @var Connection $conn */
-        $conn = $this->writer->getConnection();
+        $conn = new Connection($this->config['parameters']['db']);
         $res = $conn->fetchAll(sprintf('SELECT * FROM "%s" ORDER BY id ASC', $table['dbName']));
 
         $resFilename = tempnam('/tmp', 'db-wr-test-tmp');
@@ -132,8 +132,6 @@ class SnowflakeTest extends BaseTest
 
     public function testUpsert()
     {
-        /** @var Connection $conn */
-        $conn = $this->writer->getConnection();
         $tables = $this->config['parameters']['tables'];
         foreach ($tables as $table) {
             $this->writer->drop($table['dbName']);
@@ -156,6 +154,8 @@ class SnowflakeTest extends BaseTest
 
         $this->writer->upsert($table, $targetTable['dbName']);
 
+        /** @var Connection $conn */
+        $conn = new Connection($this->config['parameters']['db']);
         $res = $conn->fetchAll("SELECT * FROM \"{$targetTable['dbName']}\" ORDER BY id ASC");
 
         $resFilename = tempnam('/tmp', 'db-wr-test-tmp');
