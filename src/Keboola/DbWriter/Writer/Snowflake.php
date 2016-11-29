@@ -8,14 +8,11 @@
 
 namespace Keboola\DbWriter\Writer;
 
-use Aws\Exception\AwsException;
-use Aws\S3\S3Client;
 use Keboola\Csv\CsvFile;
 use Keboola\DbWriter\Exception\ApplicationException;
 use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Logger;
 use Keboola\DbWriter\Snowflake\Connection;
-use Keboola\DbWriter\Snowflake\Exception;
 use Keboola\DbWriter\Writer;
 use Keboola\DbWriter\WriterInterface;
 
@@ -72,13 +69,13 @@ class Snowflake extends Writer implements WriterInterface
 
         if ($s3info['isSliced']) {
             // key ends with manifest
+            $path = $s3info['key'];
+            $pattern = '';
             if (strrpos($s3info['key'], 'manifest') === strlen($s3info['key']) - strlen('manifest')) {
                 $path = substr($s3info['key'], 0, strlen($s3info['key']) - strlen('manifest'));
                 $pattern = 'PATTERN="^.*(?<!manifest)$"';
-            } else {
-                $path = $s3info['key'];
-                $pattern = '';
             }
+
             return sprintf(
                 "COPY INTO %s FROM %s 
                 CREDENTIALS = (AWS_KEY_ID = %s AWS_SECRET_KEY = %s  AWS_TOKEN = %s)
@@ -92,20 +89,19 @@ class Snowflake extends Writer implements WriterInterface
                 implode(' ', $csvOptions),
                 $pattern
             );
-        } else {
-            return sprintf(
-                "COPY INTO %s FROM %s
-                CREDENTIALS = (AWS_KEY_ID = %s AWS_SECRET_KEY = %s AWS_TOKEN = %s)
-                REGION = %s
-                FILE_FORMAT = (TYPE=CSV %s)",
-                $this->nameWithSchemaEscaped($tableName),
-                $this->quote('s3://' . $s3info['bucket'] . "/" . $s3info['key']),
-                $this->quote($s3info['credentials']['access_key_id']),
-                $this->quote($s3info['credentials']['secret_access_key']),
-                $this->quote($s3info['credentials']['session_token']),
-                implode(' ', $csvOptions)
-            );
         }
+
+        return sprintf(
+            "COPY INTO %s FROM %s
+            CREDENTIALS = (AWS_KEY_ID = %s AWS_SECRET_KEY = %s AWS_TOKEN = %s)
+            FILE_FORMAT = (TYPE=CSV %s)",
+            $this->nameWithSchemaEscaped($tableName),
+            $this->quote('s3://' . $s3info['bucket'] . "/" . $s3info['key']),
+            $this->quote($s3info['credentials']['access_key_id']),
+            $this->quote($s3info['credentials']['secret_access_key']),
+            $this->quote($s3info['credentials']['session_token']),
+            implode(' ', $csvOptions)
+        );
     }
 
 
