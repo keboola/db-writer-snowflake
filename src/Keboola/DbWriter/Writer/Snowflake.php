@@ -91,6 +91,8 @@ class Snowflake extends Writer implements WriterInterface
             );
         }
 
+        $csvOptions[] = "SKIP_HEADER = 1";
+        
         return sprintf(
             "COPY INTO %s FROM %s
             CREDENTIALS = (AWS_KEY_ID = %s AWS_SECRET_KEY = %s AWS_TOKEN = %s)
