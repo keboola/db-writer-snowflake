@@ -18,6 +18,8 @@ use Keboola\DbWriter\WriterInterface;
 
 class Snowflake extends Writer implements WriterInterface
 {
+    const STATEMENT_TIMEOUT_IN_SECONDS = 900;
+
     private static $allowedTypes = [
         'number',
         'decimal', 'numeric',
@@ -51,7 +53,9 @@ class Snowflake extends Writer implements WriterInterface
 
     public function createConnection($dbParams)
     {
-        return new Connection($dbParams);
+        $connection = new Connection($dbParams);
+        $connection->query(sprintf("ALTER SESSION SET STATEMENT_TIMEOUT_IN_SECONDS = %d", self::STATEMENT_TIMEOUT_IN_SECONDS));
+        return $connection;
     }
 
     public function writeFromS3($s3info, array $table)
