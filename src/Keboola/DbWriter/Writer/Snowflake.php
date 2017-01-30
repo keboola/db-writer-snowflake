@@ -19,6 +19,7 @@ use Keboola\DbWriter\WriterInterface;
 class Snowflake extends Writer implements WriterInterface
 {
     const STATEMENT_TIMEOUT_IN_SECONDS = 900;
+    const STAGE_NAME = 'db-writer';
 
     private static $allowedTypes = [
         'number',
@@ -60,54 +61,73 @@ class Snowflake extends Writer implements WriterInterface
 
     public function writeFromS3($s3info, array $table)
     {
-        $this->execQuery($this->generateCopyCommand($table['dbName'], $s3info));
+        $this->execQuery($this->generateCreateStageCommand($s3info));
+        $this->execQuery($this->generateCopyCommand($table['dbName'], $s3info, $table['items']));
     }
 
-    private function generateCopyCommand($tableName, $s3info)
+    private function generateCreateStageCommand($s3info)
     {
         $csvOptions = [];
         $csvOptions[] = sprintf('FIELD_DELIMITER = %s', $this->quote(','));
         $csvOptions[] = sprintf("FIELD_OPTIONALLY_ENCLOSED_BY = %s", $this->quote('"'));
         $csvOptions[] = "ESCAPE_UNENCLOSED_FIELD = NONE";
         $csvOptions[] = sprintf("ESCAPE_UNENCLOSED_FIELD = %s", $this->quote('\\'));
-        $csvOptions[] = "NULL_IF = ('')";
 
+       if (!$s3info['isSliced']) {
+           $csvOptions[] = "SKIP_HEADER = 1";
+       }
+
+       return sprintf(
+            "CREATE OR REPLACE STAGE %s
+             FILE_FORMAT = (TYPE=CSV %s)
+             URL = 's3://%s'
+             CREDENTIALS = (AWS_KEY_ID = %s AWS_SECRET_KEY = %s  AWS_TOKEN = %s)
+            ",
+            $this->quoteIdentifier(self::STAGE_NAME),
+            implode(' ', $csvOptions),
+            $s3info['bucket'],
+            $this->quote($s3info['credentials']['access_key_id']),
+            $this->quote($s3info['credentials']['secret_access_key']),
+            $this->quote($s3info['credentials']['session_token'])
+        );
+    }
+
+    private function generateCopyCommand($tableName, $s3info, $columns)
+    {
+        $columnNames = array_map(function ($column) {
+           return $this->quoteIdentifier($column['dbName']);
+        }, $columns);
+
+        $transformationColumns = array_map(
+            function ($column, $index) {
+                if (!empty($column['nullable'])) {
+                    return sprintf("IFF(t.$%d = '', null, t.$%d)", $index + 1, $index + 1);
+                }
+                return sprintf('t.$%d', $index + 1);
+            },
+            $columns,
+            array_keys($columns)
+        );
+
+        $path = $s3info['key'];
+        $pattern = '';
         if ($s3info['isSliced']) {
             // key ends with manifest
-            $path = $s3info['key'];
-            $pattern = '';
             if (strrpos($s3info['key'], 'manifest') === strlen($s3info['key']) - strlen('manifest')) {
                 $path = substr($s3info['key'], 0, strlen($s3info['key']) - strlen('manifest'));
                 $pattern = 'PATTERN="^.*(?<!manifest)$"';
             }
-
-            return sprintf(
-                "COPY INTO %s FROM %s 
-                CREDENTIALS = (AWS_KEY_ID = %s AWS_SECRET_KEY = %s  AWS_TOKEN = %s)
-                FILE_FORMAT = (TYPE=CSV %s)
-                %s",
-                $this->nameWithSchemaEscaped($tableName),
-                $this->quote('s3://' . $s3info['bucket'] . "/" . $path),
-                $this->quote($s3info['credentials']['access_key_id']),
-                $this->quote($s3info['credentials']['secret_access_key']),
-                $this->quote($s3info['credentials']['session_token']),
-                implode(' ', $csvOptions),
-                $pattern
-            );
         }
 
-        $csvOptions[] = "SKIP_HEADER = 1";
-        
         return sprintf(
-            "COPY INTO %s FROM %s
-            CREDENTIALS = (AWS_KEY_ID = %s AWS_SECRET_KEY = %s AWS_TOKEN = %s)
-            FILE_FORMAT = (TYPE=CSV %s)",
+            "COPY INTO %s(%s) 
+            FROM (SELECT %s FROM %s t)
+            %s",
             $this->nameWithSchemaEscaped($tableName),
-            $this->quote('s3://' . $s3info['bucket'] . "/" . $s3info['key']),
-            $this->quote($s3info['credentials']['access_key_id']),
-            $this->quote($s3info['credentials']['secret_access_key']),
-            $this->quote($s3info['credentials']['session_token']),
-            implode(' ', $csvOptions)
+            implode(', ', $columnNames),
+            implode(', ', $transformationColumns),
+            $this->quote('@' . $this->quoteIdentifier(self::STAGE_NAME) . "/" . $path),
+            $pattern
         );
     }
 

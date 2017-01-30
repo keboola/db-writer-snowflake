@@ -28,7 +28,7 @@ parameters:
                     dbName: name
                     type: varchar
                     size: 255
-                    nullable: true
+                    nullable: false
                     default:
                 -
                     name: glasses
