@@ -152,6 +152,7 @@ class SnowflakeTest extends BaseTest
             if (!is_numeric($row['age'])) {
                 $this->assertNull($row['age']);
             }
+            $this->assertNotNull($row['name']);
         }
 
         $this->assertFileEquals($this->getInputCsv($table['tableId']), $resFilename);
