@@ -120,8 +120,8 @@ class SnowflakeTest extends BaseTest
         $conn = new Connection($this->config['parameters']['db']);
 
         $columnsInDb = $conn->fetchAll("DESCRIBE TABLE \"{$table['dbName']}\"");
-        $getColumnInDb = function($columnName) use($columnsInDb) {
-            $found = array_filter($columnsInDb, function($currentColumn) use($columnName) {
+        $getColumnInDb = function ($columnName) use ($columnsInDb) {
+            $found = array_filter($columnsInDb, function ($currentColumn) use ($columnName) {
                 return $currentColumn['name'] === $columnName;
             });
             if (empty($found)) {
