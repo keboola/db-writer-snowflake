@@ -73,11 +73,11 @@ class Snowflake extends Writer implements WriterInterface
         $csvOptions[] = "ESCAPE_UNENCLOSED_FIELD = NONE";
         $csvOptions[] = sprintf("ESCAPE_UNENCLOSED_FIELD = %s", $this->quote('\\'));
 
-       if (!$s3info['isSliced']) {
-           $csvOptions[] = "SKIP_HEADER = 1";
-       }
+        if (!$s3info['isSliced']) {
+            $csvOptions[] = "SKIP_HEADER = 1";
+        }
 
-       return sprintf(
+        return sprintf(
             "CREATE OR REPLACE STAGE %s
              FILE_FORMAT = (TYPE=CSV %s)
              URL = 's3://%s'
@@ -95,7 +95,7 @@ class Snowflake extends Writer implements WriterInterface
     private function generateCopyCommand($tableName, $s3info, $columns)
     {
         $columnNames = array_map(function ($column) {
-           return $this->quoteIdentifier($column['dbName']);
+            return $this->quoteIdentifier($column['dbName']);
         }, $columns);
 
         $transformationColumns = array_map(
