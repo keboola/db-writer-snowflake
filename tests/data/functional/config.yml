@@ -37,6 +37,13 @@ parameters:
                     size: 255
                     nullable:
                     default:
+                -
+                    name: age
+                    dbName: age
+                    type: int
+                    size:
+                    nullable: true
+                    default:
 
         -
             tableId: special
@@ -86,4 +93,11 @@ parameters:
                     type: varchar
                     size: 255
                     nullable:
+                    default:
+                -
+                    name: age
+                    dbName: age
+                    type: int
+                    size:
+                    nullable: true
                     default:

@@ -40,6 +40,7 @@ class S3Loader
 
         $sourceTableId = $this->storageApi->createTable($bucketId, $tableId, new CsvFile($filePath));
 
+        $this->storageApi->writeTable($sourceTableId, new CsvFile($filePath));
         $job = $this->storageApi->exportTableAsync(
             $sourceTableId,
             [
