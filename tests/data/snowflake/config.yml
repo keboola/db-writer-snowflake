@@ -28,7 +28,7 @@ parameters:
                     dbName: name
                     type: varchar
                     size: 255
-                    nullable:
+                    nullable: true
                     default:
                 -
                     name: glasses
@@ -36,6 +36,13 @@ parameters:
                     type: varchar
                     size: 255
                     nullable:
+                    default:
+                -
+                    name: age
+                    dbName: age
+                    type: int
+                    size:
+                    nullable: true
                     default:
 
         -
@@ -56,5 +63,5 @@ parameters:
                     dbName: col2
                     type: varchar
                     size: 255
-                    nullable:
+                    nullable: true
                     default:

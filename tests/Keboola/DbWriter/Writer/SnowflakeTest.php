@@ -118,13 +118,40 @@ class SnowflakeTest extends BaseTest
 
         /** @var Connection $conn */
         $conn = new Connection($this->config['parameters']['db']);
+
+        $columnsInDb = $conn->fetchAll("DESCRIBE TABLE \"{$table['dbName']}\"");
+        $getColumnInDb = function($columnName) use($columnsInDb) {
+            $found = array_filter($columnsInDb, function($currentColumn) use($columnName) {
+                return $currentColumn['name'] === $columnName;
+            });
+            if (empty($found)) {
+                throw new \Exception("Column $columnName not found");
+            }
+            return reset($found);
+        };
+
+        foreach ($table['items'] as $columnConfiguration) {
+            $columnInDb = $getColumnInDb($columnConfiguration['dbName']);
+            if (!empty($columnConfiguration['nullable'])) {
+                $this->assertEquals('Y', $columnInDb['null?']);
+            } else {
+                $this->assertEquals('N', $columnInDb['null?']);
+            }
+        }
+
         $res = $conn->fetchAll(sprintf('SELECT * FROM "%s" ORDER BY id ASC', $table['dbName']));
+
 
         $resFilename = tempnam('/tmp', 'db-wr-test-tmp');
         $csv = new CsvFile($resFilename);
-        $csv->writeRow(["id","name","glasses"]);
+        $csv->writeRow(["id","name","glasses", "age"]);
         foreach ($res as $row) {
             $csv->writeRow($row);
+
+            // null test - age column is nullable
+            if (!is_numeric($row['age'])) {
+                $this->assertNull($row['age']);
+            }
         }
 
         $this->assertFileEquals($this->getInputCsv($table['tableId']), $resFilename);
@@ -160,7 +187,7 @@ class SnowflakeTest extends BaseTest
 
         $resFilename = tempnam('/tmp', 'db-wr-test-tmp');
         $csv = new CsvFile($resFilename);
-        $csv->writeRow(["id", "name", "glasses"]);
+        $csv->writeRow(["id", "name", "glasses", "age"]);
         foreach ($res as $row) {
             $csv->writeRow($row);
         }
