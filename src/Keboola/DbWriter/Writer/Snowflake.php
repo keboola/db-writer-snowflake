@@ -70,7 +70,6 @@ class Snowflake extends Writer implements WriterInterface
         $csvOptions = [];
         $csvOptions[] = sprintf('FIELD_DELIMITER = %s', $this->quote(','));
         $csvOptions[] = sprintf("FIELD_OPTIONALLY_ENCLOSED_BY = %s", $this->quote('"'));
-        $csvOptions[] = "ESCAPE_UNENCLOSED_FIELD = NONE";
         $csvOptions[] = sprintf("ESCAPE_UNENCLOSED_FIELD = %s", $this->quote('\\'));
 
         if (!$s3info['isSliced']) {
