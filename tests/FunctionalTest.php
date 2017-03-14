@@ -146,6 +146,7 @@ class FunctionalTest extends BaseTest
         $config['parameters']['db']['port'] = $this->getEnv(self::DRIVER, 'DB_PORT');
         $config['parameters']['db']['database'] = $this->getEnv(self::DRIVER, 'DB_DATABASE');
         $config['parameters']['db']['schema'] = $this->getEnv(self::DRIVER, 'DB_SCHEMA');
+        $config['parameters']['db']['warehouse'] = $this->getEnv(self::DRIVER, 'DB_WAREHOUSE');
 
 
         if ($callback !== null) {

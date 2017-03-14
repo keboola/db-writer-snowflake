@@ -9,6 +9,7 @@
 namespace Keboola\DbWriter\Writer;
 
 use Keboola\Csv\CsvFile;
+use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Snowflake\Connection;
 use Keboola\DbWriter\Snowflake\Test\S3Loader;
 use Keboola\DbWriter\Test\BaseTest;
@@ -34,7 +35,9 @@ class SnowflakeTest extends BaseTest
         $this->config = $this->getConfig(self::DRIVER);
         $this->config['parameters']['writer_class'] = 'Snowflake';
         $this->config['parameters']['db']['schema'] = 'development';
+        $this->config['parameters']['db']['warehouse'] = $this->getEnv(self::DRIVER, 'DB_WAREHOUSE');
         $this->config['parameters']['db']['password'] = $this->config['parameters']['db']['#password'];
+
         $this->writer = $this->getWriter($this->config['parameters']);
 
         $tables = $this->config['parameters']['tables'];
@@ -196,5 +199,85 @@ class SnowflakeTest extends BaseTest
         $expectedFilename = $this->getInputCsv($table['tableId'] . "_merged");
 
         $this->assertFileEquals($expectedFilename, $resFilename);
+    }
+
+    public function testDefaultWarehouse()
+    {
+        $config = $this->config;
+
+        /** @var Connection $conn */
+        $conn = $this->writer->getConnection();
+
+        $user = $config['parameters']['db']['user'];
+        $warehouse = $config['parameters']['db']['warehouse'];
+
+        // reset warehouse
+        $sql = sprintf(
+            "ALTER USER %s SET DEFAULT_WAREHOUSE = null;",
+            $conn->quoteIdentifier($user)
+        );
+        $conn->query($sql);
+
+        $this->assertEmpty($this->getUserDefaultWarehouse($user));
+
+        // run without warehouse param
+        unset($config['parameters']['db']['warehouse']);
+
+        /** @var Snowflake $writer */
+        $writer = $this->getWriter($config['parameters']);
+
+        $tables = $config['parameters']['tables'];
+        foreach ($tables as $table) {
+            $writer->drop($table['dbName']);
+        }
+        $table = $tables[0];
+
+        $s3Manifest = $this->loadDataToS3($table['tableId']);
+
+        try {
+            $writer->create($table);
+            $writer->writeFromS3($s3Manifest, $table);
+            $this->fail('Run writer without warehouse should fail');
+        } catch (UserException $e) {
+            $this->assertRegExp('/No active warehouse/ui', $e->getMessage());
+        }
+
+        // run with warehouse param
+        $config = $this->config;
+
+        /** @var Snowflake $writer */
+        $writer = $this->getWriter($config['parameters']);
+
+        $writer->create($table);
+        $writer->writeFromS3($s3Manifest, $table);
+
+        // restore default warehouse
+        $sql = sprintf(
+            "ALTER USER %s SET DEFAULT_WAREHOUSE = %s;",
+            $conn->quoteIdentifier($user),
+            $conn->quoteIdentifier($warehouse)
+        );
+        $conn->query($sql);
+    }
+
+    private function getUserDefaultWarehouse($user)
+    {
+        /** @var Connection $conn */
+        $conn = $this->writer->getConnection();
+
+        $sql = sprintf(
+            "DESC USER %s;",
+            $conn->quoteIdentifier($user)
+        );
+
+        $config = $conn->fetchAll($sql);
+
+        foreach ($config as $item) {
+            if ($item['property'] === 'DEFAULT_WAREHOUSE') {
+                return $item['value'] === 'null' ? null : $item['value'];
+            }
+        }
+
+        return null;
     }
 }
