@@ -16,6 +16,7 @@ services:
       - SNOWFLAKE_DB_PASSWORD
       - SNOWFLAKE_DB_DATABASE
       - SNOWFLAKE_DB_SCHEMA
+      - SNOWFLAKE_DB_WAREHOUSE
 
   php:
     image: keboola/docker-php56-all-db
