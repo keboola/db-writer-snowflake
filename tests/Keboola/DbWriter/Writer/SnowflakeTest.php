@@ -34,6 +34,7 @@ class SnowflakeTest extends BaseTest
     {
         $this->config = $this->getConfig(self::DRIVER);
         $this->config['parameters']['writer_class'] = 'Snowflake';
+        $this->config['parameters']['db']['schema'] = $this->getEnv(self::DRIVER, 'DB_SCHEMA');
         $this->config['parameters']['db']['warehouse'] = $this->getEnv(self::DRIVER, 'DB_WAREHOUSE');
         $this->config['parameters']['db']['password'] = $this->config['parameters']['db']['#password'];
 
