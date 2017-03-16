@@ -18,7 +18,8 @@ Writes data to Redshift Database.
         "database": "DATABASE",
         "user": "USERNAME",
         "password": "PASSWORD",
-        "schema": "SCHEMA"
+        "schema": "SCHEMA",
+        "warehouse": "WAREHOUSE",
         "ssh": {
           "enabled": true,
           "keys": {
@@ -82,5 +83,6 @@ SNOWFLAKE_DB_DATABASE=
 SNOWFLAKE_DB_USER=
 SNOWFLAKE_DB_PASSWORD=
 SNOWFLAKE_DB_SCHEMA=
+SNOWFLAKE_DB_WAREHOUSE=
 ```
 5. Run docker-compose, which will trigger phpunit: `docker-compose run --rm app`
