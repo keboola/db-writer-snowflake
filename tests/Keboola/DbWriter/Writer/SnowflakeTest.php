@@ -273,7 +273,6 @@ class SnowflakeTest extends BaseTest
         $this->setUserDefaultWarehouse($user, null);
 
         /** @var Snowflake $writer */
-        var_dump($config['parameters']);
         $writer = $this->getWriter($config['parameters']);
         $writer->testConnection();
 
