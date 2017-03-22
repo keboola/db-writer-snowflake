@@ -260,6 +260,52 @@ class SnowflakeTest extends BaseTest
         $conn->query($sql);
     }
 
+    public function testCredentialsDefaultWarehouse()
+    {
+        $config = $this->config;
+        $config['action'] = 'testConnection';
+        unset($config['parameters']['tables']);
+
+        $user = $config['parameters']['db']['user'];
+        $warehouse = $config['parameters']['db']['warehouse'];
+
+        // empty default warehouse, specified in config
+        $this->setUserDefaultWarehouse($user, null);
+
+        /** @var Snowflake $writer */
+        var_dump($config['parameters']);
+        $writer = $this->getWriter($config['parameters']);
+        $writer->testConnection();
+
+        // empty default warehouse and not specified in config
+        unset($config['parameters']['db']['warehouse']);
+
+        /** @var Snowflake $writer */
+        $writer = $this->getWriter($config['parameters']);
+
+        try {
+            $writer->testConnection();
+            $this->fail('Test connection without warehouse and default warehouse should fail');
+        } catch (UserException $e) {
+            $this->assertRegExp('/Specify \"warehouse\" parameter/ui', $e->getMessage());
+        }
+
+        // bad warehouse
+        $config['parameters']['db']['warehouse'] = uniqid('test');
+
+        /** @var Snowflake $writer */
+        $writer = $this->getWriter($config['parameters']);
+
+        try {
+            $writer->testConnection();
+            $this->fail('Test connection with invalid warehouse ID should fail');
+        } catch (UserException $e) {
+            $this->assertRegExp('/Invalid warehouse/ui', $e->getMessage());
+        }
+
+        $this->setUserDefaultWarehouse($user, $warehouse);
+    }
+
     private function getUserDefaultWarehouse($user)
     {
         /** @var Connection $conn */
@@ -279,5 +325,30 @@ class SnowflakeTest extends BaseTest
         }
 
         return null;
+    }
+
+    private function setUserDefaultWarehouse($user, $warehouse = null)
+    {
+        /** @var Connection $conn */
+        $conn = $this->writer->getConnection();
+
+        if ($warehouse) {
+            $sql = sprintf(
+                "ALTER USER %s SET DEFAULT_WAREHOUSE = %s;",
+                $conn->quoteIdentifier($user),
+                $conn->quoteIdentifier($warehouse)
+            );
+            $conn->query($sql);
+
+            $this->assertEquals($warehouse, $this->getUserDefaultWarehouse($user));
+        } else {
+            $sql = sprintf(
+                "ALTER USER %s SET DEFAULT_WAREHOUSE = null;",
+                $conn->quoteIdentifier($user)
+            );
+            $conn->query($sql);
+
+            $this->assertEmpty($this->getUserDefaultWarehouse($user));
+        }
     }
 }

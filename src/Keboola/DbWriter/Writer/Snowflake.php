@@ -335,15 +335,15 @@ class Snowflake extends Writer implements WriterInterface
     {
         $this->execQuery('SELECT current_date;');
 
-        $paramWarehouse = !empty($this->dbParams['warehouse']) ? $this->dbParams['warehouse'] : null;
+        $envWarehouse = !empty($this->dbParams['warehouse']) ? $this->dbParams['warehouse'] : null;
         $defaultWarehouse = $this->getUserDefaultWarehouse();
-        if (!$defaultWarehouse && !$warehouse) {
+        if (!$defaultWarehouse && !$envWarehouse) {
             throw new UserException('Specify "warehouse" parameter');
         }
 
         $warehouse = $defaultWarehouse;
-        if ($paramWarehouse) {
-            $warehouse = $paramWarehouse;
+        if ($envWarehouse) {
+            $warehouse = $envWarehouse;
         }
 
         try {
