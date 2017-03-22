@@ -358,7 +358,6 @@ class Snowflake extends Writer implements WriterInterface
                 throw $e;
             }
         }
-
     }
 
     public function generateTmpName($tableName)
