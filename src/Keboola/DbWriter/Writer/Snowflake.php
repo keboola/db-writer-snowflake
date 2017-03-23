@@ -313,9 +313,51 @@ class Snowflake extends Writer implements WriterInterface
         return '"' . $str . '"';
     }
 
+    private function getUserDefaultWarehouse()
+    {
+        $sql = sprintf(
+            "DESC USER %s;",
+            $this->db->quoteIdentifier($this->dbParams['user'])
+        );
+
+        $config = $this->db->fetchAll($sql);
+
+        foreach ($config as $item) {
+            if ($item['property'] === 'DEFAULT_WAREHOUSE') {
+                return $item['value'] === 'null' ? null : $item['value'];
+            }
+        }
+
+        return null;
+    }
+
     public function testConnection()
     {
-        $this->execQuery('select current_date');
+        $this->execQuery('SELECT current_date;');
+
+        $envWarehouse = !empty($this->dbParams['warehouse']) ? $this->dbParams['warehouse'] : null;
+        $defaultWarehouse = $this->getUserDefaultWarehouse();
+        if (!$defaultWarehouse && !$envWarehouse) {
+            throw new UserException('Specify "warehouse" parameter');
+        }
+
+        $warehouse = $defaultWarehouse;
+        if ($envWarehouse) {
+            $warehouse = $envWarehouse;
+        }
+
+        try {
+            $this->db->query(sprintf(
+                'USE WAREHOUSE %s;',
+                $this->db->quoteIdentifier($warehouse)
+            ));
+        } catch (\Exception $e) {
+            if (preg_match('/Object does not exist/ui', $e->getMessage())) {
+                throw new UserException(sprintf('Invalid warehouse "%s" specified', $warehouse));
+            } else {
+                throw $e;
+            }
+        }
     }
 
     public function generateTmpName($tableName)
