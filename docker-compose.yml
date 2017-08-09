@@ -2,6 +2,7 @@ version: '2'
 services:
   app:
     build: .
+    image: keboola/wr-db-snowflake
     volumes:
       - .:/code
     working_dir: /code

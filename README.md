@@ -1,6 +1,5 @@
 # Snowflake DB Writer
 
-[![Docker Repository on Quay](https://quay.io/repository/keboola/db-writer-snowflake/status "Docker Repository on Quay")](https://quay.io/repository/keboola/db-writer-snowflake)
 [![Build Status](https://travis-ci.org/keboola/db-writer-snowflake.svg?branch=master)](https://travis-ci.org/keboola/db-writer-snowflake)
 [![Code Climate](https://codeclimate.com/github/keboola/db-writer-snowflake/badges/gpa.svg)](https://codeclimate.com/github/keboola/db-writer-snowflake)
 [![Test Coverage](https://codeclimate.com/github/keboola/db-writer-snowflake/badges/coverage.svg)](https://codeclimate.com/github/keboola/db-writer-snowflake/coverage)
