@@ -385,10 +385,6 @@ class Snowflake extends Writer implements WriterInterface
         return '__temp_' . str_replace('.', '_', uniqid('wr_db_', true));
     }
 
-    private function hideCredentialsInQuery($query)
-    {
-        return preg_replace("/(AWS_[A-Z_]*\\s=\\s.)[0-9A-Za-z\\/\\+=]*./", '${1}...\'', $query);
-    }
 
     /**
      * Generate stage name for given run ID
@@ -396,7 +392,7 @@ class Snowflake extends Writer implements WriterInterface
      * @param string $runId
      * @return string
      */
-    private function generateStageName($runId = null)
+    public function generateStageName($runId = null)
     {
         return rtrim(
             mb_substr(
@@ -410,5 +406,10 @@ class Snowflake extends Writer implements WriterInterface
             ),
             '-'
         );
+    }
+
+    private function hideCredentialsInQuery($query)
+    {
+        return preg_replace("/(AWS_[A-Z_]*\\s=\\s.)[0-9A-Za-z\\/\\+=]*./", '${1}...\'', $query);
     }
 }
