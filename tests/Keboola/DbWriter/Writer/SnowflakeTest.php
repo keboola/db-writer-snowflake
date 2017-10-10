@@ -107,6 +107,13 @@ class SnowflakeTest extends BaseTest
         $this->assertEquals('simple', $res[0]['TABLE_NAME']);
     }
 
+    public function testStageName()
+    {
+       $this->assertFalse(
+           $this->writer->generateStageName(getenv('KBC_RUNID')) === Snowflake::STAGE_NAME
+       );
+    }
+
     public function testWriteAsync()
     {
         $tables = $this->config['parameters']['tables'];
