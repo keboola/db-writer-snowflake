@@ -109,9 +109,9 @@ class SnowflakeTest extends BaseTest
 
     public function testStageName()
     {
-       $this->assertFalse(
+        $this->assertFalse(
            $this->writer->generateStageName(getenv('KBC_RUNID')) === Snowflake::STAGE_NAME
-       );
+        );
     }
 
     public function testWriteAsync()
