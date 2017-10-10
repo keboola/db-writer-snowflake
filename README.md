@@ -76,6 +76,7 @@ App is developed on localhost using TDD.
 4. Create `.env` file:
 ```bash
 STORAGE_API_TOKEN=
+KBC_RUNID=
 SNOWFLAKE_DB_HOST=
 SNOWFLAKE_DB_PORT=
 SNOWFLAKE_DB_DATABASE=
