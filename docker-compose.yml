@@ -10,6 +10,7 @@ services:
     tty: true
     stdin_open: true
     environment:
+      - KBC_RUNID
       - STORAGE_API_TOKEN
       - SNOWFLAKE_DB_HOST
       - SNOWFLAKE_DB_PORT

@@ -107,6 +107,11 @@ class SnowflakeTest extends BaseTest
         $this->assertEquals('simple', $res[0]['TABLE_NAME']);
     }
 
+    public function testStageName()
+    {
+        $this->assertFalse($this->writer->generateStageName(getenv('KBC_RUNID')) === Snowflake::STAGE_NAME);
+    }
+
     public function testWriteAsync()
     {
         $tables = $this->config['parameters']['tables'];
@@ -122,6 +127,19 @@ class SnowflakeTest extends BaseTest
         /** @var Connection $conn */
         $conn = new Connection($this->config['parameters']['db']);
 
+        // check if writer stage does not exists
+        $stageName = $this->writer->generateStageName(getenv('KBC_RUNID'));
+
+        $writerStages = array_filter(
+            $conn->fetchAll(sprintf("SHOW STAGES LIKE '{$stageName}'")),
+            function ($row) {
+                return $row['owner'] === getenv('SNOWFLAKE_DB_USER');
+            }
+        );
+
+        $this->assertCount(0, $writerStages);
+
+        // validate structure and data
         $columnsInDb = $conn->fetchAll("DESCRIBE TABLE \"{$table['dbName']}\"");
         $getColumnInDb = function ($columnName) use ($columnsInDb) {
             $found = array_filter($columnsInDb, function ($currentColumn) use ($columnName) {
