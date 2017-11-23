@@ -1,4 +1,4 @@
-FROM php:5.6.21
+FROM php:7.1
 MAINTAINER Miroslav Cillik <miro@keboola.com>
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -6,27 +6,21 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update \
   && apt-get install unzip git unixODBC-dev libpq-dev -y
 
-RUN docker-php-ext-install pdo_pgsql pdo_mysql
-RUN pecl install xdebug \
-  && docker-php-ext-enable xdebug
 
 # snowflake odbc - https://github.com/docker-library/php/issues/103
 RUN set -x \
-&& cd /usr/src/php/ext/odbc \
-&& phpize \
-&& sed -ri 's@^ *test +"\$PHP_.*" *= *"no" *&& *PHP_.*=yes *$@#&@g' configure \
-&& ./configure --with-unixODBC=shared,/usr \
-&& docker-php-ext-install odbc
+    && docker-php-source extract \
+    && cd /usr/src/php/ext/odbc \
+    && phpize \
+    && sed -ri 's@^ *test +"\$PHP_.*" *= *"no" *&& *PHP_.*=yes *$@#&@g' configure \
+    && ./configure --with-unixODBC=shared,/usr \
+    && docker-php-ext-install odbc \
+    && docker-php-source delete
 
 ## install snowflake drivers
-ADD snowflake_linux_x8664_odbc.tgz /usr/bin
-ADD ./driver/simba.snowflake.ini /etc/simba.snowflake.ini
-ADD ./driver/odbcinst.ini /etc/odbcinst.ini
-RUN mkdir -p  /usr/bin/snowflake_odbc/log
-
-ENV SIMBAINI /etc/simba.snowflake.ini
-ENV SSL_DIR /usr/bin/snowflake_odbc/SSLCertificates/nssdb
-ENV LD_LIBRARY_PATH /usr/bin/snowflake_odbc/lib
+ADD snowflake-odbc.deb /tmp/snowflake-odbc.deb
+ADD ./driver/simba.snowflake.ini /usr/lib/snowflake/odbc/lib/simba.snowflake.ini
+RUN apt-get install -y libnss3-tools && dpkg -i /tmp/snowflake-odbc.deb
 
 # snowflake - charset settings
 ENV LANG en_US.UTF-8

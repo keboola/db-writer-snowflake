@@ -6,4 +6,4 @@ composer.phar
 runtests.sh
 .env
 /build
-/driver/snowflake_linux_x8664_odbc.tgz
+snowflake-odbc.deb
