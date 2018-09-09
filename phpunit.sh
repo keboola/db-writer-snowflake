@@ -35,4 +35,4 @@ composer install -n
 
 export ROOT_PATH="/code";
 
-./vendor/bin/phpunit && ./vendor/bin/test-reporter
+composer ci && ./vendor/bin/test-reporter
