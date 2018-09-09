@@ -1,10 +1,5 @@
 <?php
 /**
- * Created by PhpStorm.
- * User: miroslavcillik
- * Date: 21/11/16
- * Time: 14:16
- *
  * Download Snowflake ODBC driver to S3
  */
 
@@ -28,5 +23,5 @@ $client =  new \Aws\S3\S3Client([
 $client->getObject([
     'Bucket' => 'keboola-configs',
     'Key' => 'drivers/snowflake/snowflake_linux_x8664_odbc-2.16.6.tgz',
-    'SaveAs' => './snowflake_linux_x8664_odbc.tgz'
+    'SaveAs' => './snowflake_linux_x8664_odbc.tgz',
 ]);

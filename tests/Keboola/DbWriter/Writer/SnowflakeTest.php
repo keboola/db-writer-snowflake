@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: miroslavcillik
- * Date: 05/11/15
- * Time: 13:33
- */
 
 namespace Keboola\DbWriter\Writer;
 
@@ -17,7 +11,7 @@ use Keboola\StorageApi\Client;
 
 class SnowflakeTest extends BaseTest
 {
-    const DRIVER = 'snowflake';
+    public const DRIVER = 'snowflake';
 
     /** @var Snowflake */
     private $writer;
@@ -46,7 +40,7 @@ class SnowflakeTest extends BaseTest
         }
 
         $this->storageApi = new Client([
-            'token' => getenv('STORAGE_API_TOKEN')
+            'token' => getenv('STORAGE_API_TOKEN'),
         ]);
 
         $bucketId = 'in.c-test-wr-db-snowflake';
@@ -372,7 +366,6 @@ class SnowflakeTest extends BaseTest
         } catch (UserException $e) {
             $this->assertContains('Primary key(s) in configuration does NOT match with keys in DB table.', $e->getMessage());
         }
-
     }
 
     public function testUpsertAddMissingPrimaryKey(): void

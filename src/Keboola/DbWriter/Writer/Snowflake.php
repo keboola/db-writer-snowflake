@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: miroslavcillik
- * Date: 12/02/16
- * Time: 16:38
- */
 
 namespace Keboola\DbWriter\Writer;
 
@@ -18,8 +12,8 @@ use Keboola\DbWriter\WriterInterface;
 
 class Snowflake extends Writer implements WriterInterface
 {
-    const STATEMENT_TIMEOUT_IN_SECONDS = 3600;
-    const STAGE_NAME = 'db-writer';
+    private const STATEMENT_TIMEOUT_IN_SECONDS = 3600;
+    public const STAGE_NAME = 'db-writer';
 
     private static $allowedTypes = [
         'number',
@@ -29,12 +23,12 @@ class Snowflake extends Writer implements WriterInterface
         'double', 'double precision', 'real',
         'boolean',
         'char', 'character', 'varchar', 'string', 'text', 'binary',
-        'date', 'time', 'timestamp', 'timestamp_ltz', 'timestamp_ntz', 'timestamp_tz'
+        'date', 'time', 'timestamp', 'timestamp_ltz', 'timestamp_ntz', 'timestamp_tz',
     ];
 
     private static $typesWithSize = [
         'number', 'decimal', 'numeric',
-        'char', 'character', 'varchar', 'string', 'text', 'binary'
+        'char', 'character', 'varchar', 'string', 'text', 'binary',
     ];
 
     /** @var Connection */
@@ -219,14 +213,14 @@ class Snowflake extends Writer implements WriterInterface
         if (!empty($table['primaryKey'])) {
             $writer = $this;
             $sql .= "PRIMARY KEY (" . implode(
-                    ', ',
-                    array_map(
-                        function ($primaryColumn) use ($writer) {
-                            return $writer->escape($primaryColumn);
-                        },
-                        $table['primaryKey']
-                    )
-                ) . ")";
+                ', ',
+                array_map(
+                    function ($primaryColumn) use ($writer) {
+                        return $writer->escape($primaryColumn);
+                    },
+                    $table['primaryKey']
+                )
+            ) . ")";
             $sql .= ',';
         }
 
@@ -330,7 +324,7 @@ class Snowflake extends Writer implements WriterInterface
         $this->logger->info(sprintf("Executing query '%s'", $this->hideCredentialsInQuery($query)));
         try {
             $this->db->query($query);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             throw new UserException("Query execution error: " . $e->getMessage(), 0, $e);
         }
     }
@@ -399,7 +393,7 @@ class Snowflake extends Writer implements WriterInterface
                 'USE WAREHOUSE %s;',
                 $this->db->quoteIdentifier($warehouse)
             ));
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             if (preg_match('/Object does not exist/ui', $e->getMessage())) {
                 throw new UserException(sprintf('Invalid warehouse "%s" specified', $warehouse));
             } else {

@@ -1,23 +1,16 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: miroslavcillik
- * Date: 27/10/16
- * Time: 17:20
- */
 
 namespace Keboola\DbWriter\Writer\Snowflake\Tests;
 
 use Keboola\DbWriter\Snowflake\Test\S3Loader;
 use Keboola\DbWriter\Test\BaseTest;
+use Keboola\DbWriter\Writer\SnowflakeTest;
 use Keboola\StorageApi\Client;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Yaml\Yaml;
 
 class FunctionalTest extends BaseTest
 {
-    const DRIVER = 'Snowflake';
-
     protected $dataDir = ROOT_PATH . 'tests/data/functional';
 
     protected $tmpRunDir;
@@ -33,7 +26,7 @@ class FunctionalTest extends BaseTest
         $s3Loader = new S3Loader(
             $this->dataDir,
             new Client([
-                'token' => getenv('STORAGE_API_TOKEN')
+                'token' => getenv('STORAGE_API_TOKEN'),
             ])
         );
 
@@ -132,21 +125,21 @@ class FunctionalTest extends BaseTest
         $this->assertEquals(1, $process->getExitCode());
     }
 
-    private function initConfig(callable $callback = null)
+    private function initConfig(?callable $callback = null)
     {
         $yaml = new Yaml();
         $dstConfigPath = $this->tmpRunDir . '/config.yml';
         $config = $yaml->parse(file_get_contents($this->dataDir . '/config.yml'));
 
-        $config['parameters']['writer_class'] = self::DRIVER;
-        $config['parameters']['db']['user'] = $this->getEnv(self::DRIVER, 'DB_USER', true);
-        $config['parameters']['db']['#password'] = $this->getEnv(self::DRIVER, 'DB_PASSWORD', true);
-        $config['parameters']['db']['password'] = $this->getEnv(self::DRIVER, 'DB_PASSWORD', true);
-        $config['parameters']['db']['host'] = $this->getEnv(self::DRIVER, 'DB_HOST');
-        $config['parameters']['db']['port'] = $this->getEnv(self::DRIVER, 'DB_PORT');
-        $config['parameters']['db']['database'] = $this->getEnv(self::DRIVER, 'DB_DATABASE');
-        $config['parameters']['db']['schema'] = $this->getEnv(self::DRIVER, 'DB_SCHEMA');
-        $config['parameters']['db']['warehouse'] = $this->getEnv(self::DRIVER, 'DB_WAREHOUSE');
+        $config['parameters']['writer_class'] = SnowflakeTest::DRIVER;
+        $config['parameters']['db']['user'] = $this->getEnv(SnowflakeTest::DRIVER, 'DB_USER', true);
+        $config['parameters']['db']['#password'] = $this->getEnv(SnowflakeTest::DRIVER, 'DB_PASSWORD', true);
+        $config['parameters']['db']['password'] = $this->getEnv(SnowflakeTest::DRIVER, 'DB_PASSWORD', true);
+        $config['parameters']['db']['host'] = $this->getEnv(SnowflakeTest::DRIVER, 'DB_HOST');
+        $config['parameters']['db']['port'] = $this->getEnv(SnowflakeTest::DRIVER, 'DB_PORT');
+        $config['parameters']['db']['database'] = $this->getEnv(SnowflakeTest::DRIVER, 'DB_DATABASE');
+        $config['parameters']['db']['schema'] = $this->getEnv(SnowflakeTest::DRIVER, 'DB_SCHEMA');
+        $config['parameters']['db']['warehouse'] = $this->getEnv(SnowflakeTest::DRIVER, 'DB_WAREHOUSE');
 
 
         if ($callback !== null) {
