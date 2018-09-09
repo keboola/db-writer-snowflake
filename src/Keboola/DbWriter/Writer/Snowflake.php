@@ -333,11 +333,17 @@ class Snowflake extends Writer implements WriterInterface
         return '"' . $str . '"';
     }
 
-    private function getUserDefaultWarehouse()
+    public function getCurrentUser()
+    {
+        $data = $this->db->fetchAll("SELECT CURRENT_USER;");
+        return $data[0]['CURRENT_USER'];
+    }
+
+    public function getUserDefaultWarehouse()
     {
         $sql = sprintf(
             "DESC USER %s;",
-            $this->db->quoteIdentifier($this->dbParams['user'])
+            $this->db->quoteIdentifier($this->getCurrentUser())
         );
 
         $config = $this->db->fetchAll($sql);
