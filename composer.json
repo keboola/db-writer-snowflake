@@ -22,6 +22,9 @@
         "keboola/coding-standard": "^4.0",
         "phpstan/phpstan": "^0.8"
     },
+    "config": {
+        "process-timeout": 0
+    },
     "scripts": {
         "tests": "phpunit",
         "phpcs": "phpcs -n --ignore=vendor --extensions=php .",

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Keboola\DbWriter\Writer;
 
 use Keboola\Csv\CsvFile;

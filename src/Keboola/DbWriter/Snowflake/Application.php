@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Keboola\DbWriter\Snowflake;
 
 use \Keboola\DbWriter\Application as BaseApplication;
