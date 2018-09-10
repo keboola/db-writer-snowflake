@@ -111,6 +111,36 @@ class FunctionalTest extends BaseTest
         $this->assertEquals('success', $data['status']);
     }
 
+    public function testInvalidWarehouse(): void
+    {
+        $this->initConfig(function ($config) {
+            $config['action'] = 'testConnection';
+            $config['parameters']['db']['warehouse'] = uniqid();
+            return $config;
+        });
+
+        $process = new Process('php ' . ROOT_PATH . 'run.php --data=' . $this->tmpRunDir . ' 2>&1');
+        $process->run();
+
+        $this->assertEquals(1, $process->getExitCode());
+        $this->assertContains('Invalid warehouse', $process->getOutput());
+    }
+
+    public function testInvalidSchema(): void
+    {
+        $this->initConfig(function ($config) {
+            $config['action'] = 'testConnection';
+            $config['parameters']['db']['schema'] = uniqid();
+            return $config;
+        });
+
+        $process = new Process('php ' . ROOT_PATH . 'run.php --data=' . $this->tmpRunDir . ' 2>&1');
+        $process->run();
+
+        $this->assertEquals(1, $process->getExitCode());
+        $this->assertContains('Invalid schema', $process->getOutput());
+    }
+
     public function testUserException(): void
     {
         $this->initConfig(function ($config) {
