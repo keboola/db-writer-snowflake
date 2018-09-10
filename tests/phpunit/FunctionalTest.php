@@ -130,7 +130,7 @@ class FunctionalTest extends BaseTest
         $dstConfigPath = $this->tmpRunDir . '/config.yml';
         $config = $yaml->parse(file_get_contents($this->dataDir . '/config.yml'));
 
-        $config['parameters']['writer_class'] = SnowflakeTest::DRIVER;
+        $config['parameters']['writer_class'] = ucfirst(SnowflakeTest::DRIVER);
         $config['parameters']['db']['user'] = $this->getEnv(SnowflakeTest::DRIVER, 'DB_USER', true);
         $config['parameters']['db']['#password'] = $this->getEnv(SnowflakeTest::DRIVER, 'DB_PASSWORD', true);
         $config['parameters']['db']['password'] = $this->getEnv(SnowflakeTest::DRIVER, 'DB_PASSWORD', true);
