@@ -44,8 +44,12 @@ class Snowflake extends Writer implements WriterInterface
     public function __construct($dbParams, Logger $logger)
     {
         parent::__construct($dbParams, $logger);
+
         $this->dbParams = $dbParams;
         $this->logger = $logger;
+
+        $this->validateAndSetWarehouse();
+        $this->validateAndSetSchema();
     }
 
     public function createConnection($dbParams)
@@ -375,33 +379,50 @@ class Snowflake extends Writer implements WriterInterface
         return null;
     }
 
-    public function testConnection()
+    private function validateAndSetWarehouse()
     {
-        $this->execQuery('SELECT current_date;');
-
         $envWarehouse = !empty($this->dbParams['warehouse']) ? $this->dbParams['warehouse'] : null;
+
         $defaultWarehouse = $this->getUserDefaultWarehouse();
         if (!$defaultWarehouse && !$envWarehouse) {
-            throw new UserException('Specify "warehouse" parameter');
+            throw new UserException('Snowflake user has any "DEFAULT_WAREHOUSE" specified. Set "warehouse" parameter.');
         }
 
-        $warehouse = $defaultWarehouse;
-        if ($envWarehouse) {
-            $warehouse = $envWarehouse;
-        }
+        $warehouse = $envWarehouse ?: $defaultWarehouse;
 
         try {
             $this->db->query(sprintf(
                 'USE WAREHOUSE %s;',
                 $this->db->quoteIdentifier($warehouse)
             ));
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             if (preg_match('/Object does not exist/ui', $e->getMessage())) {
                 throw new UserException(sprintf('Invalid warehouse "%s" specified', $warehouse));
             } else {
                 throw $e;
             }
         }
+    }
+
+    private function validateAndSetSchema()
+    {
+        try {
+            $this->db->query(sprintf(
+                'USE SCHEMA %s;',
+                $this->db->quoteIdentifier($this->dbParams['schema'])
+            ));
+        } catch (\Exception $e) {
+            if (preg_match('/Object does not exist/ui', $e->getMessage())) {
+                throw new UserException(sprintf('Invalid schema "%s" specified', $this->dbParams['schema']));
+            } else {
+                throw $e;
+            }
+        }
+    }
+
+    public function testConnection()
+    {
+        $this->execQuery('SELECT current_date;');
     }
 
     public function generateTmpName($tableName)
