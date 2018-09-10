@@ -187,7 +187,7 @@ class Snowflake extends Writer implements WriterInterface
         $sql = sprintf(
             "CREATE %s TABLE %s (",
             $table['incremental']?'TEMPORARY':'',
-            $this->nameWithSchemaEscaped($table['dbName'])
+            $this->escape($table['dbName'])
         );
 
         $columns = array_filter($table['items'], function ($item) {
