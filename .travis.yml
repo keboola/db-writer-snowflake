@@ -13,13 +13,14 @@ install:
   - >-
    docker
    run
-   -e AWS_ACCESS_KEY=$AWS_ODBC_KEY
-   -e AWS_SECRET_KEY=$AWS_ODBC_SECRET
+   -e AWS_ACCESS_KEY_ID=$AWS_ODBC_KEY
+   -e AWS_SECRET_ACCESS_KEY=$AWS_ODBC_SECRET
    -v `pwd`:/code
    quay.io/keboola/aws-cli
-   s3 cp s3://keboola-configs/snowflake/snowflake_linux_x8664_odbc-2.16.6.tgz /code/snowflake_linux_x8664_odbc.tgz
-  - docker-compose run --rm app composer ci
+   s3 cp s3://keboola-configs/drivers/snowflake/snowflake_linux_x8664_odbc-2.16.6.tgz /code/snowflake_linux_x8664_odbc.tgz
   - docker-compose build app
+  - docker-compose run --rm app composer install
+  - docker-compose run --rm app composer ci
 
 script:
   - docker-compose run -e CODECLIMATE_REPO_TOKEN=$CODECLIMATE_REPO_TOKEN app
