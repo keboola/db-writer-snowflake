@@ -20,13 +20,3 @@ services:
       - SNOWFLAKE_DB_SCHEMA
       - SNOWFLAKE_DB_WAREHOUSE
 
-  php:
-    image: keboola/docker-php56-all-db
-    volumes:
-        - .:/code
-    working_dir: /code
-    environment:
-      - AWS_ACCESS_KEY
-      - AWS_SECRET_KEY
-      - AWS_S3_BUCKET
-      - AWS_REGION

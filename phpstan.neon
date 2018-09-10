@@ -1,0 +1,6 @@
+parameters:
+    excludes_analyse:
+        - 'src/Keboola/DbWriter/Snowflake/Configuration/ConfigDefinition.php'
+    ignoreErrors:
+        - '#Parameter \#3 $previous of class Keboola\\DbWriter\\Exception\\UserException constructor expects Exception|null\, Throwable given\.#'
+        - '#Constant ROOT_PATH not found#'

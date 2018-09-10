@@ -1,10 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: miroslavcillik
- * Date: 12/02/16
- * Time: 16:38
- */
+
+declare(strict_types=1);
 
 namespace Keboola\DbWriter\Writer;
 
@@ -18,8 +14,8 @@ use Keboola\DbWriter\WriterInterface;
 
 class Snowflake extends Writer implements WriterInterface
 {
-    const STATEMENT_TIMEOUT_IN_SECONDS = 3600;
-    const STAGE_NAME = 'db-writer';
+    private const STATEMENT_TIMEOUT_IN_SECONDS = 3600;
+    public const STAGE_NAME = 'db-writer';
 
     private static $allowedTypes = [
         'number',
@@ -29,12 +25,12 @@ class Snowflake extends Writer implements WriterInterface
         'double', 'double precision', 'real',
         'boolean',
         'char', 'character', 'varchar', 'string', 'text', 'binary',
-        'date', 'time', 'timestamp', 'timestamp_ltz', 'timestamp_ntz', 'timestamp_tz'
+        'date', 'time', 'timestamp', 'timestamp_ltz', 'timestamp_ntz', 'timestamp_tz',
     ];
 
     private static $typesWithSize = [
         'number', 'decimal', 'numeric',
-        'char', 'character', 'varchar', 'string', 'text', 'binary'
+        'char', 'character', 'varchar', 'string', 'text', 'binary',
     ];
 
     /** @var Connection */
@@ -48,8 +44,12 @@ class Snowflake extends Writer implements WriterInterface
     public function __construct($dbParams, Logger $logger)
     {
         parent::__construct($dbParams, $logger);
+
         $this->dbParams = $dbParams;
         $this->logger = $logger;
+
+        $this->validateAndSetWarehouse();
+        $this->validateAndSetSchema();
     }
 
     public function createConnection($dbParams)
@@ -215,6 +215,21 @@ class Snowflake extends Writer implements WriterInterface
                 $default
             );
         }
+
+        if (!empty($table['primaryKey'])) {
+            $writer = $this;
+            $sql .= "PRIMARY KEY (" . implode(
+                ', ',
+                array_map(
+                    function ($primaryColumn) use ($writer) {
+                        return $writer->escape($primaryColumn);
+                    },
+                    $table['primaryKey']
+                )
+            ) . ")";
+            $sql .= ',';
+        }
+
         $sql = substr($sql, 0, -1);
         $sql .= ");";
 
@@ -223,6 +238,13 @@ class Snowflake extends Writer implements WriterInterface
 
     public function upsert(array $table, $targetTable)
     {
+        if (!empty($table['primaryKey'])) {
+            $this->addPrimaryKeyIfMissing($table['primaryKey'], $targetTable);
+
+            // check primary keys
+            $this->checkPrimaryKey($table['primaryKey'], $targetTable);
+        }
+
         $sourceTable = $this->nameWithSchemaEscaped($table['dbName']);
         $targetTable = $this->nameWithSchemaEscaped($targetTable);
 
@@ -308,7 +330,7 @@ class Snowflake extends Writer implements WriterInterface
         $this->logger->info(sprintf("Executing query '%s'", $this->hideCredentialsInQuery($query)));
         try {
             $this->db->query($query);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             throw new UserException("Query execution error: " . $e->getMessage(), 0, $e);
         }
     }
@@ -333,11 +355,17 @@ class Snowflake extends Writer implements WriterInterface
         return '"' . $str . '"';
     }
 
-    private function getUserDefaultWarehouse()
+    public function getCurrentUser()
+    {
+        $data = $this->db->fetchAll("SELECT CURRENT_USER;");
+        return $data[0]['CURRENT_USER'];
+    }
+
+    public function getUserDefaultWarehouse()
     {
         $sql = sprintf(
             "DESC USER %s;",
-            $this->db->quoteIdentifier($this->dbParams['user'])
+            $this->db->quoteIdentifier($this->getCurrentUser())
         );
 
         $config = $this->db->fetchAll($sql);
@@ -351,33 +379,50 @@ class Snowflake extends Writer implements WriterInterface
         return null;
     }
 
-    public function testConnection()
+    private function validateAndSetWarehouse()
     {
-        $this->execQuery('SELECT current_date;');
-
         $envWarehouse = !empty($this->dbParams['warehouse']) ? $this->dbParams['warehouse'] : null;
+
         $defaultWarehouse = $this->getUserDefaultWarehouse();
         if (!$defaultWarehouse && !$envWarehouse) {
-            throw new UserException('Specify "warehouse" parameter');
+            throw new UserException('Snowflake user has any "DEFAULT_WAREHOUSE" specified. Set "warehouse" parameter.');
         }
 
-        $warehouse = $defaultWarehouse;
-        if ($envWarehouse) {
-            $warehouse = $envWarehouse;
-        }
+        $warehouse = $envWarehouse ?: $defaultWarehouse;
 
         try {
             $this->db->query(sprintf(
                 'USE WAREHOUSE %s;',
                 $this->db->quoteIdentifier($warehouse)
             ));
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             if (preg_match('/Object does not exist/ui', $e->getMessage())) {
                 throw new UserException(sprintf('Invalid warehouse "%s" specified', $warehouse));
             } else {
                 throw $e;
             }
         }
+    }
+
+    private function validateAndSetSchema()
+    {
+        try {
+            $this->db->query(sprintf(
+                'USE SCHEMA %s;',
+                $this->db->quoteIdentifier($this->dbParams['schema'])
+            ));
+        } catch (\Throwable $e) {
+            if (preg_match('/Object does not exist/ui', $e->getMessage())) {
+                throw new UserException(sprintf('Invalid schema "%s" specified', $this->dbParams['schema']));
+            } else {
+                throw $e;
+            }
+        }
+    }
+
+    public function testConnection()
+    {
+        $this->execQuery('SELECT current_date;');
     }
 
     public function generateTmpName($tableName)
@@ -406,6 +451,49 @@ class Snowflake extends Writer implements WriterInterface
             ),
             '-'
         );
+    }
+
+    public function checkPrimaryKey(array $columns, string $targetTable): void
+    {
+        $primaryKeysInDb = $this->db->getTablePrimaryKey($this->dbParams['schema'], $targetTable);
+
+        sort($primaryKeysInDb);
+        sort($columns);
+
+        if ($primaryKeysInDb != $columns) {
+            throw new UserException(sprintf(
+                'Primary key(s) in configuration does NOT match with keys in DB table.' . PHP_EOL
+                . 'Keys in configuration: %s' . PHP_EOL
+                . 'Keys in DB table: %s',
+                implode(',', $columns),
+                implode(',', $primaryKeysInDb)
+            ));
+        }
+    }
+
+    private function addPrimaryKeyIfMissing(array $columns, string $targetTable): void
+    {
+        $primaryKeysInDb = $this->db->getTablePrimaryKey($this->dbParams['schema'], $targetTable);
+        if (!empty($primaryKeysInDb)) {
+            return;
+        }
+
+        $writer = $this;
+        $sql = sprintf(
+            "ALTER TABLE %s ADD PRIMARY KEY(%s);",
+            $this->nameWithSchemaEscaped($targetTable),
+            implode(
+                ', ',
+                array_map(
+                    function ($primaryColumn) use ($writer) {
+                        return $writer->escape($primaryColumn);
+                    },
+                    $columns
+                )
+            )
+        );
+
+        $this->execQuery($sql);
     }
 
     private function hideCredentialsInQuery($query)

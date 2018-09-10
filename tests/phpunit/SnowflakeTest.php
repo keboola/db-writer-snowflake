@@ -1,23 +1,18 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: miroslavcillik
- * Date: 05/11/15
- * Time: 13:33
- */
 
-namespace Keboola\DbWriter\Writer;
+namespace Keboola\DbWriter\Snowflake\Tests;
 
 use Keboola\Csv\CsvFile;
 use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Snowflake\Connection;
 use Keboola\DbWriter\Snowflake\Test\S3Loader;
 use Keboola\DbWriter\Test\BaseTest;
+use Keboola\DbWriter\Writer\Snowflake;
 use Keboola\StorageApi\Client;
 
 class SnowflakeTest extends BaseTest
 {
-    const DRIVER = 'snowflake';
+    public const DRIVER = 'snowflake';
 
     /** @var Snowflake */
     private $writer;
@@ -30,7 +25,7 @@ class SnowflakeTest extends BaseTest
     /** @var S3Loader */
     private $s3Loader;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->config = $this->getConfig(self::DRIVER);
         $this->config['parameters']['writer_class'] = 'Snowflake';
@@ -46,7 +41,7 @@ class SnowflakeTest extends BaseTest
         }
 
         $this->storageApi = new Client([
-            'token' => getenv('STORAGE_API_TOKEN')
+            'token' => getenv('STORAGE_API_TOKEN'),
         ]);
 
         $bucketId = 'in.c-test-wr-db-snowflake';
@@ -57,17 +52,7 @@ class SnowflakeTest extends BaseTest
         $this->s3Loader = new S3Loader($this->dataDir, $this->storageApi);
     }
 
-    private function getInputCsv($tableId)
-    {
-        return sprintf($this->dataDir . "/in/tables/%s.csv", $tableId);
-    }
-
-    private function loadDataToS3($tableId)
-    {
-        return $this->s3Loader->upload($tableId);
-    }
-
-    public function testDrop()
+    public function testDrop(): void
     {
         /** @var Connection $conn */
         $conn = $this->writer->getConnection();
@@ -87,7 +72,7 @@ class SnowflakeTest extends BaseTest
         $this->assertEmpty($res);
     }
 
-    public function testCreate()
+    public function testCreate(): void
     {
         $tables = $this->config['parameters']['tables'];
 
@@ -107,12 +92,38 @@ class SnowflakeTest extends BaseTest
         $this->assertEquals('simple', $res[0]['TABLE_NAME']);
     }
 
-    public function testStageName()
+    public function testInvalidWarehouse(): void
+    {
+        $parameters = $this->config['parameters'];
+        $parameters['db']['warehouse'] = uniqid();
+
+        try {
+            $this->getWriter($parameters);
+            $this->fail('Creating writer should fail with UserError');
+        } catch (UserException $e) {
+            $this->assertContains('Invalid warehouse', $e->getMessage());
+        }
+    }
+
+    public function testInvalidSchema(): void
+    {
+        $parameters = $this->config['parameters'];
+        $parameters['db']['schema'] = uniqid();
+
+        try {
+            $this->getWriter($parameters);
+            $this->fail('Creating writer should fail with UserError');
+        } catch (UserException $e) {
+            $this->assertContains('Invalid schema', $e->getMessage());
+        }
+    }
+
+    public function testStageName(): void
     {
         $this->assertFalse($this->writer->generateStageName(getenv('KBC_RUNID')) === Snowflake::STAGE_NAME);
     }
 
-    public function testWriteAsync()
+    public function testWriteAsync(): void
     {
         $tables = $this->config['parameters']['tables'];
 
@@ -179,7 +190,7 @@ class SnowflakeTest extends BaseTest
         $this->assertFileEquals($this->getInputCsv($table['tableId']), $resFilename);
     }
 
-    public function testUpsert()
+    public function testUpsert(): void
     {
         $tables = $this->config['parameters']['tables'];
         foreach ($tables as $table) {
@@ -219,7 +230,7 @@ class SnowflakeTest extends BaseTest
         $this->assertFileEquals($expectedFilename, $resFilename);
     }
 
-    public function testDefaultWarehouse()
+    public function testDefaultWarehouse(): void
     {
         $config = $this->config;
 
@@ -236,7 +247,7 @@ class SnowflakeTest extends BaseTest
         );
         $conn->query($sql);
 
-        $this->assertEmpty($this->getUserDefaultWarehouse($user));
+        $this->assertEmpty($this->writer->getUserDefaultWarehouse());
 
         // run without warehouse param
         unset($config['parameters']['db']['warehouse']);
@@ -257,7 +268,7 @@ class SnowflakeTest extends BaseTest
             $writer->writeFromS3($s3Manifest, $table);
             $this->fail('Run writer without warehouse should fail');
         } catch (UserException $e) {
-            $this->assertRegExp('/No active warehouse/ui', $e->getMessage());
+            $this->assertRegExp('/Snowflake user has any \"DEFAULT_WAREHOUSE\" specified/ui', $e->getMessage());
         }
 
         // run with warehouse param
@@ -278,17 +289,16 @@ class SnowflakeTest extends BaseTest
         $conn->query($sql);
     }
 
-    public function testCredentialsDefaultWarehouse()
+    public function testCredentialsDefaultWarehouse(): void
     {
         $config = $this->config;
         $config['action'] = 'testConnection';
         unset($config['parameters']['tables']);
 
-        $user = $config['parameters']['db']['user'];
         $warehouse = $config['parameters']['db']['warehouse'];
 
         // empty default warehouse, specified in config
-        $this->setUserDefaultWarehouse($user, null);
+        $this->setUserDefaultWarehouse(null);
 
         /** @var Snowflake $writer */
         $writer = $this->getWriter($config['parameters']);
@@ -320,34 +330,96 @@ class SnowflakeTest extends BaseTest
             $this->assertRegExp('/Invalid warehouse/ui', $e->getMessage());
         }
 
-        $this->setUserDefaultWarehouse($user, $warehouse);
+        $this->setUserDefaultWarehouse($warehouse);
     }
 
-    private function getUserDefaultWarehouse($user)
+    public function testCheckPrimaryKey(): void
     {
-        /** @var Connection $conn */
-        $conn = $this->writer->getConnection();
+        $table = $this->config['parameters']['tables'][0];
+        $table['primaryKey'] = ['id', 'name'];
 
-        $sql = sprintf(
-            "DESC USER %s;",
-            $conn->quoteIdentifier($user)
-        );
+        $this->writer->create($table);
 
-        $config = $conn->fetchAll($sql);
+        // test with keys in different order
+        $this->writer->checkPrimaryKey(['name', 'id'], $table['dbName']);
 
-        foreach ($config as $item) {
-            if ($item['property'] === 'DEFAULT_WAREHOUSE') {
-                return $item['value'] === 'null' ? null : $item['value'];
-            }
+        // no exception thrown, that's good
+        $this->assertTrue(true);
+    }
+
+    public function testCheckPrimaryKeyError(): void
+    {
+        $table = $this->config['parameters']['tables'][0];
+
+        $tableConfigWithOtherPrimaryKeys = $table;
+        $tableConfigWithOtherPrimaryKeys['items'][0]['dbName'] = 'code';
+        $tableConfigWithOtherPrimaryKeys['primaryKey'] = ['code'];
+
+        $this->writer->create($tableConfigWithOtherPrimaryKeys);
+
+        try {
+            $this->writer->checkPrimaryKey($table['primaryKey'], $table['dbName']);
+            $this->fail('Primary key check should fail');
+        } catch (UserException $e) {
+            $this->assertContains('Primary key(s) in configuration does NOT match with keys in DB table.', $e->getMessage());
         }
-
-        return null;
     }
 
-    private function setUserDefaultWarehouse($user, $warehouse = null)
+    public function testUpsertCheckPrimaryKeyError(): void
+    {
+        $table = $this->config['parameters']['tables'][0];
+        $table['primaryKey'] = ['id'];
+
+        $tmpTable = $table;
+        $tmpTable['dbName'] = $this->writer->generateTmpName($table['dbName']);
+
+        $this->writer->create($table);
+        $this->writer->create($tmpTable);
+
+        try {
+            $table['primaryKey'] = ['id', 'name'];
+            $this->writer->upsert($table, $tmpTable['dbName']);
+            $this->fail('Primary key check should fail');
+        } catch (UserException $e) {
+            $this->assertContains('Primary key(s) in configuration does NOT match with keys in DB table.', $e->getMessage());
+        }
+    }
+
+    public function testUpsertAddMissingPrimaryKey(): void
+    {
+        $table = $this->config['parameters']['tables'][0];
+        $table['primaryKey'] = [];
+
+        $tmpTable = $table;
+        $tmpTable['dbName'] = $this->writer->generateTmpName($table['dbName']);
+
+        $this->writer->create($table);
+        $this->writer->create($tmpTable);
+
+        $this->writer->checkPrimaryKey([], $tmpTable['dbName']);
+
+        $table['primaryKey'] = ['id', 'name'];
+        $this->writer->upsert($table, $tmpTable['dbName']);
+
+        $this->writer->checkPrimaryKey(['id', 'name'], $tmpTable['dbName']);
+    }
+
+    private function getInputCsv(string $tableId): string
+    {
+        return sprintf($this->dataDir . "/in/tables/%s.csv", $tableId);
+    }
+
+    private function loadDataToS3(string $tableId): array
+    {
+        return $this->s3Loader->upload($tableId);
+    }
+
+    private function setUserDefaultWarehouse($warehouse = null)
     {
         /** @var Connection $conn */
         $conn = $this->writer->getConnection();
+
+        $user = $this->writer->getCurrentUser();
 
         if ($warehouse) {
             $sql = sprintf(
@@ -357,7 +429,7 @@ class SnowflakeTest extends BaseTest
             );
             $conn->query($sql);
 
-            $this->assertEquals($warehouse, $this->getUserDefaultWarehouse($user));
+            $this->assertEquals($warehouse, $this->writer->getUserDefaultWarehouse());
         } else {
             $sql = sprintf(
                 "ALTER USER %s SET DEFAULT_WAREHOUSE = null;",
@@ -365,7 +437,7 @@ class SnowflakeTest extends BaseTest
             );
             $conn->query($sql);
 
-            $this->assertEmpty($this->getUserDefaultWarehouse($user));
+            $this->assertEmpty($this->writer->getUserDefaultWarehouse());
         }
     }
 }
