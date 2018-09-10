@@ -395,7 +395,7 @@ class Snowflake extends Writer implements WriterInterface
                 'USE WAREHOUSE %s;',
                 $this->db->quoteIdentifier($warehouse)
             ));
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             if (preg_match('/Object does not exist/ui', $e->getMessage())) {
                 throw new UserException(sprintf('Invalid warehouse "%s" specified', $warehouse));
             } else {
@@ -411,7 +411,7 @@ class Snowflake extends Writer implements WriterInterface
                 'USE SCHEMA %s;',
                 $this->db->quoteIdentifier($this->dbParams['schema'])
             ));
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             if (preg_match('/Object does not exist/ui', $e->getMessage())) {
                 throw new UserException(sprintf('Invalid schema "%s" specified', $this->dbParams['schema']));
             } else {
