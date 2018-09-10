@@ -1,10 +1,9 @@
 <?php
 
-namespace Keboola\DbWriter\Writer\Snowflake\Tests;
+namespace Keboola\DbWriter\Snowflake\Tests;
 
 use Keboola\DbWriter\Snowflake\Test\S3Loader;
 use Keboola\DbWriter\Test\BaseTest;
-use Keboola\DbWriter\Writer\SnowflakeTest;
 use Keboola\StorageApi\Client;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Yaml\Yaml;
@@ -15,7 +14,7 @@ class FunctionalTest extends BaseTest
 
     protected $tmpRunDir;
 
-    public function setUp()
+    public function setUp(): void
     {
         // cleanup & init
         $this->tmpRunDir = '/tmp/' . uniqid('wr-db-snowflake_');
@@ -49,7 +48,7 @@ class FunctionalTest extends BaseTest
         }
     }
 
-    public function testRun()
+    public function testRun(): void
     {
         $process = new Process('php ' . ROOT_PATH . 'run.php --data=' . $this->tmpRunDir . ' 2>&1');
         $process->run();
@@ -57,7 +56,7 @@ class FunctionalTest extends BaseTest
         $this->assertEquals(0, $process->getExitCode(), 'Output: ' . $process->getOutput());
     }
 
-    public function testRunAllIgnored()
+    public function testRunAllIgnored(): void
     {
         $config = $this->initConfig(function ($config) {
             $tables = array_map(function ($table) {
@@ -94,7 +93,7 @@ class FunctionalTest extends BaseTest
         $this->assertEquals(0, $process->getExitCode());
     }
 
-    public function testTestConnection()
+    public function testTestConnection(): void
     {
         $this->initConfig(function ($config) {
             $config['action'] = 'testConnection';
@@ -112,7 +111,7 @@ class FunctionalTest extends BaseTest
         $this->assertEquals('success', $data['status']);
     }
 
-    public function testUserException()
+    public function testUserException(): void
     {
         $this->initConfig(function ($config) {
             $config['parameters']['tables'][0]['items'][1]['type'] = 'int';
@@ -125,7 +124,7 @@ class FunctionalTest extends BaseTest
         $this->assertEquals(1, $process->getExitCode());
     }
 
-    private function initConfig(?callable $callback = null)
+    private function initConfig(?callable $callback = null): array
     {
         $yaml = new Yaml();
         $dstConfigPath = $this->tmpRunDir . '/config.yml';

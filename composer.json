@@ -41,5 +41,10 @@
         "psr-4": {
             "Keboola\\": "src/Keboola/"
         }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Keboola\\DbWriter\\Snowflake\\Tests\\": "tests/phpunit"
+        }
     }
 }

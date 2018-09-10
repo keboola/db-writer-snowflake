@@ -1,12 +1,13 @@
 <?php
 
-namespace Keboola\DbWriter\Writer;
+namespace Keboola\DbWriter\Snowflake\Tests;
 
 use Keboola\Csv\CsvFile;
 use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Snowflake\Connection;
 use Keboola\DbWriter\Snowflake\Test\S3Loader;
 use Keboola\DbWriter\Test\BaseTest;
+use Keboola\DbWriter\Writer\Snowflake;
 use Keboola\StorageApi\Client;
 
 class SnowflakeTest extends BaseTest
@@ -24,7 +25,7 @@ class SnowflakeTest extends BaseTest
     /** @var S3Loader */
     private $s3Loader;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->config = $this->getConfig(self::DRIVER);
         $this->config['parameters']['writer_class'] = 'Snowflake';
@@ -51,17 +52,7 @@ class SnowflakeTest extends BaseTest
         $this->s3Loader = new S3Loader($this->dataDir, $this->storageApi);
     }
 
-    private function getInputCsv($tableId)
-    {
-        return sprintf($this->dataDir . "/in/tables/%s.csv", $tableId);
-    }
-
-    private function loadDataToS3($tableId)
-    {
-        return $this->s3Loader->upload($tableId);
-    }
-
-    public function testDrop()
+    public function testDrop(): void
     {
         /** @var Connection $conn */
         $conn = $this->writer->getConnection();
@@ -81,7 +72,7 @@ class SnowflakeTest extends BaseTest
         $this->assertEmpty($res);
     }
 
-    public function testCreate()
+    public function testCreate(): void
     {
         $tables = $this->config['parameters']['tables'];
 
@@ -101,12 +92,12 @@ class SnowflakeTest extends BaseTest
         $this->assertEquals('simple', $res[0]['TABLE_NAME']);
     }
 
-    public function testStageName()
+    public function testStageName(): void
     {
         $this->assertFalse($this->writer->generateStageName(getenv('KBC_RUNID')) === Snowflake::STAGE_NAME);
     }
 
-    public function testWriteAsync()
+    public function testWriteAsync(): void
     {
         $tables = $this->config['parameters']['tables'];
 
@@ -173,7 +164,7 @@ class SnowflakeTest extends BaseTest
         $this->assertFileEquals($this->getInputCsv($table['tableId']), $resFilename);
     }
 
-    public function testUpsert()
+    public function testUpsert(): void
     {
         $tables = $this->config['parameters']['tables'];
         foreach ($tables as $table) {
@@ -213,7 +204,7 @@ class SnowflakeTest extends BaseTest
         $this->assertFileEquals($expectedFilename, $resFilename);
     }
 
-    public function testDefaultWarehouse()
+    public function testDefaultWarehouse(): void
     {
         $config = $this->config;
 
@@ -272,7 +263,7 @@ class SnowflakeTest extends BaseTest
         $conn->query($sql);
     }
 
-    public function testCredentialsDefaultWarehouse()
+    public function testCredentialsDefaultWarehouse(): void
     {
         $config = $this->config;
         $config['action'] = 'testConnection';
@@ -385,6 +376,16 @@ class SnowflakeTest extends BaseTest
         $this->writer->upsert($table, $tmpTable['dbName']);
 
         $this->writer->checkPrimaryKey(['id', 'name'], $tmpTable['dbName']);
+    }
+
+    private function getInputCsv(string $tableId): string
+    {
+        return sprintf($this->dataDir . "/in/tables/%s.csv", $tableId);
+    }
+
+    private function loadDataToS3(string $tableId): array
+    {
+        return $this->s3Loader->upload($tableId);
     }
 
     private function setUserDefaultWarehouse($warehouse = null)
