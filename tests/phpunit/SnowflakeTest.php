@@ -92,6 +92,32 @@ class SnowflakeTest extends BaseTest
         $this->assertEquals('simple', $res[0]['TABLE_NAME']);
     }
 
+    public function testInvalidWarehouse(): void
+    {
+        $parameters = $this->config['parameters'];
+        $parameters['db']['warehouse'] = uniqid();
+
+        try {
+            $this->getWriter($parameters);
+            $this->fail('Creating writer should fail with UserError');
+        } catch (UserException $e) {
+            $this->assertContains('Invalid warehouse', $e->getMessage());
+        }
+    }
+
+    public function testInvalidSchema(): void
+    {
+        $parameters = $this->config['parameters'];
+        $parameters['db']['schema'] = uniqid();
+
+        try {
+            $this->getWriter($parameters);
+            $this->fail('Creating writer should fail with UserError');
+        } catch (UserException $e) {
+            $this->assertContains('Invalid schema', $e->getMessage());
+        }
+    }
+
     public function testStageName(): void
     {
         $this->assertFalse($this->writer->generateStageName(getenv('KBC_RUNID')) === Snowflake::STAGE_NAME);
