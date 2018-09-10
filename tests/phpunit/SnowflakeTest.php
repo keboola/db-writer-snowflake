@@ -268,7 +268,7 @@ class SnowflakeTest extends BaseTest
             $writer->writeFromS3($s3Manifest, $table);
             $this->fail('Run writer without warehouse should fail');
         } catch (UserException $e) {
-            $this->assertRegExp('/No active warehouse/ui', $e->getMessage());
+            $this->assertRegExp('/Snowflake user has any \"DEFAULT_WAREHOUSE\" specified/ui', $e->getMessage());
         }
 
         // run with warehouse param
