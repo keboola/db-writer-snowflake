@@ -215,6 +215,21 @@ class Snowflake extends Writer implements WriterInterface
                 $default
             );
         }
+
+        if (!empty($table['primaryKey'])) {
+            $writer = $this;
+            $sql .= "PRIMARY KEY (" . implode(
+                    ', ',
+                    array_map(
+                        function ($primaryColumn) use ($writer) {
+                            return $writer->escape($primaryColumn);
+                        },
+                        $table['primaryKey']
+                    )
+                ) . ")";
+            $sql .= ',';
+        }
+
         $sql = substr($sql, 0, -1);
         $sql .= ");";
 
@@ -223,6 +238,13 @@ class Snowflake extends Writer implements WriterInterface
 
     public function upsert(array $table, $targetTable)
     {
+        if (!empty($table['primaryKey'])) {
+            $this->addPrimaryKeyIfMissing($table['primaryKey'], $targetTable);
+
+            // check primary keys
+            $this->checkPrimaryKey($table['primaryKey'], $targetTable);
+        }
+
         $sourceTable = $this->nameWithSchemaEscaped($table['dbName']);
         $targetTable = $this->nameWithSchemaEscaped($targetTable);
 
@@ -406,6 +428,49 @@ class Snowflake extends Writer implements WriterInterface
             ),
             '-'
         );
+    }
+
+    public function checkPrimaryKey(array $columns, string $targetTable): void
+    {
+        $primaryKeysInDb = $this->db->getTablePrimaryKey($this->dbParams['schema'], $targetTable);
+
+        sort($primaryKeysInDb);
+        sort($columns);
+
+        if ($primaryKeysInDb != $columns) {
+            throw new UserException(sprintf(
+                'Primary key(s) in configuration does NOT match with keys in DB table.' . PHP_EOL
+                . 'Keys in configuration: %s' . PHP_EOL
+                . 'Keys in DB table: %s',
+                implode(',', $columns),
+                implode(',', $primaryKeysInDb)
+            ));
+        }
+    }
+
+    private function addPrimaryKeyIfMissing(array $columns, string $targetTable): void
+    {
+        $primaryKeysInDb = $this->db->getTablePrimaryKey($this->dbParams['schema'], $targetTable);
+        if (!empty($primaryKeysInDb)) {
+            return;
+        }
+
+        $writer = $this;
+        $sql = sprintf(
+            "ALTER TABLE %s ADD PRIMARY KEY(%s);",
+            $this->nameWithSchemaEscaped($targetTable),
+            implode(
+                ', ',
+                array_map(
+                    function ($primaryColumn) use ($writer) {
+                        return $writer->escape($primaryColumn);
+                    },
+                    $columns
+                )
+            )
+        );
+
+        $this->execQuery($sql);
     }
 
     private function hideCredentialsInQuery($query)
