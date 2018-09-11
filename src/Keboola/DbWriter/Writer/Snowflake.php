@@ -48,8 +48,12 @@ class Snowflake extends Writer implements WriterInterface
     public function __construct($dbParams, Logger $logger)
     {
         parent::__construct($dbParams, $logger);
+
         $this->dbParams = $dbParams;
         $this->logger = $logger;
+
+        $this->validateAndSetWarehouse();
+        $this->validateAndSetSchema();
     }
 
     public function createConnection($dbParams)
@@ -354,30 +358,6 @@ class Snowflake extends Writer implements WriterInterface
     public function testConnection()
     {
         $this->execQuery('SELECT current_date;');
-
-        $envWarehouse = !empty($this->dbParams['warehouse']) ? $this->dbParams['warehouse'] : null;
-        $defaultWarehouse = $this->getUserDefaultWarehouse();
-        if (!$defaultWarehouse && !$envWarehouse) {
-            throw new UserException('Specify "warehouse" parameter');
-        }
-
-        $warehouse = $defaultWarehouse;
-        if ($envWarehouse) {
-            $warehouse = $envWarehouse;
-        }
-
-        try {
-            $this->db->query(sprintf(
-                'USE WAREHOUSE %s;',
-                $this->db->quoteIdentifier($warehouse)
-            ));
-        } catch (\Exception $e) {
-            if (preg_match('/Object does not exist/ui', $e->getMessage())) {
-                throw new UserException(sprintf('Invalid warehouse "%s" specified', $warehouse));
-            } else {
-                throw $e;
-            }
-        }
     }
 
     public function generateTmpName($tableName)
@@ -411,5 +391,46 @@ class Snowflake extends Writer implements WriterInterface
     private function hideCredentialsInQuery($query)
     {
         return preg_replace("/(AWS_[A-Z_]*\\s=\\s.)[0-9A-Za-z\\/\\+=]*./", '${1}...\'', $query);
+    }
+
+    private function validateAndSetWarehouse()
+    {
+        $envWarehouse = !empty($this->dbParams['warehouse']) ? $this->dbParams['warehouse'] : null;
+
+        $defaultWarehouse = $this->getUserDefaultWarehouse();
+        if (!$defaultWarehouse && !$envWarehouse) {
+            throw new UserException('Snowflake user has any "DEFAULT_WAREHOUSE" specified. Set "warehouse" parameter.');
+        }
+
+        $warehouse = $envWarehouse ?: $defaultWarehouse;
+
+        try {
+            $this->db->query(sprintf(
+                'USE WAREHOUSE %s;',
+                $this->db->quoteIdentifier($warehouse)
+            ));
+        } catch (\Throwable $e) {
+            if (preg_match('/Object does not exist/ui', $e->getMessage())) {
+                throw new UserException(sprintf('Invalid warehouse "%s" specified', $warehouse));
+            } else {
+                throw $e;
+            }
+        }
+    }
+
+    private function validateAndSetSchema()
+    {
+        try {
+            $this->db->query(sprintf(
+                'USE SCHEMA %s;',
+                $this->db->quoteIdentifier($this->dbParams['schema'])
+            ));
+        } catch (\Throwable $e) {
+            if (preg_match('/Object does not exist/ui', $e->getMessage())) {
+                throw new UserException(sprintf('Invalid schema "%s" specified', $this->dbParams['schema']));
+            } else {
+                throw $e;
+            }
+        }
     }
 }

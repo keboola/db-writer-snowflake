@@ -257,7 +257,7 @@ class SnowflakeTest extends BaseTest
             $writer->writeFromS3($s3Manifest, $table);
             $this->fail('Run writer without warehouse should fail');
         } catch (UserException $e) {
-            $this->assertRegExp('/No active warehouse/ui', $e->getMessage());
+            $this->assertRegExp('/Snowflake user has any \"DEFAULT_WAREHOUSE\" specified/ui', $e->getMessage());
         }
 
         // run with warehouse param
@@ -321,6 +321,30 @@ class SnowflakeTest extends BaseTest
         }
 
         $this->setUserDefaultWarehouse($user, $warehouse);
+    }
+
+    public function testInvalidWarehouse(): void
+    {
+        $parameters = $this->config['parameters'];
+        $parameters['db']['warehouse'] = uniqid();
+        try {
+            $this->getWriter($parameters);
+            $this->fail('Creating writer should fail with UserError');
+        } catch (UserException $e) {
+            $this->assertContains('Invalid warehouse', $e->getMessage());
+        }
+    }
+
+    public function testInvalidSchema(): void
+    {
+        $parameters = $this->config['parameters'];
+        $parameters['db']['schema'] = uniqid();
+        try {
+            $this->getWriter($parameters);
+            $this->fail('Creating writer should fail with UserError');
+        } catch (UserException $e) {
+            $this->assertContains('Invalid schema', $e->getMessage());
+        }
     }
 
     private function getUserDefaultWarehouse($user)
