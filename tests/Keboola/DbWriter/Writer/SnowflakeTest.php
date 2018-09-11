@@ -232,11 +232,11 @@ class SnowflakeTest extends BaseTest
         // reset warehouse
         $sql = sprintf(
             "ALTER USER %s SET DEFAULT_WAREHOUSE = null;",
-            $conn->quoteIdentifier($user)
+            $conn->quoteIdentifier($this->writer->getCurrentUser())
         );
         $conn->query($sql);
 
-        $this->assertEmpty($this->getUserDefaultWarehouse($user));
+        $this->assertEmpty($this->writer->getUserDefaultWarehouse());
 
         // run without warehouse param
         unset($config['parameters']['db']['warehouse']);
@@ -284,11 +284,10 @@ class SnowflakeTest extends BaseTest
         $config['action'] = 'testConnection';
         unset($config['parameters']['tables']);
 
-        $user = $config['parameters']['db']['user'];
         $warehouse = $config['parameters']['db']['warehouse'];
 
         // empty default warehouse, specified in config
-        $this->setUserDefaultWarehouse($user, null);
+        $this->setUserDefaultWarehouse(null);
 
         /** @var Snowflake $writer */
         $writer = $this->getWriter($config['parameters']);
@@ -320,31 +319,10 @@ class SnowflakeTest extends BaseTest
             $this->assertRegExp('/Invalid warehouse/ui', $e->getMessage());
         }
 
-        $this->setUserDefaultWarehouse($user, $warehouse);
+        $this->setUserDefaultWarehouse($warehouse);
     }
 
-    private function getUserDefaultWarehouse($user)
-    {
-        /** @var Connection $conn */
-        $conn = $this->writer->getConnection();
-
-        $sql = sprintf(
-            "DESC USER %s;",
-            $conn->quoteIdentifier($user)
-        );
-
-        $config = $conn->fetchAll($sql);
-
-        foreach ($config as $item) {
-            if ($item['property'] === 'DEFAULT_WAREHOUSE') {
-                return $item['value'] === 'null' ? null : $item['value'];
-            }
-        }
-
-        return null;
-    }
-
-    private function setUserDefaultWarehouse($user, $warehouse = null)
+    private function setUserDefaultWarehouse($warehouse = null)
     {
         /** @var Connection $conn */
         $conn = $this->writer->getConnection();
@@ -352,20 +330,20 @@ class SnowflakeTest extends BaseTest
         if ($warehouse) {
             $sql = sprintf(
                 "ALTER USER %s SET DEFAULT_WAREHOUSE = %s;",
-                $conn->quoteIdentifier($user),
+                $conn->quoteIdentifier($this->writer->getCurrentUser()),
                 $conn->quoteIdentifier($warehouse)
             );
             $conn->query($sql);
 
-            $this->assertEquals($warehouse, $this->getUserDefaultWarehouse($user));
+            $this->assertEquals($warehouse, $this->writer->getUserDefaultWarehouse());
         } else {
             $sql = sprintf(
                 "ALTER USER %s SET DEFAULT_WAREHOUSE = null;",
-                $conn->quoteIdentifier($user)
+                $conn->quoteIdentifier($this->writer->getCurrentUser())
             );
             $conn->query($sql);
 
-            $this->assertEmpty($this->getUserDefaultWarehouse($user));
+            $this->assertEmpty($this->writer->getUserDefaultWarehouse());
         }
     }
 }
