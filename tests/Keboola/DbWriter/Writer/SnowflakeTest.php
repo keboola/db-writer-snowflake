@@ -344,6 +344,77 @@ class SnowflakeTest extends BaseTest
         return null;
     }
 
+    public function testCheckPrimaryKey(): void
+    {
+        $table = $this->config['parameters']['tables'][0];
+        $table['primaryKey'] = ['id', 'name'];
+
+        $this->writer->create($table);
+
+        // test with keys in different order
+        $this->writer->checkPrimaryKey(['name', 'id'], $table['dbName']);
+
+        // no exception thrown, that's good
+        $this->assertTrue(true);
+    }
+
+    public function testCheckPrimaryKeyError(): void
+    {
+        $table = $this->config['parameters']['tables'][0];
+
+        $tableConfigWithOtherPrimaryKeys = $table;
+        $tableConfigWithOtherPrimaryKeys['items'][0]['dbName'] = 'code';
+        $tableConfigWithOtherPrimaryKeys['primaryKey'] = ['code'];
+
+        $this->writer->create($tableConfigWithOtherPrimaryKeys);
+
+        try {
+            $this->writer->checkPrimaryKey($table['primaryKey'], $table['dbName']);
+            $this->fail('Primary key check should fail');
+        } catch (UserException $e) {
+            $this->assertContains('Primary key(s) in configuration does NOT match with keys in DB table.', $e->getMessage());
+        }
+    }
+
+    public function testUpsertCheckPrimaryKeyError(): void
+    {
+        $table = $this->config['parameters']['tables'][0];
+        $table['primaryKey'] = ['id'];
+
+        $tmpTable = $table;
+        $tmpTable['dbName'] = $this->writer->generateTmpName($table['dbName']);
+
+        $this->writer->create($table);
+        $this->writer->create($tmpTable);
+
+        try {
+            $table['primaryKey'] = ['id', 'name'];
+            $this->writer->upsert($table, $tmpTable['dbName']);
+            $this->fail('Primary key check should fail');
+        } catch (UserException $e) {
+            $this->assertContains('Primary key(s) in configuration does NOT match with keys in DB table.', $e->getMessage());
+        }
+    }
+
+    public function testUpsertAddMissingPrimaryKey(): void
+    {
+        $table = $this->config['parameters']['tables'][0];
+        $table['primaryKey'] = [];
+
+        $tmpTable = $table;
+        $tmpTable['dbName'] = $this->writer->generateTmpName($table['dbName']);
+
+        $this->writer->create($table);
+        $this->writer->create($tmpTable);
+
+        $this->writer->checkPrimaryKey([], $tmpTable['dbName']);
+
+        $table['primaryKey'] = ['id', 'name'];
+        $this->writer->upsert($table, $tmpTable['dbName']);
+
+        $this->writer->checkPrimaryKey(['id', 'name'], $tmpTable['dbName']);
+    }
+
     private function setUserDefaultWarehouse($user, $warehouse = null)
     {
         /** @var Connection $conn */
