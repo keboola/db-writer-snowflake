@@ -219,14 +219,14 @@ class Snowflake extends Writer implements WriterInterface
         if (!empty($table['primaryKey'])) {
             $writer = $this;
             $sql .= "PRIMARY KEY (" . implode(
-                    ', ',
-                    array_map(
-                        function ($primaryColumn) use ($writer) {
-                            return $writer->escape($primaryColumn);
-                        },
-                        $table['primaryKey']
-                    )
-                ) . ")";
+                ', ',
+                array_map(
+                    function ($primaryColumn) use ($writer) {
+                        return $writer->escape($primaryColumn);
+                    },
+                    $table['primaryKey']
+                )
+            ) . ")";
             $sql .= ',';
         }
 
