@@ -219,23 +219,13 @@ class SnowflakeTest extends BaseTest
         $this->assertFileEquals($expectedFilename, $resFilename);
     }
 
-    public function testDefaultWarehouse()
+    public function testDefaultWarehouse(): void
     {
         $config = $this->config;
 
-        /** @var Connection $conn */
-        $conn = $this->writer->getConnection();
-
-        $user = $config['parameters']['db']['user'];
         $warehouse = $config['parameters']['db']['warehouse'];
 
-        // reset warehouse
-        $sql = sprintf(
-            "ALTER USER %s SET DEFAULT_WAREHOUSE = null;",
-            $conn->quoteIdentifier($this->writer->getCurrentUser())
-        );
-        $conn->query($sql);
-
+        $this->setUserDefaultWarehouse(null);
         $this->assertEmpty($this->writer->getUserDefaultWarehouse());
 
         // run without warehouse param
@@ -246,17 +236,6 @@ class SnowflakeTest extends BaseTest
             $this->fail('Create writer without warehouse should fail');
         } catch (UserException $e) {
             $this->assertRegExp('/Snowflake user has any \"DEFAULT_WAREHOUSE\" specified/ui', $e->getMessage());
-        }
-
-        // bad warehouse
-        $config = $this->config;
-        $config['parameters']['db']['warehouse'] = uniqid('test');
-
-        try {
-            $this->getWriter($config['parameters']);
-            $this->fail('Create writer wit invalid warehouse should fail');
-        } catch (UserException $e) {
-            $this->assertRegExp('/Invalid warehouse/ui', $e->getMessage());
         }
 
         // run with warehouse param
@@ -274,12 +253,8 @@ class SnowflakeTest extends BaseTest
         $writer->writeFromS3($s3Manifest, $table);
 
         // restore default warehouse
-        $sql = sprintf(
-            "ALTER USER %s SET DEFAULT_WAREHOUSE = %s;",
-            $conn->quoteIdentifier($user),
-            $conn->quoteIdentifier($warehouse)
-        );
-        $conn->query($sql);
+        $this->setUserDefaultWarehouse($warehouse);
+        $this->assertEquals($warehouse, $this->writer->getUserDefaultWarehouse());
     }
 
     public function testInvalidWarehouse(): void
@@ -305,27 +280,6 @@ class SnowflakeTest extends BaseTest
         } catch (UserException $e) {
             $this->assertContains('Invalid schema', $e->getMessage());
         }
-    }
-
-    private function getUserDefaultWarehouse()
-    {
-        /** @var Connection $conn */
-        $conn = $this->writer->getConnection();
-
-        $sql = sprintf(
-            "DESC USER %s;",
-            $conn->quoteIdentifier($this->writer->getCurrentUser())
-        );
-
-        $config = $conn->fetchAll($sql);
-
-        foreach ($config as $item) {
-            if ($item['property'] === 'DEFAULT_WAREHOUSE') {
-                return $item['value'] === 'null' ? null : $item['value'];
-            }
-        }
-
-        return null;
     }
 
     public function testCheckPrimaryKey(): void
@@ -401,13 +355,15 @@ class SnowflakeTest extends BaseTest
 
     private function setUserDefaultWarehouse($warehouse = null)
     {
+        $user = $this->writer->getCurrentUser();
+
         /** @var Connection $conn */
         $conn = $this->writer->getConnection();
 
         if ($warehouse) {
             $sql = sprintf(
                 "ALTER USER %s SET DEFAULT_WAREHOUSE = %s;",
-                $conn->quoteIdentifier($this->writer->getCurrentUser()),
+                $conn->quoteIdentifier($user),
                 $conn->quoteIdentifier($warehouse)
             );
             $conn->query($sql);
@@ -416,7 +372,7 @@ class SnowflakeTest extends BaseTest
         } else {
             $sql = sprintf(
                 "ALTER USER %s SET DEFAULT_WAREHOUSE = null;",
-                $conn->quoteIdentifier($this->writer->getCurrentUser())
+                $conn->quoteIdentifier($user)
             );
             $conn->query($sql);
 
