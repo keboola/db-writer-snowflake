@@ -241,23 +241,22 @@ class SnowflakeTest extends BaseTest
         // run without warehouse param
         unset($config['parameters']['db']['warehouse']);
 
-        /** @var Snowflake $writer */
-        $writer = $this->getWriter($config['parameters']);
-
-        $tables = $config['parameters']['tables'];
-        foreach ($tables as $table) {
-            $writer->drop($table['dbName']);
+        try {
+            $this->getWriter($config['parameters']);
+            $this->fail('Create writer without warehouse should fail');
+        } catch (UserException $e) {
+            $this->assertRegExp('/Snowflake user has any \"DEFAULT_WAREHOUSE\" specified/ui', $e->getMessage());
         }
-        $table = $tables[0];
 
-        $s3Manifest = $this->loadDataToS3($table['tableId']);
+        // bad warehouse
+        $config = $this->config;
+        $config['parameters']['db']['warehouse'] = uniqid('test');
 
         try {
-            $writer->create($table);
-            $writer->writeFromS3($s3Manifest, $table);
-            $this->fail('Run writer without warehouse should fail');
+            $this->getWriter($config['parameters']);
+            $this->fail('Create writer wit invalid warehouse should fail');
         } catch (UserException $e) {
-            $this->assertRegExp('/No active warehouse/ui', $e->getMessage());
+            $this->assertRegExp('/Invalid warehouse/ui', $e->getMessage());
         }
 
         // run with warehouse param
@@ -265,6 +264,11 @@ class SnowflakeTest extends BaseTest
 
         /** @var Snowflake $writer */
         $writer = $this->getWriter($config['parameters']);
+
+        $tables = $config['parameters']['tables'];
+        $table = $tables[0];
+
+        $s3Manifest = $this->loadDataToS3($table['tableId']);
 
         $writer->create($table);
         $writer->writeFromS3($s3Manifest, $table);
@@ -278,48 +282,121 @@ class SnowflakeTest extends BaseTest
         $conn->query($sql);
     }
 
-    public function testCredentialsDefaultWarehouse()
+    public function testInvalidWarehouse(): void
     {
-        $config = $this->config;
-        $config['action'] = 'testConnection';
-        unset($config['parameters']['tables']);
-
-        $warehouse = $config['parameters']['db']['warehouse'];
-
-        // empty default warehouse, specified in config
-        $this->setUserDefaultWarehouse(null);
-
-        /** @var Snowflake $writer */
-        $writer = $this->getWriter($config['parameters']);
-        $writer->testConnection();
-
-        // empty default warehouse and not specified in config
-        unset($config['parameters']['db']['warehouse']);
-
-        /** @var Snowflake $writer */
-        $writer = $this->getWriter($config['parameters']);
+        $parameters = $this->config['parameters'];
+        $parameters['db']['warehouse'] = uniqid();
 
         try {
-            $writer->testConnection();
-            $this->fail('Test connection without warehouse and default warehouse should fail');
+            $this->getWriter($parameters);
+            $this->fail('Creating writer should fail with UserError');
         } catch (UserException $e) {
-            $this->assertRegExp('/Specify \"warehouse\" parameter/ui', $e->getMessage());
+            $this->assertContains('Invalid warehouse', $e->getMessage());
+        }
+    }
+
+    public function testInvalidSchema(): void
+    {
+        $parameters = $this->config['parameters'];
+        $parameters['db']['schema'] = uniqid();
+        try {
+            $this->getWriter($parameters);
+            $this->fail('Creating writer should fail with UserError');
+        } catch (UserException $e) {
+            $this->assertContains('Invalid schema', $e->getMessage());
+        }
+    }
+
+    private function getUserDefaultWarehouse()
+    {
+        /** @var Connection $conn */
+        $conn = $this->writer->getConnection();
+
+        $sql = sprintf(
+            "DESC USER %s;",
+            $conn->quoteIdentifier($this->writer->getCurrentUser())
+        );
+
+        $config = $conn->fetchAll($sql);
+
+        foreach ($config as $item) {
+            if ($item['property'] === 'DEFAULT_WAREHOUSE') {
+                return $item['value'] === 'null' ? null : $item['value'];
+            }
         }
 
-        // bad warehouse
-        $config['parameters']['db']['warehouse'] = uniqid('test');
+        return null;
+    }
 
-        /** @var Snowflake $writer */
-        $writer = $this->getWriter($config['parameters']);
+    public function testCheckPrimaryKey(): void
+    {
+        $table = $this->config['parameters']['tables'][0];
+        $table['primaryKey'] = ['id', 'name'];
+
+        $this->writer->create($table);
+
+        // test with keys in different order
+        $this->writer->checkPrimaryKey(['name', 'id'], $table['dbName']);
+
+        // no exception thrown, that's good
+        $this->assertTrue(true);
+    }
+
+    public function testCheckPrimaryKeyError(): void
+    {
+        $table = $this->config['parameters']['tables'][0];
+
+        $tableConfigWithOtherPrimaryKeys = $table;
+        $tableConfigWithOtherPrimaryKeys['items'][0]['dbName'] = 'code';
+        $tableConfigWithOtherPrimaryKeys['primaryKey'] = ['code'];
+
+        $this->writer->create($tableConfigWithOtherPrimaryKeys);
 
         try {
-            $writer->testConnection();
-            $this->fail('Test connection with invalid warehouse ID should fail');
+            $this->writer->checkPrimaryKey($table['primaryKey'], $table['dbName']);
+            $this->fail('Primary key check should fail');
         } catch (UserException $e) {
-            $this->assertRegExp('/Invalid warehouse/ui', $e->getMessage());
+            $this->assertContains('Primary key(s) in configuration does NOT match with keys in DB table.', $e->getMessage());
         }
+    }
 
-        $this->setUserDefaultWarehouse($warehouse);
+    public function testUpsertCheckPrimaryKeyError(): void
+    {
+        $table = $this->config['parameters']['tables'][0];
+        $table['primaryKey'] = ['id'];
+
+        $tmpTable = $table;
+        $tmpTable['dbName'] = $this->writer->generateTmpName($table['dbName']);
+
+        $this->writer->create($table);
+        $this->writer->create($tmpTable);
+
+        try {
+            $table['primaryKey'] = ['id', 'name'];
+            $this->writer->upsert($table, $tmpTable['dbName']);
+            $this->fail('Primary key check should fail');
+        } catch (UserException $e) {
+            $this->assertContains('Primary key(s) in configuration does NOT match with keys in DB table.', $e->getMessage());
+        }
+    }
+
+    public function testUpsertAddMissingPrimaryKey(): void
+    {
+        $table = $this->config['parameters']['tables'][0];
+        $table['primaryKey'] = [];
+
+        $tmpTable = $table;
+        $tmpTable['dbName'] = $this->writer->generateTmpName($table['dbName']);
+
+        $this->writer->create($table);
+        $this->writer->create($tmpTable);
+
+        $this->writer->checkPrimaryKey([], $tmpTable['dbName']);
+
+        $table['primaryKey'] = ['id', 'name'];
+        $this->writer->upsert($table, $tmpTable['dbName']);
+
+        $this->writer->checkPrimaryKey(['id', 'name'], $tmpTable['dbName']);
     }
 
     private function setUserDefaultWarehouse($warehouse = null)
