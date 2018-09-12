@@ -241,23 +241,22 @@ class SnowflakeTest extends BaseTest
         // run without warehouse param
         unset($config['parameters']['db']['warehouse']);
 
-        /** @var Snowflake $writer */
-        $writer = $this->getWriter($config['parameters']);
-
-        $tables = $config['parameters']['tables'];
-        foreach ($tables as $table) {
-            $writer->drop($table['dbName']);
+        try {
+            $this->getWriter($config['parameters']);
+            $this->fail('Create writer without warehouse should fail');
+        } catch (UserException $e) {
+            $this->assertRegExp('/Snowflake user has any \"DEFAULT_WAREHOUSE\" specified/ui', $e->getMessage());
         }
-        $table = $tables[0];
 
-        $s3Manifest = $this->loadDataToS3($table['tableId']);
+        // bad warehouse
+        $config = $this->config;
+        $config['parameters']['db']['warehouse'] = uniqid('test');
 
         try {
-            $writer->create($table);
-            $writer->writeFromS3($s3Manifest, $table);
-            $this->fail('Run writer without warehouse should fail');
+            $this->getWriter($config['parameters']);
+            $this->fail('Create writer wit invalid warehouse should fail');
         } catch (UserException $e) {
-            $this->assertRegExp('/No active warehouse/ui', $e->getMessage());
+            $this->assertRegExp('/Invalid warehouse/ui', $e->getMessage());
         }
 
         // run with warehouse param
@@ -265,6 +264,11 @@ class SnowflakeTest extends BaseTest
 
         /** @var Snowflake $writer */
         $writer = $this->getWriter($config['parameters']);
+
+        $tables = $config['parameters']['tables'];
+        $table = $tables[0];
+
+        $s3Manifest = $this->loadDataToS3($table['tableId']);
 
         $writer->create($table);
         $writer->writeFromS3($s3Manifest, $table);
@@ -278,49 +282,28 @@ class SnowflakeTest extends BaseTest
         $conn->query($sql);
     }
 
-    public function testCredentialsDefaultWarehouse()
+    public function testInvalidWarehouse(): void
     {
-        $config = $this->config;
-        $config['action'] = 'testConnection';
-        unset($config['parameters']['tables']);
-
-        $user = $config['parameters']['db']['user'];
-        $warehouse = $config['parameters']['db']['warehouse'];
-
-        // empty default warehouse, specified in config
-        $this->setUserDefaultWarehouse($user, null);
-
-        /** @var Snowflake $writer */
-        $writer = $this->getWriter($config['parameters']);
-        $writer->testConnection();
-
-        // empty default warehouse and not specified in config
-        unset($config['parameters']['db']['warehouse']);
-
-        /** @var Snowflake $writer */
-        $writer = $this->getWriter($config['parameters']);
-
+        $parameters = $this->config['parameters'];
+        $parameters['db']['warehouse'] = uniqid();
         try {
-            $writer->testConnection();
-            $this->fail('Test connection without warehouse and default warehouse should fail');
+            $this->getWriter($parameters);
+            $this->fail('Creating writer should fail with UserError');
         } catch (UserException $e) {
-            $this->assertRegExp('/Specify \"warehouse\" parameter/ui', $e->getMessage());
+            $this->assertContains('Invalid warehouse', $e->getMessage());
         }
+    }
 
-        // bad warehouse
-        $config['parameters']['db']['warehouse'] = uniqid('test');
-
-        /** @var Snowflake $writer */
-        $writer = $this->getWriter($config['parameters']);
-
+    public function testInvalidSchema(): void
+    {
+        $parameters = $this->config['parameters'];
+        $parameters['db']['schema'] = uniqid();
         try {
-            $writer->testConnection();
-            $this->fail('Test connection with invalid warehouse ID should fail');
+            $this->getWriter($parameters);
+            $this->fail('Creating writer should fail with UserError');
         } catch (UserException $e) {
-            $this->assertRegExp('/Invalid warehouse/ui', $e->getMessage());
+            $this->assertContains('Invalid schema', $e->getMessage());
         }
-
-        $this->setUserDefaultWarehouse($user, $warehouse);
     }
 
     private function getUserDefaultWarehouse($user)
