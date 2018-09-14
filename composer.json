@@ -22,6 +22,21 @@
         "keboola/coding-standard": "^6.0",
         "phpstan/phpstan": "^0.10.3"
     },
+    "scripts": {
+        "tests": "phpunit",
+        "phpcs": "phpcs -n --ignore=vendor --extensions=php .",
+        "phpcbf": "phpcbf -n --ignore=vendor --extensions=php .",
+        "phpstan": "phpstan analyse ./src ./tests --level=max --no-progress -c phpstan.neon",
+        "build": [
+            "@phpcs",
+            "@phpstan",
+            "@tests"
+        ],
+        "ci": [
+            "@composer validate --no-check-all --strict",
+            "@build"
+        ]
+    },
     "autoload": {
         "psr-4": {
             "Keboola\\": "src/Keboola/"
