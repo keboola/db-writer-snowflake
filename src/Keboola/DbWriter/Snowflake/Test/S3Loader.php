@@ -1,11 +1,5 @@
 <?php
 
-/**
- * Created by PhpStorm.
- * User: miroslavcillik
- * Date: 31/10/16
- * Time: 13:02
- */
 namespace Keboola\DbWriter\Snowflake\Test;
 
 use Keboola\Csv\CsvFile;

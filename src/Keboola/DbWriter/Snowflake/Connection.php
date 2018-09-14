@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: miroslavcillik
- * Date: 21/11/16
- * Time: 08:38
- */
 
 namespace Keboola\DbWriter\Snowflake;
 
