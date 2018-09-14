@@ -38,7 +38,7 @@ class S3Loader
         $job = $this->storageApi->exportTableAsync(
             $sourceTableId,
             [
-                'gzip' => true
+                'gzip' => true,
             ]
         );
         $fileInfo = $this->storageApi->getFile(
@@ -54,8 +54,8 @@ class S3Loader
             "credentials" => [
                 "access_key_id" => $fileInfo["credentials"]["AccessKeyId"],
                 "secret_access_key" => $fileInfo["credentials"]["SecretAccessKey"],
-                "session_token" => $fileInfo["credentials"]["SessionToken"]
-            ]
+                "session_token" => $fileInfo["credentials"]["SessionToken"],
+            ],
         ];
     }
 }

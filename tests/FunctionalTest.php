@@ -10,7 +10,7 @@ use Symfony\Component\Yaml\Yaml;
 
 class FunctionalTest extends BaseTest
 {
-    const DRIVER = 'Snowflake';
+    private const DRIVER = 'Snowflake';
 
     protected $dataDir = ROOT_PATH . 'tests/data/functional';
 
@@ -27,7 +27,7 @@ class FunctionalTest extends BaseTest
         $s3Loader = new S3Loader(
             $this->dataDir,
             new Client([
-                'token' => getenv('STORAGE_API_TOKEN')
+                'token' => getenv('STORAGE_API_TOKEN'),
             ])
         );
 
@@ -156,13 +156,13 @@ class FunctionalTest extends BaseTest
         $this->assertContains('Invalid schema', $process->getOutput());
     }
 
-    private function initConfig(callable $callback = null)
+    private function initConfig(?callable $callback = null)
     {
         $yaml = new Yaml();
         $dstConfigPath = $this->tmpRunDir . '/config.yml';
         $config = $yaml->parse(file_get_contents($this->dataDir . '/config.yml'));
 
-        $config['parameters']['writer_class'] = self::DRIVER;
+        $config['parameters']['writer_class'] = ucfirst(self::DRIVER);
         $config['parameters']['db']['user'] = $this->getEnv(self::DRIVER, 'DB_USER', true);
         $config['parameters']['db']['#password'] = $this->getEnv(self::DRIVER, 'DB_PASSWORD', true);
         $config['parameters']['db']['password'] = $this->getEnv(self::DRIVER, 'DB_PASSWORD', true);

@@ -11,7 +11,7 @@ use Keboola\StorageApi\Client;
 
 class SnowflakeTest extends BaseTest
 {
-    const DRIVER = 'snowflake';
+    private const DRIVER = 'snowflake';
 
     /** @var Snowflake */
     private $writer;
@@ -27,7 +27,7 @@ class SnowflakeTest extends BaseTest
     public function setUp()
     {
         $this->config = $this->getConfig(self::DRIVER);
-        $this->config['parameters']['writer_class'] = 'Snowflake';
+        $this->config['parameters']['writer_class'] = ucfirst(self::DRIVER);
         $this->config['parameters']['db']['schema'] = $this->getEnv(self::DRIVER, 'DB_SCHEMA');
         $this->config['parameters']['db']['warehouse'] = $this->getEnv(self::DRIVER, 'DB_WAREHOUSE');
         $this->config['parameters']['db']['password'] = $this->config['parameters']['db']['#password'];
@@ -40,7 +40,7 @@ class SnowflakeTest extends BaseTest
         }
 
         $this->storageApi = new Client([
-            'token' => getenv('STORAGE_API_TOKEN')
+            'token' => getenv('STORAGE_API_TOKEN'),
         ]);
 
         $bucketId = 'in.c-test-wr-db-snowflake';

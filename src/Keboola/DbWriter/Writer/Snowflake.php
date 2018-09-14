@@ -12,8 +12,8 @@ use Keboola\DbWriter\WriterInterface;
 
 class Snowflake extends Writer implements WriterInterface
 {
-    const STATEMENT_TIMEOUT_IN_SECONDS = 3600;
-    const STAGE_NAME = 'db-writer';
+    private const STATEMENT_TIMEOUT_IN_SECONDS = 3600;
+    public const STAGE_NAME = 'db-writer';
 
     private static $allowedTypes = [
         'number',
@@ -23,12 +23,12 @@ class Snowflake extends Writer implements WriterInterface
         'double', 'double precision', 'real',
         'boolean',
         'char', 'character', 'varchar', 'string', 'text', 'binary',
-        'date', 'time', 'timestamp', 'timestamp_ltz', 'timestamp_ntz', 'timestamp_tz'
+        'date', 'time', 'timestamp', 'timestamp_ltz', 'timestamp_ntz', 'timestamp_tz',
     ];
 
     private static $typesWithSize = [
         'number', 'decimal', 'numeric',
-        'char', 'character', 'varchar', 'string', 'text', 'binary'
+        'char', 'character', 'varchar', 'string', 'text', 'binary',
     ];
 
     /** @var Connection */
@@ -201,7 +201,7 @@ class Snowflake extends Writer implements WriterInterface
             }
             $null = $col['nullable'] ? 'NULL' : 'NOT NULL';
             $default = empty($col['default']) ? '' : "DEFAULT '{$col['default']}'";
-            if ($type == 'TEXT') {
+            if ($type === 'TEXT') {
                 $default = '';
             }
             $sql .= sprintf(
@@ -250,7 +250,7 @@ class Snowflake extends Writer implements WriterInterface
                 return $this->quoteIdentifier($item['dbName']);
             },
             array_filter($table['items'], function ($item) {
-                return strtolower($item['type']) != 'ignore';
+                return strtolower($item['type']) !== 'ignore';
             })
         );
 
@@ -327,7 +327,7 @@ class Snowflake extends Writer implements WriterInterface
         $this->logger->info(sprintf("Executing query '%s'", $this->hideCredentialsInQuery($query)));
         try {
             $this->db->query($query);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             throw new UserException("Query execution error: " . $e->getMessage(), 0, $e);
         }
     }
@@ -414,7 +414,7 @@ class Snowflake extends Writer implements WriterInterface
         sort($primaryKeysInDb);
         sort($columns);
 
-        if ($primaryKeysInDb != $columns) {
+        if ($primaryKeysInDb !== $columns) {
             throw new UserException(sprintf(
                 'Primary key(s) in configuration does NOT match with keys in DB table.' . PHP_EOL
                 . 'Keys in configuration: %s' . PHP_EOL

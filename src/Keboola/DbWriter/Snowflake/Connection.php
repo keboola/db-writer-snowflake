@@ -32,7 +32,7 @@ class Connection
             'user',
             'password',
             'database',
-            'schema'
+            'schema',
         ];
 
         $missingOptions = array_diff($requiredOptions, array_keys($options));
@@ -71,7 +71,7 @@ class Connection
             }
             try {
                 $this->connection = odbc_connect($dsn, $options['user'], $options['password']);
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 // try again if it is a failed rest request
                 if (stristr($e->getMessage(), "S1000") !== false) {
                     $attemptNumber++;

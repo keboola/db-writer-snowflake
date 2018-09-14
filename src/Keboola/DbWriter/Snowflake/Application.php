@@ -55,7 +55,7 @@ class Application extends BaseApplication
                 throw new UserException($e->getMessage(), 0, $e, ["trace" => $e->getTraceAsString()]);
             } catch (UserException $e) {
                 throw $e;
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 throw new ApplicationException($e->getMessage(), 2, $e, ["trace" => $e->getTraceAsString()]);
             }
 
@@ -64,7 +64,7 @@ class Application extends BaseApplication
 
         return [
             'status' => 'success',
-            'uploaded' => $uploaded
+            'uploaded' => $uploaded,
         ];
     }
 
@@ -82,7 +82,7 @@ class Application extends BaseApplication
         $reordered = [];
         foreach ($manifestColumns as $manifestCol) {
             foreach ($items as $item) {
-                if ($manifestCol == $item['name']) {
+                if ($manifestCol === $item['name']) {
                     $reordered[] = $item;
                 }
             }
