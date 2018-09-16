@@ -103,7 +103,7 @@ class SnowflakeTest extends BaseTest
 
     public function testStageName()
     {
-        $this->assertFalse($this->writer->generateStageName(getenv('KBC_RUNID')) === Snowflake::STAGE_NAME);
+        $this->assertFalse($this->writer->generateStageName((string) getenv('KBC_RUNID')) === Snowflake::STAGE_NAME);
     }
 
     public function testWriteAsync()
@@ -122,7 +122,7 @@ class SnowflakeTest extends BaseTest
         $conn = new Connection($this->config['parameters']['db']);
 
         // check if writer stage does not exists
-        $stageName = $this->writer->generateStageName(getenv('KBC_RUNID'));
+        $stageName = $this->writer->generateStageName((string) getenv('KBC_RUNID'));
 
         $writerStages = array_filter(
             $conn->fetchAll(sprintf("SHOW STAGES LIKE '{$stageName}'")),

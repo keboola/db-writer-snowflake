@@ -61,7 +61,7 @@ class Snowflake extends Writer implements WriterInterface
     {
         $this->execQuery($this->generateDropStageCommand()); // remove old db wr stage
 
-        $stageName = $this->generateStageName(getenv('KBC_RUNID'));
+        $stageName = $this->generateStageName((string) getenv('KBC_RUNID'));
 
         $this->execQuery($this->generateCreateStageCommand($stageName, $s3info));
 
@@ -160,12 +160,12 @@ class Snowflake extends Writer implements WriterInterface
         );
     }
 
-    private function quote($value)
+    private function quote(string $value): string
     {
         return "'" . addslashes($value) . "'";
     }
 
-    private function quoteIdentifier($value)
+    private function quoteIdentifier(string $value): string
     {
         $q = '"';
         return ($q . str_replace("$q", "$q$q", $value) . $q);
@@ -386,7 +386,7 @@ class Snowflake extends Writer implements WriterInterface
      * @param string $runId
      * @return string
      */
-    public function generateStageName($runId = null)
+    public function generateStageName(string $runId)
     {
         return rtrim(
             mb_substr(

@@ -76,10 +76,10 @@ class Connection
                 if (stristr($e->getMessage(), "S1000") !== false) {
                     $attemptNumber++;
                     if ($attemptNumber > $maxBackoffAttempts) {
-                        throw new Exception("Initializing Snowflake connection failed: " . $e->getMessage(), null, $e);
+                        throw new Exception("Initializing Snowflake connection failed: " . $e->getMessage(), 0, $e);
                     }
                 } else {
-                    throw new Exception("Initializing Snowflake connection failed: " . $e->getMessage(), null, $e);
+                    throw new Exception("Initializing Snowflake connection failed: " . $e->getMessage(), 0, $e);
                 }
             }
         } while ($this->connection === null);
@@ -96,12 +96,9 @@ class Connection
      *  - name
      *  - bytes
      *  - rows
-     * @param $schemaName
-     * @param $tableName
-     * @return array
      * @throws Exception
      */
-    public function describeTable($schemaName, $tableName)
+    public function describeTable(string $schemaName, string $tableName): array
     {
         $tables = $this->fetchAll(sprintf(
             "SHOW TABLES LIKE %s IN SCHEMA %s",

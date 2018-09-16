@@ -71,7 +71,7 @@ class Application extends BaseApplication
     private function getManifest($tableId)
     {
         return (new Yaml())->parse(
-            file_get_contents(
+            (string) file_get_contents(
                 $this['parameters']['data_dir'] . "/in/tables/" . $tableId . ".csv.manifest"
             )
         );
