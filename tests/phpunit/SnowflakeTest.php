@@ -1,12 +1,13 @@
 <?php
 
-namespace Keboola\DbWriter\Writer;
+namespace Keboola\DbWriter\Snowflake\Tests;
 
 use Keboola\Csv\CsvFile;
 use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Snowflake\Connection;
 use Keboola\DbWriter\Snowflake\Test\S3Loader;
 use Keboola\DbWriter\Test\BaseTest;
+use Keboola\DbWriter\Writer\Snowflake;
 use Keboola\StorageApi\Client;
 
 class SnowflakeTest extends BaseTest
@@ -170,7 +171,7 @@ class SnowflakeTest extends BaseTest
             $this->assertNotNull($row['name']);
         }
 
-        $this->assertFileEquals($this->getInputCsv($table['tableId']), $resFilename);
+        $this->assertFileEquals($this->getInputCsv($table['tableId']), $csv->getPath());
     }
 
     public function testUpsert()
@@ -210,7 +211,7 @@ class SnowflakeTest extends BaseTest
 
         $expectedFilename = $this->getInputCsv($table['tableId'] . "_merged");
 
-        $this->assertFileEquals($expectedFilename, $resFilename);
+        $this->assertFileEquals($expectedFilename, $csv->getPath());
     }
 
     public function testDefaultWarehouse(): void
