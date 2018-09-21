@@ -12,6 +12,8 @@ class FunctionalTest extends BaseTest
 {
     private const DRIVER = 'Snowflake';
 
+    private const PROCESS_TIMEOUT_SECONDS = 180;
+
     protected $dataDir = __DIR__ . '/../data/functional';
 
     protected $tmpRunDir;
@@ -52,7 +54,13 @@ class FunctionalTest extends BaseTest
 
     public function testRun()
     {
-        $process = new Process('php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1');
+        $process = new Process(
+            'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
+            null,
+            null,
+            null,
+            self::PROCESS_TIMEOUT_SECONDS
+        );
         $process->run();
 
         $this->assertEquals(0, $process->getExitCode(), 'Output: ' . $process->getOutput());
@@ -89,7 +97,13 @@ class FunctionalTest extends BaseTest
             );
         }
 
-        $process = new Process('php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir);
+        $process = new Process(
+            'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir,
+            null,
+            null,
+            null,
+            self::PROCESS_TIMEOUT_SECONDS
+        );
         $process->run();
 
         $this->assertEquals(0, $process->getExitCode());
@@ -102,7 +116,13 @@ class FunctionalTest extends BaseTest
             return $config;
         });
 
-        $process = new Process('php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1');
+        $process = new Process(
+            'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
+            null,
+            null,
+            null,
+            self::PROCESS_TIMEOUT_SECONDS
+        );
         $process->run();
 
         $this->assertEquals(0, $process->getExitCode());
@@ -120,7 +140,13 @@ class FunctionalTest extends BaseTest
             return $config;
         });
 
-        $process = new Process('php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1');
+        $process = new Process(
+            'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
+            null,
+            null,
+            null,
+            self::PROCESS_TIMEOUT_SECONDS
+        );
         $process->run();
 
         $this->assertEquals(1, $process->getExitCode());
@@ -134,7 +160,13 @@ class FunctionalTest extends BaseTest
             return $config;
         });
 
-        $process = new Process('php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1');
+        $process = new Process(
+            'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
+            null,
+            null,
+            null,
+            self::PROCESS_TIMEOUT_SECONDS
+        );
         $process->run();
 
         $this->assertEquals(1, $process->getExitCode());
@@ -149,7 +181,13 @@ class FunctionalTest extends BaseTest
             return $config;
         });
 
-        $process = new Process('php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1');
+        $process = new Process(
+            'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
+            null,
+            null,
+            null,
+            self::PROCESS_TIMEOUT_SECONDS
+        );
         $process->run();
 
         $this->assertEquals(1, $process->getExitCode());
