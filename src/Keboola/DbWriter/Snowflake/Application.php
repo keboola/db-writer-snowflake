@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: miroslavcillik
- * Date: 29/09/16
- * Time: 17:45
- */
 
 namespace Keboola\DbWriter\Snowflake;
 
@@ -61,7 +55,7 @@ class Application extends BaseApplication
                 throw new UserException($e->getMessage(), 0, $e, ["trace" => $e->getTraceAsString()]);
             } catch (UserException $e) {
                 throw $e;
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 throw new ApplicationException($e->getMessage(), 2, $e, ["trace" => $e->getTraceAsString()]);
             }
 
@@ -70,14 +64,14 @@ class Application extends BaseApplication
 
         return [
             'status' => 'success',
-            'uploaded' => $uploaded
+            'uploaded' => $uploaded,
         ];
     }
 
     private function getManifest($tableId)
     {
         return (new Yaml())->parse(
-            file_get_contents(
+            (string) file_get_contents(
                 $this['parameters']['data_dir'] . "/in/tables/" . $tableId . ".csv.manifest"
             )
         );
@@ -88,7 +82,7 @@ class Application extends BaseApplication
         $reordered = [];
         foreach ($manifestColumns as $manifestCol) {
             foreach ($items as $item) {
-                if ($manifestCol == $item['name']) {
+                if ($manifestCol === $item['name']) {
                     $reordered[] = $item;
                 }
             }

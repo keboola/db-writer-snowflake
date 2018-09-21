@@ -1,10 +1,5 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: miroslavcillik
- * Date: 09/03/16
- * Time: 11:23
- */
+
 namespace Keboola\DbWriter\Snowflake\Configuration;
 
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;

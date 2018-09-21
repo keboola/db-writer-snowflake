@@ -47,11 +47,11 @@ try {
 } catch (ApplicationException $e) {
     $logger->log('error', $e->getMessage(), (array) $e->getData());
     exit($e->getCode() > 1 ? $e->getCode(): 2);
-} catch (\Exception $e) {
+} catch (\Throwable $e) {
     $logger->log('error', $e->getMessage(), [
         'errFile' => $e->getFile(),
         'errLine' => $e->getLine(),
-        'trace' => $e->getTrace()
+        'trace' => $e->getTrace(),
     ]);
     exit(2);
 }

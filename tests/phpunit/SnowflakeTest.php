@@ -1,23 +1,18 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: miroslavcillik
- * Date: 05/11/15
- * Time: 13:33
- */
 
-namespace Keboola\DbWriter\Writer;
+namespace Keboola\DbWriter\Snowflake\Tests;
 
 use Keboola\Csv\CsvFile;
 use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Snowflake\Connection;
 use Keboola\DbWriter\Snowflake\Test\S3Loader;
 use Keboola\DbWriter\Test\BaseTest;
+use Keboola\DbWriter\Writer\Snowflake;
 use Keboola\StorageApi\Client;
 
 class SnowflakeTest extends BaseTest
 {
-    const DRIVER = 'snowflake';
+    private const DRIVER = 'snowflake';
 
     /** @var Snowflake */
     private $writer;
@@ -33,7 +28,7 @@ class SnowflakeTest extends BaseTest
     public function setUp()
     {
         $this->config = $this->getConfig(self::DRIVER);
-        $this->config['parameters']['writer_class'] = 'Snowflake';
+        $this->config['parameters']['writer_class'] = ucfirst(self::DRIVER);
         $this->config['parameters']['db']['schema'] = $this->getEnv(self::DRIVER, 'DB_SCHEMA');
         $this->config['parameters']['db']['warehouse'] = $this->getEnv(self::DRIVER, 'DB_WAREHOUSE');
         $this->config['parameters']['db']['password'] = $this->config['parameters']['db']['#password'];
@@ -46,7 +41,7 @@ class SnowflakeTest extends BaseTest
         }
 
         $this->storageApi = new Client([
-            'token' => getenv('STORAGE_API_TOKEN')
+            'token' => getenv('STORAGE_API_TOKEN'),
         ]);
 
         $bucketId = 'in.c-test-wr-db-snowflake';
@@ -109,7 +104,7 @@ class SnowflakeTest extends BaseTest
 
     public function testStageName()
     {
-        $this->assertFalse($this->writer->generateStageName(getenv('KBC_RUNID')) === Snowflake::STAGE_NAME);
+        $this->assertFalse($this->writer->generateStageName((string) getenv('KBC_RUNID')) === Snowflake::STAGE_NAME);
     }
 
     public function testWriteAsync()
@@ -128,7 +123,7 @@ class SnowflakeTest extends BaseTest
         $conn = new Connection($this->config['parameters']['db']);
 
         // check if writer stage does not exists
-        $stageName = $this->writer->generateStageName(getenv('KBC_RUNID'));
+        $stageName = $this->writer->generateStageName((string) getenv('KBC_RUNID'));
 
         $writerStages = array_filter(
             $conn->fetchAll(sprintf("SHOW STAGES LIKE '{$stageName}'")),
@@ -176,7 +171,7 @@ class SnowflakeTest extends BaseTest
             $this->assertNotNull($row['name']);
         }
 
-        $this->assertFileEquals($this->getInputCsv($table['tableId']), $resFilename);
+        $this->assertFileEquals($this->getInputCsv($table['tableId']), $csv->getPathname());
     }
 
     public function testUpsert()
@@ -216,7 +211,7 @@ class SnowflakeTest extends BaseTest
 
         $expectedFilename = $this->getInputCsv($table['tableId'] . "_merged");
 
-        $this->assertFileEquals($expectedFilename, $resFilename);
+        $this->assertFileEquals($expectedFilename, $csv->getPathname());
     }
 
     public function testDefaultWarehouse(): void

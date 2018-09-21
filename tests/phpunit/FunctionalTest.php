@@ -1,12 +1,6 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: miroslavcillik
- * Date: 27/10/16
- * Time: 17:20
- */
 
-namespace Keboola\DbWriter\Writer\Snowflake\Tests;
+namespace Keboola\DbWriter\Snowflake\Tests;
 
 use Keboola\DbWriter\Snowflake\Test\S3Loader;
 use Keboola\DbWriter\Test\BaseTest;
@@ -16,9 +10,11 @@ use Symfony\Component\Yaml\Yaml;
 
 class FunctionalTest extends BaseTest
 {
-    const DRIVER = 'Snowflake';
+    private const DRIVER = 'Snowflake';
 
-    protected $dataDir = ROOT_PATH . 'tests/data/functional';
+    private const PROCESS_TIMEOUT_SECONDS = 180;
+
+    protected $dataDir = __DIR__ . '/../data/functional';
 
     protected $tmpRunDir;
 
@@ -33,7 +29,7 @@ class FunctionalTest extends BaseTest
         $s3Loader = new S3Loader(
             $this->dataDir,
             new Client([
-                'token' => getenv('STORAGE_API_TOKEN')
+                'token' => getenv('STORAGE_API_TOKEN'),
             ])
         );
 
@@ -45,7 +41,7 @@ class FunctionalTest extends BaseTest
 
             // upload source files to S3 - mimic functionality of docker-runner
             $srcManifestPath = $this->dataDir . '/in/tables/' . $table['tableId'] . '.csv.manifest';
-            $manifestData = $yaml->parse(file_get_contents($srcManifestPath));
+            $manifestData = $yaml->parse((string) file_get_contents($srcManifestPath));
             $manifestData['s3'] = $s3Loader->upload($table['tableId']);
 
             $dstManifestPath = $this->tmpRunDir . '/in/tables/' . $table['tableId'] . '.csv.manifest';
@@ -58,7 +54,13 @@ class FunctionalTest extends BaseTest
 
     public function testRun()
     {
-        $process = new Process('php ' . ROOT_PATH . 'run.php --data=' . $this->tmpRunDir . ' 2>&1');
+        $process = new Process(
+            'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
+            null,
+            null,
+            null,
+            self::PROCESS_TIMEOUT_SECONDS
+        );
         $process->run();
 
         $this->assertEquals(0, $process->getExitCode(), 'Output: ' . $process->getOutput());
@@ -85,7 +87,7 @@ class FunctionalTest extends BaseTest
             // upload source files to S3 - mimic functionality of docker-runner
             $srcManifestPath = $this->dataDir . '/in/tables/' . $table['tableId'] . '.csv.manifest';
             $dstManifestPath = $this->tmpRunDir . '/in/tables/' . $table['tableId'] . '.csv.manifest';
-            $manifestData = $yaml->parse(file_get_contents($srcManifestPath));
+            $manifestData = $yaml->parse((string) file_get_contents($srcManifestPath));
             $manifestData['columns'] = [];
 
             unlink($dstManifestPath);
@@ -95,7 +97,13 @@ class FunctionalTest extends BaseTest
             );
         }
 
-        $process = new Process('php ' . ROOT_PATH . 'run.php --data=' . $this->tmpRunDir);
+        $process = new Process(
+            'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir,
+            null,
+            null,
+            null,
+            self::PROCESS_TIMEOUT_SECONDS
+        );
         $process->run();
 
         $this->assertEquals(0, $process->getExitCode());
@@ -108,7 +116,13 @@ class FunctionalTest extends BaseTest
             return $config;
         });
 
-        $process = new Process('php ' . ROOT_PATH . 'run.php --data=' . $this->tmpRunDir . ' 2>&1');
+        $process = new Process(
+            'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
+            null,
+            null,
+            null,
+            self::PROCESS_TIMEOUT_SECONDS
+        );
         $process->run();
 
         $this->assertEquals(0, $process->getExitCode());
@@ -126,7 +140,13 @@ class FunctionalTest extends BaseTest
             return $config;
         });
 
-        $process = new Process('php ' . ROOT_PATH . 'run.php --data=' . $this->tmpRunDir . ' 2>&1');
+        $process = new Process(
+            'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
+            null,
+            null,
+            null,
+            self::PROCESS_TIMEOUT_SECONDS
+        );
         $process->run();
 
         $this->assertEquals(1, $process->getExitCode());
@@ -140,7 +160,13 @@ class FunctionalTest extends BaseTest
             return $config;
         });
 
-        $process = new Process('php ' . ROOT_PATH . 'run.php --data=' . $this->tmpRunDir . ' 2>&1');
+        $process = new Process(
+            'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
+            null,
+            null,
+            null,
+            self::PROCESS_TIMEOUT_SECONDS
+        );
         $process->run();
 
         $this->assertEquals(1, $process->getExitCode());
@@ -155,20 +181,26 @@ class FunctionalTest extends BaseTest
             return $config;
         });
 
-        $process = new Process('php ' . ROOT_PATH . 'run.php --data=' . $this->tmpRunDir . ' 2>&1');
+        $process = new Process(
+            'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
+            null,
+            null,
+            null,
+            self::PROCESS_TIMEOUT_SECONDS
+        );
         $process->run();
 
         $this->assertEquals(1, $process->getExitCode());
         $this->assertContains('Invalid schema', $process->getOutput());
     }
 
-    private function initConfig(callable $callback = null)
+    private function initConfig(?callable $callback = null)
     {
         $yaml = new Yaml();
         $dstConfigPath = $this->tmpRunDir . '/config.yml';
-        $config = $yaml->parse(file_get_contents($this->dataDir . '/config.yml'));
+        $config = $yaml->parse((string) file_get_contents($this->dataDir . '/config.yml'));
 
-        $config['parameters']['writer_class'] = self::DRIVER;
+        $config['parameters']['writer_class'] = ucfirst(self::DRIVER);
         $config['parameters']['db']['user'] = $this->getEnv(self::DRIVER, 'DB_USER', true);
         $config['parameters']['db']['#password'] = $this->getEnv(self::DRIVER, 'DB_PASSWORD', true);
         $config['parameters']['db']['password'] = $this->getEnv(self::DRIVER, 'DB_PASSWORD', true);
@@ -187,5 +219,10 @@ class FunctionalTest extends BaseTest
         file_put_contents($dstConfigPath, $yaml->dump($config));
 
         return $config;
+    }
+
+    private function getEntryPointPathName(): string
+    {
+        return __DIR__ . '/../../run.php';
     }
 }
