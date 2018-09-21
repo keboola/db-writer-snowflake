@@ -171,7 +171,7 @@ class SnowflakeTest extends BaseTest
             $this->assertNotNull($row['name']);
         }
 
-        $this->assertFileEquals($this->getInputCsv($table['tableId']), $csv->getPath());
+        $this->assertFileEquals($this->getInputCsv($table['tableId']), $csv->getPathname());
     }
 
     public function testUpsert()
@@ -211,7 +211,7 @@ class SnowflakeTest extends BaseTest
 
         $expectedFilename = $this->getInputCsv($table['tableId'] . "_merged");
 
-        $this->assertFileEquals($expectedFilename, $csv->getPath());
+        $this->assertFileEquals($expectedFilename, $csv->getPathname());
     }
 
     public function testDefaultWarehouse(): void
