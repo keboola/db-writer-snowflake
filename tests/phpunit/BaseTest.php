@@ -11,8 +11,8 @@ abstract class BaseTest extends CommonBaseTest
     {
         $config = parent::getConfig();
         $config['parameters']['writer_class'] = Snowflake::WRITER;
-        $config['parameters']['db']['schema'] = $this->getEnv( 'DB_SCHEMA');
-        $config['parameters']['db']['warehouse'] = $this->getEnv( 'DB_WAREHOUSE');
+        $config['parameters']['db']['schema'] = $this->getEnv('DB_SCHEMA');
+        $config['parameters']['db']['warehouse'] = $this->getEnv('DB_WAREHOUSE');
         $config['parameters']['db']['password'] = $config['parameters']['db']['#password'];
 
         return $config;
