@@ -7,7 +7,6 @@ use \Keboola\DbWriter\Application as BaseApplication;
 use Keboola\DbWriter\Exception\ApplicationException;
 use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Writer\Snowflake;
-use Symfony\Component\Yaml\Yaml;
 
 class Application extends BaseApplication
 {
@@ -72,16 +71,15 @@ class Application extends BaseApplication
 
     private function getManifest($tableId)
     {
-        return (new Yaml())->parse(
-            (string) file_get_contents(
-                $this['parameters']['data_dir'] . "/in/tables/" . $tableId . ".csv.manifest"
-            )
+        return json_decode(
+            (string) file_get_contents($this['parameters']['data_dir'] . "/in/tables/" . $tableId . ".csv.manifest"),
+            true
         );
     }
 
     private function createHeadersCsvFile(array $columns): CsvFile
     {
-        $fileName = '/tmp' . uniqid('csv_headers_');
+        $fileName = sys_get_temp_dir() . DIRECTORY_SEPARATOR . uniqid('csv_headers_');
 
         $csv = (new CsvFile($fileName))->writeRow($columns);
         unset($csv);

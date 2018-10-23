@@ -6,7 +6,6 @@ use Keboola\DbWriter\Snowflake\Test\S3Loader;
 use Keboola\DbWriter\Test\BaseTest;
 use Keboola\StorageApi\Client;
 use Symfony\Component\Process\Process;
-use Symfony\Component\Yaml\Yaml;
 
 class FunctionalTest extends BaseTest
 {
@@ -33,21 +32,19 @@ class FunctionalTest extends BaseTest
             ])
         );
 
-        $yaml = new Yaml();
-
         foreach ($config['parameters']['tables'] as $table) {
             // clean destination DB
             $writer->drop($table['dbName']);
 
             // upload source files to S3 - mimic functionality of docker-runner
             $srcManifestPath = $this->dataDir . '/in/tables/' . $table['tableId'] . '.csv.manifest';
-            $manifestData = $yaml->parse((string) file_get_contents($srcManifestPath));
+            $manifestData = json_decode((string) file_get_contents($srcManifestPath), true);
             $manifestData['s3'] = $s3Loader->upload($table['tableId']);
 
             $dstManifestPath = $this->tmpRunDir . '/in/tables/' . $table['tableId'] . '.csv.manifest';
             file_put_contents(
                 $dstManifestPath,
-                $yaml->dump($manifestData)
+                json_encode($manifestData)
             );
         }
     }
@@ -81,19 +78,17 @@ class FunctionalTest extends BaseTest
             return $config;
         });
 
-        $yaml = new Yaml();
-
         foreach ($config['parameters']['tables'] as $table) {
             // upload source files to S3 - mimic functionality of docker-runner
             $srcManifestPath = $this->dataDir . '/in/tables/' . $table['tableId'] . '.csv.manifest';
             $dstManifestPath = $this->tmpRunDir . '/in/tables/' . $table['tableId'] . '.csv.manifest';
-            $manifestData = $yaml->parse((string) file_get_contents($srcManifestPath));
+            $manifestData = json_decode((string) file_get_contents($srcManifestPath), true);
             $manifestData['columns'] = [];
 
             unlink($dstManifestPath);
             file_put_contents(
                 $dstManifestPath,
-                $yaml->dump($manifestData)
+                json_encode($manifestData)
             );
         }
 
