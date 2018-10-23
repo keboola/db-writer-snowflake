@@ -34,8 +34,6 @@ class Snowflake extends Writer implements WriterInterface
     /** @var Connection */
     protected $db;
 
-    private $dbParams;
-
     /** @var Logger */
     protected $logger;
 
@@ -43,7 +41,6 @@ class Snowflake extends Writer implements WriterInterface
     {
         parent::__construct($dbParams, $logger);
 
-        $this->dbParams = $dbParams;
         $this->logger = $logger;
 
         $this->validateAndSetWarehouse();
@@ -494,5 +491,10 @@ class Snowflake extends Writer implements WriterInterface
                 throw $e;
             }
         }
+    }
+
+    public function validateTable($tableConfig)
+    {
+        // TODO: Implement validateTable() method.
     }
 }

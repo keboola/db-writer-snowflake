@@ -2,6 +2,7 @@
 
 namespace Keboola\DbWriter\Snowflake;
 
+use Keboola\Csv\CsvFile;
 use \Keboola\DbWriter\Application as BaseApplication;
 use Keboola\DbWriter\Exception\ApplicationException;
 use Keboola\DbWriter\Exception\UserException;
@@ -30,7 +31,11 @@ class Application extends BaseApplication
             if ($table['incremental']) {
                 $table['dbName'] = $writer->generateTmpName($table['dbName']);
             }
-            $table['items'] = $this->reorderColumns($manifest['columns'], $table['items']);
+
+            $table['items'] = $this->reorderColumns(
+                $this->createHeadersCsvFile($manifest['columns']),
+                $table['items']
+            );
 
             if (empty($table['items'])) {
                 continue;
@@ -62,10 +67,7 @@ class Application extends BaseApplication
             $uploaded[] = $table['tableId'];
         }
 
-        return [
-            'status' => 'success',
-            'uploaded' => $uploaded,
-        ];
+        return "Writer finished successfully";
     }
 
     private function getManifest($tableId)
@@ -77,16 +79,13 @@ class Application extends BaseApplication
         );
     }
 
-    private function reorderColumns($manifestColumns, $items)
+    private function createHeadersCsvFile(array $columns): CsvFile
     {
-        $reordered = [];
-        foreach ($manifestColumns as $manifestCol) {
-            foreach ($items as $item) {
-                if ($manifestCol === $item['name']) {
-                    $reordered[] = $item;
-                }
-            }
-        }
-        return $reordered;
+        $fileName = '/tmp' . uniqid('csv_headers_');
+
+        $csv = (new CsvFile($fileName))->writeRow($columns);
+        unset($csv);
+
+        return new CsvFile($fileName);
     }
 }

@@ -196,9 +196,8 @@ class FunctionalTest extends BaseTest
 
     private function initConfig(?callable $callback = null)
     {
-        $yaml = new Yaml();
-        $dstConfigPath = $this->tmpRunDir . '/config.yml';
-        $config = $yaml->parse((string) file_get_contents($this->dataDir . '/config.yml'));
+        $dstConfigPath = $this->tmpRunDir . '/config.json';
+        $config = json_decode((string) file_get_contents($this->dataDir . '/config.json'), true);
 
         $config['parameters']['writer_class'] = ucfirst(self::DRIVER);
         $config['parameters']['db']['user'] = $this->getEnv(self::DRIVER, 'DB_USER', true);
@@ -216,7 +215,7 @@ class FunctionalTest extends BaseTest
         }
 
         @unlink($dstConfigPath);
-        file_put_contents($dstConfigPath, $yaml->dump($config));
+        file_put_contents($dstConfigPath, json_encode($config));
 
         return $config;
     }

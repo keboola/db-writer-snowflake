@@ -6,7 +6,6 @@ use Keboola\DbWriter\Logger;
 use Keboola\DbWriter\Snowflake\Application;
 use Keboola\DbWriter\Snowflake\Configuration\ConfigDefinition;
 use Monolog\Handler\NullHandler;
-use Symfony\Component\Yaml\Yaml;
 
 define('APP_NAME', 'wr-db-snowflake');
 define('ROOT_PATH', __DIR__);
@@ -23,7 +22,7 @@ try {
         throw new UserException('Data folder not set.');
     }
 
-    $config = Yaml::parse(file_get_contents($arguments["data"] . "/config.yml"));
+    $config = json_decode(file_get_contents($arguments["data"] . "/config.json"), true);
     $config['parameters']['data_dir'] = $arguments['data'];
     $config['parameters']['writer_class'] = 'Snowflake';
 
@@ -35,7 +34,7 @@ try {
         $app['logger']->setHandlers(array(new NullHandler(Logger::INFO)));
     }
 
-    echo json_encode($app->run());
+    echo $app->run();
 } catch (UserException $e) {
     $logger->log('error', $e->getMessage(), (array) $e->getData());
 
