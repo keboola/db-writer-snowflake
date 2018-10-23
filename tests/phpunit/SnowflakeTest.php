@@ -11,6 +11,8 @@ use Keboola\StorageApi\Client;
 
 class SnowflakeTest extends BaseTest
 {
+    protected $dataDir = __DIR__ . '/../data/snowflake';
+
     /** @var Snowflake */
     private $writer;
 
