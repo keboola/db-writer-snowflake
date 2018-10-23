@@ -1,2 +1,7 @@
-id: special
-columns: [col1, col2]
+{
+  "id": "special",
+  "columns": [
+    "col1",
+    "col2"
+  ]
+}
