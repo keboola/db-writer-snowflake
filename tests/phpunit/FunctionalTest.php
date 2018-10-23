@@ -3,14 +3,11 @@
 namespace Keboola\DbWriter\Snowflake\Tests;
 
 use Keboola\DbWriter\Snowflake\Test\S3Loader;
-use Keboola\DbWriter\Test\BaseTest;
 use Keboola\StorageApi\Client;
 use Symfony\Component\Process\Process;
 
 class FunctionalTest extends BaseTest
 {
-    private const DRIVER = 'Snowflake';
-
     private const PROCESS_TIMEOUT_SECONDS = 180;
 
     protected $dataDir = __DIR__ . '/../data/functional';
@@ -192,19 +189,8 @@ class FunctionalTest extends BaseTest
     private function initConfig(?callable $callback = null)
     {
         $dstConfigPath = $this->tmpRunDir . '/config.json';
-        $config = json_decode((string) file_get_contents($this->dataDir . '/config.json'), true);
 
-        $config['parameters']['writer_class'] = ucfirst(self::DRIVER);
-        $config['parameters']['db']['user'] = $this->getEnv(self::DRIVER, 'DB_USER', true);
-        $config['parameters']['db']['#password'] = $this->getEnv(self::DRIVER, 'DB_PASSWORD', true);
-        $config['parameters']['db']['password'] = $this->getEnv(self::DRIVER, 'DB_PASSWORD', true);
-        $config['parameters']['db']['host'] = $this->getEnv(self::DRIVER, 'DB_HOST');
-        $config['parameters']['db']['port'] = $this->getEnv(self::DRIVER, 'DB_PORT');
-        $config['parameters']['db']['database'] = $this->getEnv(self::DRIVER, 'DB_DATABASE');
-        $config['parameters']['db']['schema'] = $this->getEnv(self::DRIVER, 'DB_SCHEMA');
-        $config['parameters']['db']['warehouse'] = $this->getEnv(self::DRIVER, 'DB_WAREHOUSE');
-
-
+        $config = $this->getConfig();
         if ($callback !== null) {
             $config = $callback($config);
         }

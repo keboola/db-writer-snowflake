@@ -5,14 +5,12 @@ use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Logger;
 use Keboola\DbWriter\Snowflake\Application;
 use Keboola\DbWriter\Snowflake\Configuration\ConfigDefinition;
+use Keboola\DbWriter\Writer\Snowflake;
 use Monolog\Handler\NullHandler;
 
-define('APP_NAME', 'wr-db-snowflake');
-define('ROOT_PATH', __DIR__);
+require_once(dirname(__FILE__) . "/vendor/autoload.php");
 
-require_once(dirname(__FILE__) . "/vendor/keboola/db-writer-common/bootstrap.php");
-
-$logger = new Logger(APP_NAME);
+$logger = new Logger('wr-db-snowflake');
 
 $action = 'run';
 
@@ -24,7 +22,7 @@ try {
 
     $config = json_decode(file_get_contents($arguments["data"] . "/config.json"), true);
     $config['parameters']['data_dir'] = $arguments['data'];
-    $config['parameters']['writer_class'] = 'Snowflake';
+    $config['parameters']['writer_class'] = Snowflake::WRITER;
 
     $action = isset($config['action']) ? $config['action'] : $action;
 

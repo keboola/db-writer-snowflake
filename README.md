@@ -77,12 +77,12 @@ App is developed on localhost using TDD.
 ```bash
 STORAGE_API_TOKEN=
 KBC_RUNID=
-SNOWFLAKE_DB_HOST=
-SNOWFLAKE_DB_PORT=
-SNOWFLAKE_DB_DATABASE=
-SNOWFLAKE_DB_USER=
-SNOWFLAKE_DB_PASSWORD=
-SNOWFLAKE_DB_SCHEMA=
-SNOWFLAKE_DB_WAREHOUSE=
+DB_HOST=
+DB_PORT=
+DB_DATABASE=
+DB_USER=
+DB_PASSWORD=
+DB_SCHEMA=
+DB_WAREHOUSE=
 ```
 5. Run docker-compose, which will trigger phpunit: `docker-compose run --rm app`

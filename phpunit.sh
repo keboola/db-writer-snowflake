@@ -33,6 +33,4 @@ export SNOWFLAKE_DB_SSH_KEY_PUBLIC="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC2tGpP
 composer selfupdate
 composer install -n
 
-export ROOT_PATH="/code";
-
 composer ci && ./vendor/bin/test-reporter
