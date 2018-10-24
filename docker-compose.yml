@@ -12,13 +12,13 @@ services:
     environment:
       - KBC_RUNID
       - STORAGE_API_TOKEN
-      - SNOWFLAKE_DB_HOST
-      - SNOWFLAKE_DB_PORT
-      - SNOWFLAKE_DB_USER
-      - SNOWFLAKE_DB_PASSWORD
-      - SNOWFLAKE_DB_DATABASE
-      - SNOWFLAKE_DB_SCHEMA
-      - SNOWFLAKE_DB_WAREHOUSE
+      - DB_HOST
+      - DB_PORT
+      - DB_USER
+      - DB_PASSWORD
+      - DB_DATABASE
+      - DB_SCHEMA
+      - DB_WAREHOUSE
 
   php:
     image: keboola/docker-php56-all-db

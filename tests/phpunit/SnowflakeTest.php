@@ -6,13 +6,12 @@ use Keboola\Csv\CsvFile;
 use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Snowflake\Connection;
 use Keboola\DbWriter\Snowflake\Test\S3Loader;
-use Keboola\DbWriter\Test\BaseTest;
 use Keboola\DbWriter\Writer\Snowflake;
 use Keboola\StorageApi\Client;
 
 class SnowflakeTest extends BaseTest
 {
-    private const DRIVER = 'snowflake';
+    protected $dataDir = __DIR__ . '/../data/snowflake';
 
     /** @var Snowflake */
     private $writer;
@@ -27,11 +26,7 @@ class SnowflakeTest extends BaseTest
 
     public function setUp()
     {
-        $this->config = $this->getConfig(self::DRIVER);
-        $this->config['parameters']['writer_class'] = ucfirst(self::DRIVER);
-        $this->config['parameters']['db']['schema'] = $this->getEnv(self::DRIVER, 'DB_SCHEMA');
-        $this->config['parameters']['db']['warehouse'] = $this->getEnv(self::DRIVER, 'DB_WAREHOUSE');
-        $this->config['parameters']['db']['password'] = $this->config['parameters']['db']['#password'];
+        $this->config = $this->getConfig();
 
         $this->writer = $this->getWriter($this->config['parameters']);
 
@@ -84,22 +79,23 @@ class SnowflakeTest extends BaseTest
 
     public function testCreate()
     {
+        /** @var Connection $conn */
+        $conn = $this->writer->getConnection();
+
         $tables = $this->config['parameters']['tables'];
 
         foreach ($tables as $table) {
             $this->writer->drop($table['dbName']);
             $this->writer->create($table);
+
+            $res = $conn->fetchAll("
+                SELECT *
+                FROM INFORMATION_SCHEMA.TABLES
+                WHERE table_name = '{$table['dbName']}'
+            ");
+
+            $this->assertEquals($table['dbName'], $res[0]['TABLE_NAME']);
         }
-
-        /** @var Connection $conn */
-        $conn = $this->writer->getConnection();
-        $res = $conn->fetchAll("
-            SELECT *
-            FROM INFORMATION_SCHEMA.TABLES
-            WHERE table_name = '{$tables[0]['dbName']}'
-        ");
-
-        $this->assertEquals('simple', $res[0]['TABLE_NAME']);
     }
 
     public function testStageName()

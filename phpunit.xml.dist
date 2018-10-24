@@ -7,13 +7,7 @@
          convertWarningsToExceptions="true"
          processIsolation="false"
          stopOnFailure="true"
-         syntaxCheck="false"
-         bootstrap="vendor/keboola/db-writer-common/bootstrap.php">
-
-    <php>
-        <const name="ROOT_PATH" value="./"/>
-        <const name="APP_NAME" value="wr-db-snowflake"/>
-    </php>
+         bootstrap="vendor/autoload.php">
 
     <testsuite name="Snowflake Writer Test Suite">
         <directory>tests</directory>

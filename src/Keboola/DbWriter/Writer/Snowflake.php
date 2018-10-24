@@ -12,6 +12,7 @@ use Keboola\DbWriter\WriterInterface;
 
 class Snowflake extends Writer implements WriterInterface
 {
+    public const WRITER = 'Snowflake';
     private const STATEMENT_TIMEOUT_IN_SECONDS = 3600;
     public const STAGE_NAME = 'db-writer';
 
