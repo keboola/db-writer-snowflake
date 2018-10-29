@@ -28,7 +28,12 @@ class SnowflakeTest extends BaseTest
     {
         $this->config = $this->getConfig($this->dataDir);
 
-        $this->writer = $this->getWriter($this->config['parameters']);
+        $writer = $this->getWriter($this->config['parameters']);
+        if ($writer instanceof Snowflake) {
+            $this->writer = $writer;
+        } else {
+            $this->fail('Writer factory must init Snowflake Writer');
+        }
 
         $tables = $this->config['parameters']['tables'];
         foreach ($tables as $table) {

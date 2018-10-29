@@ -2,4 +2,3 @@ parameters:
     ignoreErrors:
         - '#Keboola\\DbWriter\\Writer\\Snowflake\:\:__construct\(\) does not call parent constructor from Keboola\\DbWriter\\Writer\.#'
         - '#Call to an undefined method Symfony\\Component\\Config\\Definition\\Builder\\NodeDefinition\:\:children\(\)\.#'
-        - '#constructor expects Exception\|null\, Throwable given\.#'
