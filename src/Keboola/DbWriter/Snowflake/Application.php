@@ -10,7 +10,7 @@ use Keboola\DbWriter\Writer\Snowflake;
 
 class Application extends BaseApplication
 {
-    public function runAction()
+    public function runAction(): string
     {
         $uploaded = [];
         $tables = array_filter($this['parameters']['tables'], function ($table) {

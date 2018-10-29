@@ -40,15 +40,28 @@ class Snowflake extends Writer implements WriterInterface
 
     public function __construct($dbParams, Logger $logger)
     {
-        parent::__construct($dbParams, $logger);
-
         $this->logger = $logger;
+        $this->dbParams = $dbParams;
+
+        try {
+            $this->db = $this->createSnowflakeConnection($this->dbParams);
+        } catch (\Throwable $e) {
+            if (strstr(strtolower($e->getMessage()), 'could not find driver')) {
+                throw new ApplicationException("Missing driver: " . $e->getMessage());
+            }
+            throw new UserException("Error connecting to DB: " . $e->getMessage(), 0, $e);
+        }
 
         $this->validateAndSetWarehouse();
         $this->validateAndSetSchema();
     }
 
-    public function createConnection($dbParams)
+    public function createConnection(array $dbParams): \PDO
+    {
+        throw new ApplicationException("Method not implemented");
+    }
+
+    public function createSnowflakeConnection($dbParams)
     {
         $connection = new Connection($dbParams);
         $connection->query(sprintf("ALTER SESSION SET STATEMENT_TIMEOUT_IN_SECONDS = %d", self::STATEMENT_TIMEOUT_IN_SECONDS));
@@ -176,12 +189,12 @@ class Snowflake extends Writer implements WriterInterface
         return true;
     }
 
-    public function drop($tableName)
+    public function drop(string $tableName): void
     {
         $this->execQuery(sprintf("DROP TABLE IF EXISTS %s;", $this->escape($tableName)));
     }
 
-    public function create(array $table)
+    public function create(array $table): void
     {
         $sql = sprintf(
             "CREATE %s TABLE %s (",
@@ -231,7 +244,7 @@ class Snowflake extends Writer implements WriterInterface
         $this->execQuery($sql);
     }
 
-    public function upsert(array $table, $targetTable)
+    public function upsert(array $table, string $targetTable): void
     {
         if (!empty($table['primaryKey'])) {
             $this->addPrimaryKeyIfMissing($table['primaryKey'], $targetTable);
@@ -303,12 +316,12 @@ class Snowflake extends Writer implements WriterInterface
         $this->drop($table['dbName']);
     }
 
-    public static function getAllowedTypes()
+    public static function getAllowedTypes(): array
     {
         return self::$allowedTypes;
     }
 
-    public function tableExists($tableName)
+    public function tableExists(string $tableName): bool
     {
         $res = $this->db->fetchAll(sprintf(
             "SELECT *
@@ -330,17 +343,17 @@ class Snowflake extends Writer implements WriterInterface
         }
     }
 
-    public function showTables($dbName)
+    public function showTables(string $dbName): array
     {
         throw new ApplicationException("Method not implemented");
     }
 
-    public function getTableInfo($tableName)
+    public function getTableInfo(string $tableName): array
     {
         throw new ApplicationException("Method not implemented");
     }
 
-    public function write(CsvFile $csv, array $table)
+    public function write(CsvFile $csv, array $table): void
     {
         throw new ApplicationException("Method not implemented");
     }
@@ -373,7 +386,7 @@ class Snowflake extends Writer implements WriterInterface
         $this->execQuery('SELECT current_date;');
     }
 
-    public function generateTmpName($tableName)
+    public function generateTmpName(string $tableName): string
     {
         return '__temp_' . str_replace('.', '_', uniqid('wr_db_', true));
     }
@@ -494,8 +507,18 @@ class Snowflake extends Writer implements WriterInterface
         }
     }
 
-    public function validateTable($tableConfig)
+    public function validateTable(array $tableConfig): void
     {
         // TODO: Implement validateTable() method.
+    }
+
+    public function getConnection(): \PDO
+    {
+        throw new ApplicationException("Method not implemented");
+    }
+
+    public function getSnowflakeConnection(): Connection
+    {
+        return $this->db;
     }
 }

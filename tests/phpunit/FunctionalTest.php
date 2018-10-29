@@ -190,7 +190,7 @@ class FunctionalTest extends BaseTest
     {
         $dstConfigPath = $this->tmpRunDir . '/config.json';
 
-        $config = $this->getConfig();
+        $config = $this->getConfig($this->dataDir);
         if ($callback !== null) {
             $config = $callback($config);
         }

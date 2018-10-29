@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c116015072ceddc29f4d55ce136fd270",
+    "content-hash": "3e3edd11463f4c4dda887e38b394b5d0",
     "packages": [
         {
             "name": "keboola/csv",
@@ -39,16 +39,16 @@
         },
         {
             "name": "keboola/db-writer-common",
-            "version": "4.0.0",
+            "version": "5.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/keboola/db-writer-common.git",
-                "reference": "367d24f9d92656d3b17092d6c69c812865ae65be"
+                "reference": "f2b2091948f1115540a1df669a884bad5c812c44"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/keboola/db-writer-common/zipball/367d24f9d92656d3b17092d6c69c812865ae65be",
-                "reference": "367d24f9d92656d3b17092d6c69c812865ae65be",
+                "url": "https://api.github.com/repos/keboola/db-writer-common/zipball/f2b2091948f1115540a1df669a884bad5c812c44",
+                "reference": "f2b2091948f1115540a1df669a884bad5c812c44",
                 "shasum": ""
             },
             "require": {
@@ -90,7 +90,7 @@
                 "library",
                 "writer"
             ],
-            "time": "2018-05-02T16:37:40+00:00"
+            "time": "2018-06-20T08:32:08+00:00"
         },
         {
             "name": "keboola/ssh-tunnel",

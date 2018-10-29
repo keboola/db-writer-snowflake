@@ -26,7 +26,7 @@ class SnowflakeTest extends BaseTest
 
     public function setUp()
     {
-        $this->config = $this->getConfig();
+        $this->config = $this->getConfig($this->dataDir);
 
         $this->writer = $this->getWriter($this->config['parameters']);
 
@@ -59,8 +59,8 @@ class SnowflakeTest extends BaseTest
 
     public function testDrop()
     {
-        /** @var Connection $conn */
-        $conn = $this->writer->getConnection();
+        $conn = $this->writer->getSnowflakeConnection();
+
         $conn->query("CREATE TABLE \"dropMe\" (
           id INT PRIMARY KEY,
           firstname VARCHAR(30) NOT NULL,
@@ -79,8 +79,7 @@ class SnowflakeTest extends BaseTest
 
     public function testCreate()
     {
-        /** @var Connection $conn */
-        $conn = $this->writer->getConnection();
+        $conn = $this->writer->getSnowflakeConnection();
 
         $tables = $this->config['parameters']['tables'];
 
@@ -347,9 +346,7 @@ class SnowflakeTest extends BaseTest
     private function setUserDefaultWarehouse($warehouse = null)
     {
         $user = $this->writer->getCurrentUser();
-
-        /** @var Connection $conn */
-        $conn = $this->writer->getConnection();
+        $conn = $this->writer->getSnowflakeConnection();
 
         if ($warehouse) {
             $sql = sprintf(
