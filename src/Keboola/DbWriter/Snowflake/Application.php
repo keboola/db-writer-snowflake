@@ -89,13 +89,9 @@ class Application extends BaseApplication
         /** @var Snowflake $writer */
         $writer = $this['writer'];
 
-        $writer->beginTransaction();
-
         $writer->drop($tableConfig['dbName']);
         $writer->create($tableConfig);
         $writer->writeFromS3($s3info, $tableConfig);
-
-        $writer->commitTransaction();
     }
 
     private function getManifest($tableId)

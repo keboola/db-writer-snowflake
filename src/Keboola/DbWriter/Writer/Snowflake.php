@@ -194,16 +194,6 @@ class Snowflake extends Writer implements WriterInterface
         $this->execQuery(sprintf("DROP TABLE IF EXISTS %s;", $this->escape($tableName)));
     }
 
-    public function beginTransaction(): void
-    {
-        $this->execQuery('BEGIN TRANSACTION');
-    }
-
-    public function commitTransaction(): void
-    {
-        $this->execQuery('COMMIT');
-    }
-
     public function create(array $table): void
     {
         $sql = sprintf(
