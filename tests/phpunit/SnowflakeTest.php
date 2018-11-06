@@ -5,10 +5,13 @@ namespace Keboola\DbWriter\Snowflake\Tests;
 use Keboola\Csv\CsvFile;
 use Keboola\DbWriter\Exception\ApplicationException;
 use Keboola\DbWriter\Exception\UserException;
+use Keboola\DbWriter\Logger;
 use Keboola\DbWriter\Snowflake\Connection;
 use Keboola\DbWriter\Snowflake\Test\S3Loader;
 use Keboola\DbWriter\Writer\Snowflake;
+use Keboola\DbWriter\WriterFactory;
 use Keboola\StorageApi\Client;
+use Monolog\Handler\TestHandler;
 
 class SnowflakeTest extends BaseTest
 {
@@ -91,6 +94,29 @@ class SnowflakeTest extends BaseTest
         } catch (ApplicationException $e) {
             $this->assertContains('Method not implemented', $e->getMessage());
         }
+    }
+
+    public function testConnection()
+    {
+        $testHandler = new TestHandler();
+
+        $logger = new Logger($this->appName);
+        $logger->pushHandler($testHandler);
+
+        $writerFactory = new WriterFactory($this->config['parameters']);
+        $writer =  $writerFactory->create($logger);
+
+        $this->assertTrue($writer instanceof Snowflake);
+        $this->assertCount(0, $testHandler->getRecords());
+
+        $writer->testConnection();
+
+        $records = $testHandler->getRecords();
+
+        $this->assertCount(1, $records);
+
+        $this->assertContains('Executing query', $records[0]['message']);
+        $this->assertEquals('INFO', $records[0]['level_name']);
     }
 
     public function testDrop()
