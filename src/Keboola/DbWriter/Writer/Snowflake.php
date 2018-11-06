@@ -182,13 +182,6 @@ class Snowflake extends Writer implements WriterInterface
         return ($q . str_replace("$q", "$q$q", $value) . $q);
     }
 
-    public function isTableValid(array $table, $ignoreExport = false)
-    {
-        // TODO: Implement isTableValid() method.
-
-        return true;
-    }
-
     public function drop(string $tableName): void
     {
         $this->execQuery(sprintf("DROP TABLE IF EXISTS %s;", $this->escape($tableName)));
