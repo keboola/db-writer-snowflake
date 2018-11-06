@@ -3,6 +3,7 @@
 namespace Keboola\DbWriter\Snowflake\Tests;
 
 use Keboola\Csv\CsvFile;
+use Keboola\DbWriter\Exception\ApplicationException;
 use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Snowflake\Connection;
 use Keboola\DbWriter\Snowflake\Test\S3Loader;
@@ -68,6 +69,13 @@ class SnowflakeTest extends BaseTest
 
         $result = $connection->fetchAll('SELECT current_date;');
         $this->assertNotEmpty($result);
+
+        try {
+            $this->writer->createConnection($this->config['parameters']['db']);
+            $this->fail('Create connection via Common inteface method should fail');
+        } catch (ApplicationException $e) {
+            $this->assertContains('Method not implemented', $e->getMessage());
+        }
     }
 
     public function testGetConnection()
@@ -76,6 +84,13 @@ class SnowflakeTest extends BaseTest
 
         $result = $connection->fetchAll('SELECT current_date;');
         $this->assertNotEmpty($result);
+
+        try {
+            $this->writer->getConnection();
+            $this->fail('Getting connection via Common inteface method should fail');
+        } catch (ApplicationException $e) {
+            $this->assertContains('Method not implemented', $e->getMessage());
+        }
     }
 
     public function testDrop()
