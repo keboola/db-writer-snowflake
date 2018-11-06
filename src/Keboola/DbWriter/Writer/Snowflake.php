@@ -61,7 +61,7 @@ class Snowflake extends Writer implements WriterInterface
         throw new ApplicationException("Method not implemented");
     }
 
-    public function createSnowflakeConnection($dbParams)
+    public function createSnowflakeConnection($dbParams): Connection
     {
         $connection = new Connection($dbParams);
         $connection->query(sprintf("ALTER SESSION SET STATEMENT_TIMEOUT_IN_SECONDS = %d", self::STATEMENT_TIMEOUT_IN_SECONDS));

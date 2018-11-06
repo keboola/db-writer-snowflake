@@ -355,6 +355,14 @@ class SnowflakeTest extends BaseTest
         $this->writer->checkPrimaryKey(['id', 'name'], $tmpTable['dbName']);
     }
 
+    public function testCreateConnection()
+    {
+        $connection = $this->writer->createSnowflakeConnection($this->config['parameters']['db']);
+
+        $result = $connection->fetchAll('SELECT current_date;');
+        $this->assertNotEmpty($result);
+    }
+
     private function setUserDefaultWarehouse($warehouse = null)
     {
         $user = $this->writer->getCurrentUser();
