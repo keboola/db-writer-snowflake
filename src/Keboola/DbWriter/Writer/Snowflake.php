@@ -324,11 +324,18 @@ class Snowflake extends Writer implements WriterInterface
     public function tableExists(string $tableName): bool
     {
         $res = $this->db->fetchAll(sprintf(
-            "SELECT *
-            FROM INFORMATION_SCHEMA.TABLES
-            WHERE table_name = '%s'",
-            $tableName
+            "
+                SELECT *
+                FROM INFORMATION_SCHEMA.TABLES
+                WHERE TABLE_NAME = %s
+                AND TABLE_SCHEMA = %s
+                AND TABLE_CATALOG = %s
+            ",
+            $this->quote($tableName),
+            $this->quote($this->dbParams['schema']),
+            $this->quote($this->dbParams['database'])
         ));
+
 
         return !empty($res);
     }

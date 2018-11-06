@@ -71,15 +71,10 @@ class SnowflakeTest extends BaseTest
           firstname VARCHAR(30) NOT NULL,
           lastname VARCHAR(30) NOT NULL)");
 
-        $this->writer->drop("dropMe");
+        $this->assertTrue($this->writer->tableExists('dropMe'));
 
-        $res = $conn->fetchAll("
-            SELECT *
-            FROM INFORMATION_SCHEMA.TABLES
-            WHERE table_name = 'dropMe'
-        ");
-
-        $this->assertEmpty($res);
+        $this->writer->drop('dropMe');
+        $this->assertFalse($this->writer->tableExists('dropMe'));
     }
 
     public function testCreate()
@@ -90,15 +85,10 @@ class SnowflakeTest extends BaseTest
 
         foreach ($tables as $table) {
             $this->writer->drop($table['dbName']);
+            $this->assertFalse($this->writer->tableExists($table['dbName']));
+
             $this->writer->create($table);
-
-            $res = $conn->fetchAll("
-                SELECT *
-                FROM INFORMATION_SCHEMA.TABLES
-                WHERE table_name = '{$table['dbName']}'
-            ");
-
-            $this->assertEquals($table['dbName'], $res[0]['TABLE_NAME']);
+            $this->assertTrue($this->writer->tableExists($table['dbName']));
         }
     }
 
