@@ -106,7 +106,10 @@ class SnowflakeTest extends BaseTest
         $writerFactory = new WriterFactory($this->config['parameters']);
         $writer =  $writerFactory->create($logger);
 
-        $this->assertTrue($writer instanceof Snowflake);
+        if (!$writer instanceof Snowflake) {
+            $this->fail("Writer factory must init Snowflake Writer");
+        }
+
         $this->assertCount(0, $testHandler->getRecords());
 
         $writer->testConnection();

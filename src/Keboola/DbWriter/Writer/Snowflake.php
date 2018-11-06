@@ -218,16 +218,7 @@ class Snowflake extends Writer implements WriterInterface
         }
 
         if (!empty($table['primaryKey'])) {
-            $writer = $this;
-            $sql .= "PRIMARY KEY (" . implode(
-                ', ',
-                array_map(
-                    function ($primaryColumn) use ($writer) {
-                        return $writer->escape($primaryColumn);
-                    },
-                    $table['primaryKey']
-                )
-            ) . ")";
+            $sql .= $this->getPrimaryKeySqlDefinition($table['primaryKey']);
             $sql .= ',';
         }
 
@@ -444,22 +435,32 @@ class Snowflake extends Writer implements WriterInterface
             return;
         }
 
-        $writer = $this;
         $sql = sprintf(
-            "ALTER TABLE %s ADD PRIMARY KEY(%s);",
+            "ALTER TABLE %s ADD %s;",
             $this->nameWithSchemaEscaped($targetTable),
+            $this->getPrimaryKeySqlDefinition($columns)
+        );
+
+        $this->execQuery($sql);
+    }
+
+    private function getPrimaryKeySqlDefinition(array $primaryColumns): string
+    {
+        $writer = $this;
+
+        return sprintf(
+            "PRIMARY KEY(%s)",
             implode(
                 ', ',
                 array_map(
                     function ($primaryColumn) use ($writer) {
                         return $writer->escape($primaryColumn);
                     },
-                    $columns
+                    $primaryColumns
                 )
             )
         );
 
-        $this->execQuery($sql);
     }
 
     private function hideCredentialsInQuery($query)
