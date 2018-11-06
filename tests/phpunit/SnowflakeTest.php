@@ -97,6 +97,23 @@ class SnowflakeTest extends BaseTest
         $this->assertFalse($this->writer->generateStageName((string) getenv('KBC_RUNID')) === Snowflake::STAGE_NAME);
     }
 
+    public function testTmpName()
+    {
+        $tableName = 'firstTable';
+
+        $tmpName = $this->writer->generateTmpName($tableName);
+        $this->assertRegExp('/' . $tableName . '/ui', $tmpName);
+        $this->assertRegExp('/temp/ui', $tmpName);
+        $this->assertLessThanOrEqual(256, mb_strlen($tmpName));
+
+        $tableName = str_repeat('firstTableWithLongName', 15);
+
+        $this->assertGreaterThanOrEqual(256, mb_strlen($tableName));
+        $tmpName = $this->writer->generateTmpName($tableName);
+        $this->assertRegExp('/temp/ui', $tmpName);
+        $this->assertLessThanOrEqual(256, mb_strlen($tmpName));
+    }
+
     public function testWriteAsync()
     {
         $tables = $this->config['parameters']['tables'];

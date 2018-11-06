@@ -395,7 +395,8 @@ class Snowflake extends Writer implements WriterInterface
 
     public function generateTmpName(string $tableName): string
     {
-        return '__temp_' . str_replace('.', '_', uniqid('wr_db_', true));
+        $tmpId = '_temp_' . uniqid('wr_db_', true);
+        return mb_substr($tableName, 0, 256 - mb_strlen($tmpId)) . $tmpId;
     }
 
     /**
