@@ -62,6 +62,22 @@ class SnowflakeTest extends BaseTest
         return $this->s3Loader->upload($tableId);
     }
 
+    public function testCreateConnection()
+    {
+        $connection = $this->writer->createSnowflakeConnection($this->config['parameters']['db']);
+
+        $result = $connection->fetchAll('SELECT current_date;');
+        $this->assertNotEmpty($result);
+    }
+
+    public function testGetConnection()
+    {
+        $connection = $this->writer->getSnowflakeConnection();
+
+        $result = $connection->fetchAll('SELECT current_date;');
+        $this->assertNotEmpty($result);
+    }
+
     public function testDrop()
     {
         $conn = $this->writer->getSnowflakeConnection();
@@ -353,14 +369,6 @@ class SnowflakeTest extends BaseTest
         $this->writer->upsert($table, $tmpTable['dbName']);
 
         $this->writer->checkPrimaryKey(['id', 'name'], $tmpTable['dbName']);
-    }
-
-    public function testCreateConnection()
-    {
-        $connection = $this->writer->createSnowflakeConnection($this->config['parameters']['db']);
-
-        $result = $connection->fetchAll('SELECT current_date;');
-        $this->assertNotEmpty($result);
     }
 
     private function setUserDefaultWarehouse($warehouse = null)
