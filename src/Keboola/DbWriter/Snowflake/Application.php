@@ -67,10 +67,8 @@ class Application extends BaseApplication
         $stageTable = $tableConfig;
         $stageTable['dbName'] = $writer->generateTmpName($tableConfig['dbName']);
 
-        $stageTable['temporary'] = true;
-
         $writer->drop($stageTable['dbName']);
-        $writer->create($stageTable);
+        $writer->createStaging($stageTable);
         $writer->writeFromS3($s3info, $stageTable);
 
         // create destination table if not exists

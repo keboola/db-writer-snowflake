@@ -189,43 +189,28 @@ class Snowflake extends Writer implements WriterInterface
 
     public function create(array $table): void
     {
-        $sql = sprintf(
-            "CREATE %s TABLE %s (",
-            $table['incremental']?'TEMPORARY':'',
-            $this->escape($table['dbName'])
-        );
-
-        $columns = array_filter($table['items'], function ($item) {
-            return (strtolower($item['type']) !== 'ignore');
-        });
-        foreach ($columns as $col) {
-            $type = strtoupper($col['type']);
-            if (!empty($col['size']) && in_array(strtolower($col['type']), self::$typesWithSize)) {
-                $type .= sprintf("(%s)", $col['size']);
-            }
-            $null = $col['nullable'] ? 'NULL' : 'NOT NULL';
-            $default = empty($col['default']) ? '' : "DEFAULT '{$col['default']}'";
-            if ($type === 'TEXT') {
-                $default = '';
-            }
-            $sql .= sprintf(
-                "%s %s %s %s,",
-                $this->escape($col['dbName']),
-                $type,
-                $null,
-                $default
-            );
-        }
-
+        $sqlDefinitions = [$this->getColumnsSqlDefinition($table)];
         if (!empty($table['primaryKey'])) {
-            $sql .= $this->getPrimaryKeySqlDefinition($table['primaryKey']);
-            $sql .= ',';
+            $sqlDefinitions [] = $this->getPrimaryKeySqlDefinition($table['primaryKey']);
         }
 
-        $sql = substr($sql, 0, -1);
-        $sql .= ");";
+        $this->execQuery(sprintf("CREATE TABLE %s (%s);",
+            $this->escape($table['dbName']),
+            implode(', ', $sqlDefinitions)
+        ));
+    }
 
-        $this->execQuery($sql);
+    public function createStaging(array $table): void
+    {
+        $sqlDefinitions = [$this->getColumnsSqlDefinition($table)];
+        if (!empty($table['primaryKey'])) {
+            $sqlDefinitions [] = $this->getPrimaryKeySqlDefinition($table['primaryKey']);
+        }
+
+        $this->execQuery(sprintf("CREATE TEMPORARY TABLE %s (%s);",
+            $this->escape($table['dbName']),
+            implode(', ', $sqlDefinitions)
+        ));
     }
 
     public function upsert(array $table, string $targetTable): void
@@ -442,6 +427,36 @@ class Snowflake extends Writer implements WriterInterface
         );
 
         $this->execQuery($sql);
+    }
+
+    private function getColumnsSqlDefinition(array $table): string
+    {
+        $columns = array_filter($table['items'], function ($item) {
+            return (strtolower($item['type']) !== 'ignore');
+        });
+
+        $sql = '';
+
+        foreach ($columns as $col) {
+            $type = strtoupper($col['type']);
+            if (!empty($col['size']) && in_array(strtolower($col['type']), self::$typesWithSize)) {
+                $type .= sprintf("(%s)", $col['size']);
+            }
+            $null = $col['nullable'] ? 'NULL' : 'NOT NULL';
+            $default = empty($col['default']) ? '' : "DEFAULT '{$col['default']}'";
+            if ($type === 'TEXT') {
+                $default = '';
+            }
+            $sql .= sprintf(
+                "%s %s %s %s,",
+                $this->escape($col['dbName']),
+                $type,
+                $null,
+                $default
+            );
+        }
+
+        return trim($sql, ' ,');
     }
 
     private function getPrimaryKeySqlDefinition(array $primaryColumns): string
