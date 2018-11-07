@@ -184,7 +184,7 @@ class Snowflake extends Writer implements WriterInterface
 
     public function drop(string $tableName): void
     {
-        $this->execQuery(sprintf("DROP TABLE IF EXISTS %s;", $this->escape($tableName)));
+        $this->execQuery(sprintf("DROP TABLE IF EXISTS %s;", $this->quoteIdentifier($tableName)));
     }
 
     public function create(array $table): void
@@ -195,7 +195,7 @@ class Snowflake extends Writer implements WriterInterface
         }
 
         $this->execQuery(sprintf("CREATE TABLE %s (%s);",
-            $this->escape($table['dbName']),
+            $this->quoteIdentifier($table['dbName']),
             implode(', ', $sqlDefinitions)
         ));
     }
@@ -208,7 +208,7 @@ class Snowflake extends Writer implements WriterInterface
         }
 
         $this->execQuery(sprintf("CREATE TEMPORARY TABLE %s (%s);",
-            $this->escape($table['dbName']),
+            $this->quoteIdentifier($table['dbName']),
             implode(', ', $sqlDefinitions)
         ));
     }
@@ -334,11 +334,6 @@ class Snowflake extends Writer implements WriterInterface
         throw new ApplicationException("Method not implemented");
     }
 
-    private function escape($str)
-    {
-        return '"' . $str . '"';
-    }
-
     public function getUserDefaultWarehouse()
     {
         $sql = sprintf(
@@ -449,7 +444,7 @@ class Snowflake extends Writer implements WriterInterface
             }
             $sql .= sprintf(
                 "%s %s %s %s,",
-                $this->escape($col['dbName']),
+                $this->quoteIdentifier($col['dbName']),
                 $type,
                 $null,
                 $default
@@ -469,7 +464,7 @@ class Snowflake extends Writer implements WriterInterface
                 ', ',
                 array_map(
                     function ($primaryColumn) use ($writer) {
-                        return $writer->escape($primaryColumn);
+                        return $writer->quoteIdentifier($primaryColumn);
                     },
                     $primaryColumns
                 )
