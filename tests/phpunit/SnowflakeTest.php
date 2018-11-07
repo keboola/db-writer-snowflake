@@ -152,7 +152,7 @@ class SnowflakeTest extends BaseTest
     {
         $tables = array_filter(
             $this->config['parameters']['tables'],
-            function ($table) use($incrementalValue) {
+            function ($table) use ($incrementalValue) {
                 return $table['incremental'] === $incrementalValue;
             }
         );
@@ -197,7 +197,7 @@ class SnowflakeTest extends BaseTest
     {
         $tables = array_filter(
             $this->config['parameters']['tables'],
-            function ($table) use($incrementalValue) {
+            function ($table) use ($incrementalValue) {
                 return $table['incremental'] === $incrementalValue;
             }
         );

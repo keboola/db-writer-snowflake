@@ -194,7 +194,8 @@ class Snowflake extends Writer implements WriterInterface
             $sqlDefinitions [] = $this->getPrimaryKeySqlDefinition($table['primaryKey']);
         }
 
-        $this->execQuery(sprintf("CREATE TABLE %s (%s);",
+        $this->execQuery(sprintf(
+            "CREATE TABLE %s (%s);",
             $this->quoteIdentifier($table['dbName']),
             implode(', ', $sqlDefinitions)
         ));
@@ -207,7 +208,8 @@ class Snowflake extends Writer implements WriterInterface
             $sqlDefinitions [] = $this->getPrimaryKeySqlDefinition($table['primaryKey']);
         }
 
-        $this->execQuery(sprintf("CREATE TEMPORARY TABLE %s (%s);",
+        $this->execQuery(sprintf(
+            "CREATE TEMPORARY TABLE %s (%s);",
             $this->quoteIdentifier($table['dbName']),
             implode(', ', $sqlDefinitions)
         ));
@@ -470,7 +472,6 @@ class Snowflake extends Writer implements WriterInterface
                 )
             )
         );
-
     }
 
     private function hideCredentialsInQuery($query)
