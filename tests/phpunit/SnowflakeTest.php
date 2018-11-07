@@ -137,11 +137,27 @@ class SnowflakeTest extends BaseTest
         $this->assertFalse($this->writer->tableExists('dropMe'));
     }
 
-    public function testCreate()
+    public function createData(): array
     {
-        $conn = $this->writer->getSnowflakeConnection();
+        return [
+            [true, 'TRANSIENT'],
+            [false, 'TRANSIENT'],
+        ];
+    }
 
-        $tables = $this->config['parameters']['tables'];
+    /**
+     * @dataProvider createData
+     */
+    public function testCreate(bool $incrementalValue, string $expectedKind)
+    {
+        $tables = array_filter(
+            $this->config['parameters']['tables'],
+            function ($table) use($incrementalValue) {
+                return $table['incremental'] === $incrementalValue;
+            }
+        );
+
+        $this->assertGreaterThanOrEqual(1, count($tables));
 
         foreach ($tables as $table) {
             $this->writer->drop($table['dbName']);
@@ -149,6 +165,65 @@ class SnowflakeTest extends BaseTest
 
             $this->writer->create($table);
             $this->assertTrue($this->writer->tableExists($table['dbName']));
+
+            // check table type
+            $tablesInfo = $this->writer->getSnowflakeConnection()->fetchAll(sprintf(
+                "SHOW TABLES LIKE '%s';",
+                $table['dbName']
+            ));
+
+            $this->assertCount(1, $tablesInfo);
+
+            $tableInfo = reset($tablesInfo);
+            $this->assertEquals($this->config['parameters']['db']['schema'], $tableInfo['schema_name']);
+            $this->assertEquals($this->config['parameters']['db']['database'], $tableInfo['database_name']);
+            $this->assertEquals($table['dbName'], $tableInfo['name']);
+            $this->assertEquals($expectedKind, $tableInfo['kind']);
+        }
+    }
+
+    public function createStagingData(): array
+    {
+        return [
+            [true, 'TEMPORARY'],
+            [false, 'TEMPORARY'],
+        ];
+    }
+
+    /**
+     * @dataProvider createStagingData
+     */
+    public function testCreateStaging(bool $incrementalValue, string $expectedKind)
+    {
+        $tables = array_filter(
+            $this->config['parameters']['tables'],
+            function ($table) use($incrementalValue) {
+                return $table['incremental'] === $incrementalValue;
+            }
+        );
+
+        $this->assertGreaterThanOrEqual(1, count($tables));
+
+        foreach ($tables as $table) {
+            $this->writer->drop($table['dbName']);
+            $this->assertFalse($this->writer->tableExists($table['dbName']));
+
+            $this->writer->createStaging($table);
+            $this->assertTrue($this->writer->tableExists($table['dbName']));
+
+            // check table type
+            $tablesInfo = $this->writer->getSnowflakeConnection()->fetchAll(sprintf(
+                "SHOW TABLES LIKE '%s';",
+                $table['dbName']
+            ));
+
+            $this->assertCount(1, $tablesInfo);
+
+            $tableInfo = reset($tablesInfo);
+            $this->assertEquals($this->config['parameters']['db']['schema'], $tableInfo['schema_name']);
+            $this->assertEquals($this->config['parameters']['db']['database'], $tableInfo['database_name']);
+            $this->assertEquals($table['dbName'], $tableInfo['name']);
+            $this->assertEquals($expectedKind, $tableInfo['kind']);
         }
     }
 
