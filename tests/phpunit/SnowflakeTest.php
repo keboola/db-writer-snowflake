@@ -104,6 +104,8 @@ class SnowflakeTest extends BaseTest
         $logger->pushHandler($testHandler);
 
         $writerFactory = new WriterFactory($this->config['parameters']);
+
+        /** @var Snowflake $writer */
         $writer =  $writerFactory->create($logger);
 
         if (!$writer instanceof Snowflake) {
