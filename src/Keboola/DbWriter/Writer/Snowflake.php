@@ -61,7 +61,7 @@ class Snowflake extends Writer implements WriterInterface
         throw new ApplicationException("Method not implemented");
     }
 
-    public function createSnowflakeConnection($dbParams)
+    public function createSnowflakeConnection($dbParams): Connection
     {
         $connection = new Connection($dbParams);
         $connection->query(sprintf("ALTER SESSION SET STATEMENT_TIMEOUT_IN_SECONDS = %d", self::STATEMENT_TIMEOUT_IN_SECONDS));
@@ -182,66 +182,37 @@ class Snowflake extends Writer implements WriterInterface
         return ($q . str_replace("$q", "$q$q", $value) . $q);
     }
 
-    public function isTableValid(array $table, $ignoreExport = false)
-    {
-        // TODO: Implement isTableValid() method.
-
-        return true;
-    }
-
     public function drop(string $tableName): void
     {
-        $this->execQuery(sprintf("DROP TABLE IF EXISTS %s;", $this->escape($tableName)));
+        $this->execQuery(sprintf("DROP TABLE IF EXISTS %s;", $this->quoteIdentifier($tableName)));
     }
 
     public function create(array $table): void
     {
-        $sql = sprintf(
-            "CREATE %s TABLE %s (",
-            $table['incremental']?'TEMPORARY':'',
-            $this->escape($table['dbName'])
-        );
-
-        $columns = array_filter($table['items'], function ($item) {
-            return (strtolower($item['type']) !== 'ignore');
-        });
-        foreach ($columns as $col) {
-            $type = strtoupper($col['type']);
-            if (!empty($col['size']) && in_array(strtolower($col['type']), self::$typesWithSize)) {
-                $type .= sprintf("(%s)", $col['size']);
-            }
-            $null = $col['nullable'] ? 'NULL' : 'NOT NULL';
-            $default = empty($col['default']) ? '' : "DEFAULT '{$col['default']}'";
-            if ($type === 'TEXT') {
-                $default = '';
-            }
-            $sql .= sprintf(
-                "%s %s %s %s,",
-                $this->escape($col['dbName']),
-                $type,
-                $null,
-                $default
-            );
-        }
-
+        $sqlDefinitions = [$this->getColumnsSqlDefinition($table)];
         if (!empty($table['primaryKey'])) {
-            $writer = $this;
-            $sql .= "PRIMARY KEY (" . implode(
-                ', ',
-                array_map(
-                    function ($primaryColumn) use ($writer) {
-                        return $writer->escape($primaryColumn);
-                    },
-                    $table['primaryKey']
-                )
-            ) . ")";
-            $sql .= ',';
+            $sqlDefinitions [] = $this->getPrimaryKeySqlDefinition($table['primaryKey']);
         }
 
-        $sql = substr($sql, 0, -1);
-        $sql .= ");";
+        $this->execQuery(sprintf(
+            "CREATE TABLE %s (%s);",
+            $this->quoteIdentifier($table['dbName']),
+            implode(', ', $sqlDefinitions)
+        ));
+    }
 
-        $this->execQuery($sql);
+    public function createStaging(array $table): void
+    {
+        $sqlDefinitions = [$this->getColumnsSqlDefinition($table)];
+        if (!empty($table['primaryKey'])) {
+            $sqlDefinitions [] = $this->getPrimaryKeySqlDefinition($table['primaryKey']);
+        }
+
+        $this->execQuery(sprintf(
+            "CREATE TEMPORARY TABLE %s (%s);",
+            $this->quoteIdentifier($table['dbName']),
+            implode(', ', $sqlDefinitions)
+        ));
     }
 
     public function upsert(array $table, string $targetTable): void
@@ -324,11 +295,18 @@ class Snowflake extends Writer implements WriterInterface
     public function tableExists(string $tableName): bool
     {
         $res = $this->db->fetchAll(sprintf(
-            "SELECT *
-            FROM INFORMATION_SCHEMA.TABLES
-            WHERE table_name = '%s'",
-            $tableName
+            "
+                SELECT *
+                FROM INFORMATION_SCHEMA.TABLES
+                WHERE TABLE_NAME = %s
+                AND TABLE_SCHEMA = %s
+                AND TABLE_CATALOG = %s
+            ",
+            $this->quote($tableName),
+            $this->quote($this->dbParams['schema']),
+            $this->quote($this->dbParams['database'])
         ));
+
 
         return !empty($res);
     }
@@ -358,11 +336,6 @@ class Snowflake extends Writer implements WriterInterface
         throw new ApplicationException("Method not implemented");
     }
 
-    private function escape($str)
-    {
-        return '"' . $str . '"';
-    }
-
     public function getUserDefaultWarehouse()
     {
         $sql = sprintf(
@@ -388,7 +361,8 @@ class Snowflake extends Writer implements WriterInterface
 
     public function generateTmpName(string $tableName): string
     {
-        return '__temp_' . str_replace('.', '_', uniqid('wr_db_', true));
+        $tmpId = '_temp_' . uniqid('wr_db_', true);
+        return mb_substr($tableName, 0, 256 - mb_strlen($tmpId)) . $tmpId;
     }
 
     /**
@@ -443,22 +417,61 @@ class Snowflake extends Writer implements WriterInterface
             return;
         }
 
-        $writer = $this;
         $sql = sprintf(
-            "ALTER TABLE %s ADD PRIMARY KEY(%s);",
+            "ALTER TABLE %s ADD %s;",
             $this->nameWithSchemaEscaped($targetTable),
+            $this->getPrimaryKeySqlDefinition($columns)
+        );
+
+        $this->execQuery($sql);
+    }
+
+    private function getColumnsSqlDefinition(array $table): string
+    {
+        $columns = array_filter($table['items'], function ($item) {
+            return (strtolower($item['type']) !== 'ignore');
+        });
+
+        $sql = '';
+
+        foreach ($columns as $col) {
+            $type = strtoupper($col['type']);
+            if (!empty($col['size']) && in_array(strtolower($col['type']), self::$typesWithSize)) {
+                $type .= sprintf("(%s)", $col['size']);
+            }
+            $null = $col['nullable'] ? 'NULL' : 'NOT NULL';
+            $default = empty($col['default']) ? '' : "DEFAULT '{$col['default']}'";
+            if ($type === 'TEXT') {
+                $default = '';
+            }
+            $sql .= sprintf(
+                "%s %s %s %s,",
+                $this->quoteIdentifier($col['dbName']),
+                $type,
+                $null,
+                $default
+            );
+        }
+
+        return trim($sql, ' ,');
+    }
+
+    private function getPrimaryKeySqlDefinition(array $primaryColumns): string
+    {
+        $writer = $this;
+
+        return sprintf(
+            "PRIMARY KEY(%s)",
             implode(
                 ', ',
                 array_map(
                     function ($primaryColumn) use ($writer) {
-                        return $writer->escape($primaryColumn);
+                        return $writer->quoteIdentifier($primaryColumn);
                     },
-                    $columns
+                    $primaryColumns
                 )
             )
         );
-
-        $this->execQuery($sql);
     }
 
     private function hideCredentialsInQuery($query)

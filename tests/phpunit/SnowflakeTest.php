@@ -3,11 +3,15 @@
 namespace Keboola\DbWriter\Snowflake\Tests;
 
 use Keboola\Csv\CsvFile;
+use Keboola\DbWriter\Exception\ApplicationException;
 use Keboola\DbWriter\Exception\UserException;
+use Keboola\DbWriter\Logger;
 use Keboola\DbWriter\Snowflake\Connection;
 use Keboola\DbWriter\Snowflake\Test\S3Loader;
 use Keboola\DbWriter\Writer\Snowflake;
+use Keboola\DbWriter\WriterFactory;
 use Keboola\StorageApi\Client;
+use Monolog\Handler\TestHandler;
 
 class SnowflakeTest extends BaseTest
 {
@@ -62,6 +66,64 @@ class SnowflakeTest extends BaseTest
         return $this->s3Loader->upload($tableId);
     }
 
+    public function testCreateConnection()
+    {
+        $connection = $this->writer->createSnowflakeConnection($this->config['parameters']['db']);
+
+        $result = $connection->fetchAll('SELECT current_date;');
+        $this->assertNotEmpty($result);
+
+        try {
+            $this->writer->createConnection($this->config['parameters']['db']);
+            $this->fail('Create connection via Common inteface method should fail');
+        } catch (ApplicationException $e) {
+            $this->assertContains('Method not implemented', $e->getMessage());
+        }
+    }
+
+    public function testGetConnection()
+    {
+        $connection = $this->writer->getSnowflakeConnection();
+
+        $result = $connection->fetchAll('SELECT current_date;');
+        $this->assertNotEmpty($result);
+
+        try {
+            $this->writer->getConnection();
+            $this->fail('Getting connection via Common inteface method should fail');
+        } catch (ApplicationException $e) {
+            $this->assertContains('Method not implemented', $e->getMessage());
+        }
+    }
+
+    public function testConnection()
+    {
+        $testHandler = new TestHandler();
+
+        $logger = new Logger($this->appName);
+        $logger->pushHandler($testHandler);
+
+        $writerFactory = new WriterFactory($this->config['parameters']);
+
+        /** @var Snowflake $writer */
+        $writer =  $writerFactory->create($logger);
+
+        if (!$writer instanceof Snowflake) {
+            $this->fail("Writer factory must init Snowflake Writer");
+        }
+
+        $this->assertCount(0, $testHandler->getRecords());
+
+        $writer->testConnection();
+
+        $records = $testHandler->getRecords();
+
+        $this->assertCount(1, $records);
+
+        $this->assertContains('Executing query', $records[0]['message']);
+        $this->assertEquals('INFO', $records[0]['level_name']);
+    }
+
     public function testDrop()
     {
         $conn = $this->writer->getSnowflakeConnection();
@@ -71,40 +133,122 @@ class SnowflakeTest extends BaseTest
           firstname VARCHAR(30) NOT NULL,
           lastname VARCHAR(30) NOT NULL)");
 
-        $this->writer->drop("dropMe");
+        $this->assertTrue($this->writer->tableExists('dropMe'));
 
-        $res = $conn->fetchAll("
-            SELECT *
-            FROM INFORMATION_SCHEMA.TABLES
-            WHERE table_name = 'dropMe'
-        ");
-
-        $this->assertEmpty($res);
+        $this->writer->drop('dropMe');
+        $this->assertFalse($this->writer->tableExists('dropMe'));
     }
 
-    public function testCreate()
+    public function createData(): array
     {
-        $conn = $this->writer->getSnowflakeConnection();
+        return [
+            [true, 'TRANSIENT'],
+            [false, 'TRANSIENT'],
+        ];
+    }
 
-        $tables = $this->config['parameters']['tables'];
+    /**
+     * @dataProvider createData
+     */
+    public function testCreate(bool $incrementalValue, string $expectedKind)
+    {
+        $tables = array_filter(
+            $this->config['parameters']['tables'],
+            function ($table) use ($incrementalValue) {
+                return $table['incremental'] === $incrementalValue;
+            }
+        );
+
+        $this->assertGreaterThanOrEqual(1, count($tables));
 
         foreach ($tables as $table) {
             $this->writer->drop($table['dbName']);
+            $this->assertFalse($this->writer->tableExists($table['dbName']));
+
             $this->writer->create($table);
+            $this->assertTrue($this->writer->tableExists($table['dbName']));
 
-            $res = $conn->fetchAll("
-                SELECT *
-                FROM INFORMATION_SCHEMA.TABLES
-                WHERE table_name = '{$table['dbName']}'
-            ");
+            // check table type
+            $tablesInfo = $this->writer->getSnowflakeConnection()->fetchAll(sprintf(
+                "SHOW TABLES LIKE '%s';",
+                $table['dbName']
+            ));
 
-            $this->assertEquals($table['dbName'], $res[0]['TABLE_NAME']);
+            $this->assertCount(1, $tablesInfo);
+
+            $tableInfo = reset($tablesInfo);
+            $this->assertEquals($this->config['parameters']['db']['schema'], $tableInfo['schema_name']);
+            $this->assertEquals($this->config['parameters']['db']['database'], $tableInfo['database_name']);
+            $this->assertEquals($table['dbName'], $tableInfo['name']);
+            $this->assertEquals($expectedKind, $tableInfo['kind']);
+        }
+    }
+
+    public function createStagingData(): array
+    {
+        return [
+            [true, 'TEMPORARY'],
+            [false, 'TEMPORARY'],
+        ];
+    }
+
+    /**
+     * @dataProvider createStagingData
+     */
+    public function testCreateStaging(bool $incrementalValue, string $expectedKind)
+    {
+        $tables = array_filter(
+            $this->config['parameters']['tables'],
+            function ($table) use ($incrementalValue) {
+                return $table['incremental'] === $incrementalValue;
+            }
+        );
+
+        $this->assertGreaterThanOrEqual(1, count($tables));
+
+        foreach ($tables as $table) {
+            $this->writer->drop($table['dbName']);
+            $this->assertFalse($this->writer->tableExists($table['dbName']));
+
+            $this->writer->createStaging($table);
+            $this->assertTrue($this->writer->tableExists($table['dbName']));
+
+            // check table type
+            $tablesInfo = $this->writer->getSnowflakeConnection()->fetchAll(sprintf(
+                "SHOW TABLES LIKE '%s';",
+                $table['dbName']
+            ));
+
+            $this->assertCount(1, $tablesInfo);
+
+            $tableInfo = reset($tablesInfo);
+            $this->assertEquals($this->config['parameters']['db']['schema'], $tableInfo['schema_name']);
+            $this->assertEquals($this->config['parameters']['db']['database'], $tableInfo['database_name']);
+            $this->assertEquals($table['dbName'], $tableInfo['name']);
+            $this->assertEquals($expectedKind, $tableInfo['kind']);
         }
     }
 
     public function testStageName()
     {
         $this->assertFalse($this->writer->generateStageName((string) getenv('KBC_RUNID')) === Snowflake::STAGE_NAME);
+    }
+
+    public function testTmpName()
+    {
+        $tableName = 'firstTable';
+
+        $tmpName = $this->writer->generateTmpName($tableName);
+        $this->assertRegExp('/' . $tableName . '/ui', $tmpName);
+        $this->assertRegExp('/temp/ui', $tmpName);
+        $this->assertLessThanOrEqual(256, mb_strlen($tmpName));
+
+        $tableName = str_repeat('firstTableWithLongName', 15);
+
+        $this->assertGreaterThanOrEqual(256, mb_strlen($tableName));
+        $tmpName = $this->writer->generateTmpName($tableName);
+        $this->assertRegExp('/temp/ui', $tmpName);
+        $this->assertLessThanOrEqual(256, mb_strlen($tmpName));
     }
 
     public function testWriteAsync()
