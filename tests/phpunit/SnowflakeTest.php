@@ -492,6 +492,42 @@ class SnowflakeTest extends BaseTest
         $this->writer->checkPrimaryKey(['id', 'name'], $tmpTable['dbName']);
     }
 
+    public function testTableInfo()
+    {
+        $table = reset($this->config['parameters']['tables']);
+
+        $columns = array_filter($table['items'], function ($item) {
+            return (strtolower($item['type']) !== 'ignore');
+        });
+
+        $this->writer->drop($table['dbName']);
+        $this->writer->create($table);
+
+        $columnsInfo = $this->writer->getTableInfo($table['dbName']);
+
+        $this->assertEquals(count($columns), count($columnsInfo));
+
+        $glassesColumnInfo = null;
+        foreach ($columnsInfo as $columnInfo) {
+            $this->assertArrayHasKey('name', $columnInfo);
+            $this->assertArrayHasKey('kind', $columnInfo);
+            $this->assertArrayHasKey('type', $columnInfo);
+            $this->assertArrayHasKey('null?', $columnInfo);
+            $this->assertArrayHasKey('default', $columnInfo);
+
+            if ($columnInfo['name'] === 'glasses') {
+                $glassesColumnInfo = $columnInfo;
+            }
+        }
+
+        $this->assertTrue(is_array($glassesColumnInfo));
+        $this->assertEquals('glasses', $glassesColumnInfo['name']);
+        $this->assertEquals('COLUMN', $glassesColumnInfo['kind']);
+        $this->assertEquals('VARCHAR(255)', $glassesColumnInfo['type']);
+        $this->assertEquals('N', $glassesColumnInfo['null?']);
+        $this->assertNull($glassesColumnInfo['default']);
+    }
+
     private function setUserDefaultWarehouse($warehouse = null)
     {
         $user = $this->writer->getCurrentUser();

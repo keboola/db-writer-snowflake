@@ -328,7 +328,12 @@ class Snowflake extends Writer implements WriterInterface
 
     public function getTableInfo(string $tableName): array
     {
-        throw new ApplicationException("Method not implemented");
+        $sql = sprintf(
+            "DESC TABLE %s;",
+            $this->db->quoteIdentifier($tableName)
+        );
+
+        return $this->db->fetchAll($sql);
     }
 
     public function write(CsvFile $csv, array $table): void
