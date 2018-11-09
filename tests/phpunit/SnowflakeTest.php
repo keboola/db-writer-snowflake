@@ -358,6 +358,31 @@ class SnowflakeTest extends BaseTest
         $this->assertFileEquals($expectedFilename, $csv->getPathname());
     }
 
+    public function testTruncate()
+    {
+        $tables = $this->config['parameters']['tables'];
+
+        // simple table
+        $table = $tables[0];
+        $s3manifest = $this->loadDataToS3($table['tableId']);
+
+        $this->writer->drop($table['dbName']);
+        $this->writer->create($table);
+        $this->writer->writeFromS3($s3manifest, $table);
+
+        /** @var Connection $conn */
+        $conn = new Connection($this->config['parameters']['db']);
+
+        $res = $conn->fetchAll(sprintf('SELECT * FROM "%s" ORDER BY "id" ASC', $table['dbName']));
+        $this->assertGreaterThanOrEqual(1, count($res));
+
+        $this->writer->truncate($table['dbName']);
+        $this->writer->tableExists($table['dbName']);
+
+        $res = $conn->fetchAll(sprintf('SELECT * FROM "%s" ORDER BY "id" ASC', $table['dbName']));
+        $this->assertCount(0, $res);
+    }
+
     public function testDefaultWarehouse(): void
     {
         $config = $this->config;

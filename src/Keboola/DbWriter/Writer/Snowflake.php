@@ -187,6 +187,11 @@ class Snowflake extends Writer implements WriterInterface
         $this->execQuery(sprintf("DROP TABLE IF EXISTS %s;", $this->quoteIdentifier($tableName)));
     }
 
+    public function truncate(string $tableName): void
+    {
+        $this->execQuery(sprintf("TRUNCATE TABLE %s;", $this->quoteIdentifier($tableName)));
+    }
+
     public function create(array $table): void
     {
         $sqlDefinitions = [$this->getColumnsSqlDefinition($table)];
