@@ -12,7 +12,9 @@
     ],
     "require": {
         "php": ">=7.1",
-        "keboola/db-writer-common": "^5.0"
+        "keboola/db-writer-common": "^5.0",
+        "keboola/php-csv-db-import": "^4.1",
+        "keboola/php-datatypes": "^3.2"
     },
     "require-dev": {
         "phpunit/phpunit": "^7.0",
