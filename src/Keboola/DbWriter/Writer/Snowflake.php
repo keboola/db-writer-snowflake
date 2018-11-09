@@ -9,6 +9,7 @@ use Keboola\DbWriter\Logger;
 use Keboola\DbWriter\Snowflake\Connection;
 use Keboola\DbWriter\Writer;
 use Keboola\DbWriter\WriterInterface;
+use Keboola\DbWriter\Snowflake\DataType;
 
 class Snowflake extends Writer implements WriterInterface
 {
@@ -402,6 +403,142 @@ class Snowflake extends Writer implements WriterInterface
         return $this->db->fetchAll("SELECT CURRENT_USER;")[0]['CURRENT_USER'];
     }
 
+    public function checkColumns(array $columns, string $targetTable)
+    {
+        $columnsInDb = $this->describeTableColumns($targetTable);
+        $mappingColumns = $this->describeMappingColumns($columns);
+
+
+        $requiredColumnsInDb = array_keys($mappingColumns);
+        $dbMissingColumns = array_values(array_udiff(array_keys($columnsInDb), $requiredColumnsInDb, 'strcasecmp'));
+        if (count($dbMissingColumns) > 0) {
+            throw new UserException(
+                sprintf(
+                    "Some columns are missing in the mapping. Missing columns: %s",
+                    implode(',', $dbMissingColumns)
+                )
+            );
+        }
+
+        $workspaceMissingColumns = array_values(array_udiff($requiredColumnsInDb, array_keys($columnsInDb), 'strcasecmp'));
+        if (count($workspaceMissingColumns) > 0) {
+            throw new UserException(
+                sprintf(
+                    "Some columns are missing in DB table %s. Missing columns: %s",
+                    $targetTable,
+                    implode(',', $workspaceMissingColumns)
+                )
+            );
+        }
+    }
+
+    public function checkDataTypes(array $columns, string $targetTable)
+    {
+        $columnsInDb = $this->describeTableColumns($targetTable);
+        $mappingColumns = $this->describeMappingColumns($columns);
+
+        //@FIXME rename test!
+        $dataTypeErrors = [];
+        foreach ($mappingColumns as $column => $definition) {
+            if (!array_key_exists($column, $columnsInDb)) {
+                throw new UserException(
+                    sprintf(
+                        "Some columns are missing in DB table %s. Missing columns: %s",
+                        $targetTable,
+                        $column
+                    )
+                );
+            }
+
+            $workspaceDefinition = $columnsInDb[$column];
+
+            $invalidColumnMapping = false;
+            if ($definition->getSnowflakeBaseType() !== $workspaceDefinition->getSnowflakeBaseType()) {
+                $invalidColumnMapping = true;
+            } elseif ($definition->isNullable() !== $workspaceDefinition->isNullable()) {
+                $invalidColumnMapping = true;
+            } elseif ($definition->getLength() !== $workspaceDefinition->getLength()) {
+                if ($definition->getLength() !== null) {
+                    $invalidColumnMapping = true;
+                } elseif ($definition->getSnowflakeDefaultLength() !== $workspaceDefinition->getLength()) {
+                    $invalidColumnMapping = true;
+                }
+            }
+
+            if ($invalidColumnMapping) {
+                $dataTypeErrors[$column] = [
+                    $definition,
+                    $workspaceDefinition,
+                ];
+            }
+        }
+
+        if (count($dataTypeErrors)) {
+            $errorParts = [];
+            foreach ($dataTypeErrors as $column => $definitions) {
+                /**
+                 * @var DataType\Definition $definition
+                 */
+                /**
+                 * @var DataType\Definition $workspaceDefinition
+                 */
+                list($definition, $workspaceDefinition) = $definitions;
+
+                $errorParts[] = sprintf(
+                    "'%s' mapping '%s' / '%s'",
+                    $column,
+                    $definition->getSQLDefinition(),
+                    $workspaceDefinition->getSQLDefinition()
+                );
+            }
+
+            throw new UserException(
+                sprintf(
+                    "Different mapping between incremental load and workspace for columns: %s",
+                    implode(',', $errorParts)
+                )
+            );
+        }
+    }
+
+    /**
+     * @return DataType\Definition[]
+     */
+    private function describeMappingColumns(array $columns): array
+    {
+        $return = [];
+        foreach ($columns as $columnDefinition) {
+            $return[$columnDefinition['dbName']] = new DataType\Definition(
+                $columnDefinition['type'],
+                [
+                    //@FIXME default value
+                    "nullable" => $columnDefinition['nullable'] ? true : false,
+                    "length" => !empty($columnDefinition['size']) ? (string) $columnDefinition['size'] : null,
+                ]
+            );
+        }
+
+        return $return;
+    }
+
+    /**
+     * @return DataType\Definition[]
+     */
+    private function describeTableColumns(string $targetTable): array
+    {
+        $return = [];
+
+        foreach ($this->getTableInfo($targetTable) as $meta) {
+            if ($meta['kind'] !== 'COLUMN') {
+                continue;
+            }
+
+            $return[$meta['name']] = DataType\Definition::createFromSnowflakeMetadata($meta);
+        }
+
+        return $return;
+    }
+
     public function checkPrimaryKey(array $columns, string $targetTable): void
     {
         $primaryKeysInDb = $this->db->getTablePrimaryKey($this->dbParams['schema'], $targetTable);
@@ -532,7 +669,9 @@ class Snowflake extends Writer implements WriterInterface
 
     public function validateTable(array $tableConfig): void
     {
-        // TODO: Implement validateTable() method.
+        $this->checkPrimaryKey($tableConfig['primaryKey'], $tableConfig['dbName']);
+        $this->checkColumns($tableConfig['items'], $tableConfig['dbName']);
+        $this->checkDataTypes($tableConfig['items'], $tableConfig['dbName']);
     }
 
     public function getConnection(): \PDO

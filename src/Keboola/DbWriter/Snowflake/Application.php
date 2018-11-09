@@ -87,8 +87,14 @@ class Application extends BaseApplication
         /** @var Snowflake $writer */
         $writer = $this['writer'];
 
-        $writer->drop($tableConfig['dbName']);
-        $writer->create($tableConfig);
+        if ($writer->tableExists($tableConfig['dbName'])) {
+            $writer->validateTable($tableConfig);
+
+            $writer->truncate($tableConfig['dbName']);
+        } else {
+            $writer->create($tableConfig);
+        }
+
         $writer->writeFromS3($s3info, $tableConfig);
     }
 
