@@ -6,6 +6,9 @@ use Keboola\Datatype\Definition\Snowflake;
 
 class Definition extends Snowflake
 {
+    public const TIMESTAMP_TYPE_MAPPING_LTZ = 'TIMESTAMP_LTZ';
+    public const TIMESTAMP_TYPE_MAPPING_NTZ = 'TIMESTAMP_NTZ';
+
     public static function createFromSnowflakeMetadata(array $meta): Definition
     {
         $requiredMetadata = [
@@ -86,10 +89,18 @@ class Definition extends Snowflake
     }
 
     /**
+     * @param string $timestampTypeMapping
      * @return string
      */
-    public function getSnowflakeBaseType()
+    public function getSnowflakeBaseType(string $timestampTypeMapping)
     {
+        if ($timestampTypeMapping !== self::TIMESTAMP_TYPE_MAPPING_LTZ && $timestampTypeMapping !== self::TIMESTAMP_TYPE_MAPPING_NTZ) {
+            throw new \InvalidArgumentException(sprintf(
+                'Invalid Snowflake timestamp type mapping provided: "%s"',
+                $timestampTypeMapping
+            ));
+        }
+
         switch (strtoupper($this->type)) {
             case "INT":
             case "INTEGER":
@@ -122,9 +133,8 @@ class Definition extends Snowflake
             case "DATETIME":
                 $basetype = "TIMESTAMP_NTZ";
                 break;
-            //@FIXME https://docs.snowflake.net/manuals/sql-reference/parameters.html#label-timestamp-type-mapping
             case "TIMESTAMP":
-                $basetype = "TIMESTAMP_LTZ";
+                $basetype = $timestampTypeMapping;
                 break;
             case "TIMESTAMP_NTZ":
                 $basetype = "TIMESTAMP_NTZ";

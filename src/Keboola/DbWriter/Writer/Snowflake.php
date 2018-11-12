@@ -365,6 +365,24 @@ class Snowflake extends Writer implements WriterInterface
         return null;
     }
 
+    public function getTimestampTypeMapping()
+    {
+        $sql = sprintf(
+            "SHOW PARAMETERS LIKE 'TIMESTAMP_TYPE_MAPPING';",
+            $this->db->quoteIdentifier($this->getCurrentUser())
+        );
+
+        $config = $this->db->fetchAll($sql);
+
+        foreach ($config as $item) {
+            if ($item['key'] === 'TIMESTAMP_TYPE_MAPPING') {
+                return $item['value'];
+            }
+        }
+
+        return null;
+    }
+
     public function testConnection()
     {
         $this->execQuery('SELECT current_date;');
@@ -434,6 +452,11 @@ class Snowflake extends Writer implements WriterInterface
 
     public function checkDataTypes(array $columns, string $targetTable)
     {
+        $timestampMapping = $this->getTimestampTypeMapping();
+        if (!$timestampMapping) {
+            throw new UserException("Cannot detect Snowflake TIMESTAMP_TYPE_MAPPING");
+        }
+
         $columnsInDb = $this->describeTableColumns($targetTable);
         $mappingColumns = $this->describeMappingColumns($columns);
 
@@ -453,7 +476,7 @@ class Snowflake extends Writer implements WriterInterface
             $workspaceDefinition = $columnsInDb[$column];
 
             $invalidColumnMapping = false;
-            if ($definition->getSnowflakeBaseType() !== $workspaceDefinition->getSnowflakeBaseType()) {
+            if ($definition->getSnowflakeBaseType($timestampMapping) !== $workspaceDefinition->getType()) {
                 $invalidColumnMapping = true;
             } elseif ($definition->isNullable() !== $workspaceDefinition->isNullable()) {
                 $invalidColumnMapping = true;

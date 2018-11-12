@@ -7,6 +7,7 @@ use Keboola\DbWriter\Exception\ApplicationException;
 use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Logger;
 use Keboola\DbWriter\Snowflake\Connection;
+use Keboola\DbWriter\Snowflake\DataType\Definition;
 use Keboola\DbWriter\Snowflake\Test\S3Loader;
 use Keboola\DbWriter\Writer\Snowflake;
 use Keboola\DbWriter\WriterFactory;
@@ -137,6 +138,16 @@ class SnowflakeTest extends BaseTest
 
         $this->writer->drop('dropMe');
         $this->assertFalse($this->writer->tableExists('dropMe'));
+    }
+
+    public function testGetTimestampTypeMapping()
+    {
+        $timestampTypeMapping = $this->writer->getTimestampTypeMapping();
+
+        $this->assertTrue(in_array($timestampTypeMapping, [
+            Definition::TIMESTAMP_TYPE_MAPPING_LTZ,
+            Definition::TIMESTAMP_TYPE_MAPPING_NTZ,
+        ]));
     }
 
     public function createData(): array

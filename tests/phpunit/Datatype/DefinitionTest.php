@@ -25,6 +25,14 @@ class DefinitionTest extends BaseTest
         }
     }
 
+    public function timestampBaseTypes()
+    {
+        return [
+            ['TIMESTAMP_LTZ'],
+            ['TIMESTAMP_NTZ'],
+        ];
+    }
+
     public function definitionFactoryErrors(): array
     {
         return [
@@ -86,6 +94,19 @@ class DefinitionTest extends BaseTest
     }
 
     /**
+     * @dataProvider timestampBaseTypes
+     */
+    public function testTimestampBaseTypes(string $baseType)
+    {
+        $type = 'TIMESTAMP';
+
+        $this->assertNotEquals($baseType, $type);
+
+        $definition = new Definition($type);
+        $this->assertEquals($baseType, $definition->getSnowflakeBaseType($baseType));
+    }
+
+    /**
      * @dataProvider definitionFactoryErrors
      */
     public function testDefinitionFactoryErrors(array $metadata, string $expectedError)
@@ -102,6 +123,7 @@ class DefinitionTest extends BaseTest
     public function testDefinitionFactory()
     {
         $connection = $this->writer->getSnowflakeConnection();
+        $timestampTypeMapping = $this->writer->getTimestampTypeMapping();
 
         $tableName = 'testDefinitionFactory';
         $expectedDefinition = new Definition(
@@ -134,7 +156,7 @@ class DefinitionTest extends BaseTest
         $this->assertEquals($expectedDefinition->getLength(), $dbDefinition->getLength());
         $this->assertEquals($expectedDefinition->getDefault(), $dbDefinition->getDefault());
         $this->assertEquals($expectedDefinition->isNullable(), $dbDefinition->isNullable());
-        $this->assertEquals($expectedDefinition->getSnowflakeBaseType(), $dbDefinition->getType());
+        $this->assertEquals($expectedDefinition->getSnowflakeBaseType($timestampTypeMapping), $dbDefinition->getType());
     }
 
     /**
@@ -153,6 +175,7 @@ class DefinitionTest extends BaseTest
     public function testDefaultLength(string $type)
     {
         $connection = $this->writer->getSnowflakeConnection();
+        $timestampTypeMapping = $this->writer->getTimestampTypeMapping();
 
         $tableName = 'testDefaultLength';
         $expectedDefinition = new Definition($type, ['nullable' => false]);
@@ -179,7 +202,7 @@ class DefinitionTest extends BaseTest
         $this->assertEquals($expectedDefinition->getSnowflakeDefaultLength(), $dbDefinition->getLength());
         $this->assertEquals($expectedDefinition->getDefault(), $dbDefinition->getDefault());
         $this->assertEquals($expectedDefinition->isNullable(), $dbDefinition->isNullable());
-        $this->assertEquals($expectedDefinition->getSnowflakeBaseType(), $dbDefinition->getType());
+        $this->assertEquals($expectedDefinition->getSnowflakeBaseType($timestampTypeMapping), $dbDefinition->getType());
     }
 
 }
