@@ -74,6 +74,10 @@ class Definition extends Snowflake
             case "TIMESTAMP_TZ":
                 $length = "9";
                 break;
+            case "BINARY":
+            case "VARBINARY":
+                $length = "8388608";
+                break;
             default:
                 $length = null;
                 break;
@@ -139,6 +143,10 @@ class Definition extends Snowflake
                 break;
             case "OBJECT":
                 $basetype = "OBJECT";
+                break;
+            case "BINARY":
+            case "VARBINARY":
+                $basetype = "BINARY";
                 break;
             default:
                 $basetype = "VARCHAR";

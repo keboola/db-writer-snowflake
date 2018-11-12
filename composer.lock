@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2dd1ebfc16f0d318675c6d0c427dd986",
+    "content-hash": "ee52651d0cdbbaec8d150306d82a44f6",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
@@ -397,16 +397,16 @@
         },
         {
             "name": "keboola/php-datatypes",
-            "version": "3.2.1",
+            "version": "dev-erik-snow-binary",
             "source": {
                 "type": "git",
                 "url": "https://github.com/keboola/php-datatypes.git",
-                "reference": "f16967a5da1b67e4a9fb38b07a1b0df3e588abb8"
+                "reference": "3a35c5092947c1c225650adb981f70b7c15afc7e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/keboola/php-datatypes/zipball/f16967a5da1b67e4a9fb38b07a1b0df3e588abb8",
-                "reference": "f16967a5da1b67e4a9fb38b07a1b0df3e588abb8",
+                "url": "https://api.github.com/repos/keboola/php-datatypes/zipball/3a35c5092947c1c225650adb981f70b7c15afc7e",
+                "reference": "3a35c5092947c1c225650adb981f70b7c15afc7e",
                 "shasum": ""
             },
             "require-dev": {
@@ -428,7 +428,7 @@
                     "email": "ondrej.hlavacek@keboola.com"
                 }
             ],
-            "time": "2018-08-02T15:13:46+00:00"
+            "time": "2018-11-12T13:25:11+00:00"
         },
         {
             "name": "keboola/ssh-tunnel",
@@ -4004,7 +4004,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "keboola/php-datatypes": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
