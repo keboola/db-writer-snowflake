@@ -91,7 +91,7 @@ class Snowflake extends Writer implements WriterInterface
     {
         return sprintf(
             "DROP STAGE IF EXISTS %s",
-            $this->quoteIdentifier($stage)
+            $this->db->quoteIdentifier($stage)
         );
     }
 
@@ -112,7 +112,7 @@ class Snowflake extends Writer implements WriterInterface
              URL = 's3://%s'
              CREDENTIALS = (AWS_KEY_ID = %s AWS_SECRET_KEY = %s  AWS_TOKEN = %s)
             ",
-            $this->quoteIdentifier($stageName),
+            $this->db->quoteIdentifier($stageName),
             implode(' ', $csvOptions),
             $s3info['bucket'],
             $this->quote($s3info['credentials']['access_key_id']),
@@ -124,7 +124,7 @@ class Snowflake extends Writer implements WriterInterface
     private function generateCopyCommand($tableName, $stageName, $s3info, $columns)
     {
         $columnNames = array_map(function ($column) {
-            return $this->quoteIdentifier($column['dbName']);
+            return $this->db->quoteIdentifier($column['dbName']);
         }, $columns);
 
         $transformationColumns = array_map(
@@ -155,7 +155,7 @@ class Snowflake extends Writer implements WriterInterface
             $this->nameWithSchemaEscaped($tableName),
             implode(', ', $columnNames),
             implode(', ', $transformationColumns),
-            $this->quote('@' . $this->quoteIdentifier($stageName) . "/" . $path),
+            $this->quote('@' . $this->db->quoteIdentifier($stageName) . "/" . $path),
             $pattern
         );
     }
@@ -167,8 +167,8 @@ class Snowflake extends Writer implements WriterInterface
         }
         return sprintf(
             '%s.%s',
-            $this->quoteIdentifier($schemaName),
-            $this->quoteIdentifier($tableName)
+            $this->db->quoteIdentifier($schemaName),
+            $this->db->quoteIdentifier($tableName)
         );
     }
 
@@ -177,20 +177,14 @@ class Snowflake extends Writer implements WriterInterface
         return "'" . addslashes($value) . "'";
     }
 
-    private function quoteIdentifier(string $value): string
-    {
-        $q = '"';
-        return ($q . str_replace("$q", "$q$q", $value) . $q);
-    }
-
     public function drop(string $tableName): void
     {
-        $this->execQuery(sprintf("DROP TABLE IF EXISTS %s;", $this->quoteIdentifier($tableName)));
+        $this->execQuery(sprintf("DROP TABLE IF EXISTS %s;", $this->db->quoteIdentifier($tableName)));
     }
 
     public function truncate(string $tableName): void
     {
-        $this->execQuery(sprintf("TRUNCATE TABLE %s;", $this->quoteIdentifier($tableName)));
+        $this->execQuery(sprintf("TRUNCATE TABLE %s;", $this->db->quoteIdentifier($tableName)));
     }
 
     public function create(array $table): void
@@ -202,7 +196,7 @@ class Snowflake extends Writer implements WriterInterface
 
         $this->execQuery(sprintf(
             "CREATE TABLE %s (%s);",
-            $this->quoteIdentifier($table['dbName']),
+            $this->db->quoteIdentifier($table['dbName']),
             implode(', ', $sqlDefinitions)
         ));
     }
@@ -216,7 +210,7 @@ class Snowflake extends Writer implements WriterInterface
 
         $this->execQuery(sprintf(
             "CREATE TEMPORARY TABLE %s (%s);",
-            $this->quoteIdentifier($table['dbName']),
+            $this->db->quoteIdentifier($table['dbName']),
             implode(', ', $sqlDefinitions)
         ));
     }
@@ -235,7 +229,7 @@ class Snowflake extends Writer implements WriterInterface
 
         $columns = array_map(
             function ($item) {
-                return $this->quoteIdentifier($item['dbName']);
+                return $this->db->quoteIdentifier($item['dbName']);
             },
             array_filter($table['items'], function ($item) {
                 return strtolower($item['type']) !== 'ignore';
@@ -249,9 +243,9 @@ class Snowflake extends Writer implements WriterInterface
                 $joinClauseArr[] = sprintf(
                     '%s.%s=%s.%s',
                     $targetTable,
-                    $this->quoteIdentifier($value),
+                    $this->db->quoteIdentifier($value),
                     $sourceTable,
-                    $this->quoteIdentifier($value)
+                    $this->db->quoteIdentifier($value)
                 );
             }
             $joinClause = implode(' AND ', $joinClauseArr);
@@ -616,7 +610,7 @@ class Snowflake extends Writer implements WriterInterface
             }
             $sql .= sprintf(
                 "%s %s %s %s,",
-                $this->quoteIdentifier($col['dbName']),
+                $this->db->quoteIdentifier($col['dbName']),
                 $type,
                 $null,
                 $default
@@ -628,15 +622,15 @@ class Snowflake extends Writer implements WriterInterface
 
     private function getPrimaryKeySqlDefinition(array $primaryColumns): string
     {
-        $writer = $this;
+        $connection = $this->db;
 
         return sprintf(
             "PRIMARY KEY(%s)",
             implode(
                 ', ',
                 array_map(
-                    function ($primaryColumn) use ($writer) {
-                        return $writer->quoteIdentifier($primaryColumn);
+                    function ($primaryColumn) use ($connection) {
+                        return $connection->quoteIdentifier($primaryColumn);
                     },
                     $primaryColumns
                 )
