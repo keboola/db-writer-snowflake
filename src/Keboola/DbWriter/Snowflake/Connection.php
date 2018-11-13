@@ -91,6 +91,11 @@ class Connection
         return ($q . str_replace("$q", "$q$q", $value) . $q);
     }
 
+    public function quote($value): string
+    {
+        return "'" . addslashes($value) . "'";
+    }
+
     /**
      * Returns information about table:
      *  - name

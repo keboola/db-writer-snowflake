@@ -98,9 +98,9 @@ class Snowflake extends Writer implements WriterInterface
     private function generateCreateStageCommand($stageName, $s3info)
     {
         $csvOptions = [];
-        $csvOptions[] = sprintf('FIELD_DELIMITER = %s', $this->quote(','));
-        $csvOptions[] = sprintf("FIELD_OPTIONALLY_ENCLOSED_BY = %s", $this->quote('"'));
-        $csvOptions[] = sprintf("ESCAPE_UNENCLOSED_FIELD = %s", $this->quote('\\'));
+        $csvOptions[] = sprintf('FIELD_DELIMITER = %s', $this->db->quote(','));
+        $csvOptions[] = sprintf("FIELD_OPTIONALLY_ENCLOSED_BY = %s", $this->db->quote('"'));
+        $csvOptions[] = sprintf("ESCAPE_UNENCLOSED_FIELD = %s", $this->db->quote('\\'));
 
         if (!$s3info['isSliced']) {
             $csvOptions[] = "SKIP_HEADER = 1";
@@ -115,9 +115,9 @@ class Snowflake extends Writer implements WriterInterface
             $this->db->quoteIdentifier($stageName),
             implode(' ', $csvOptions),
             $s3info['bucket'],
-            $this->quote($s3info['credentials']['access_key_id']),
-            $this->quote($s3info['credentials']['secret_access_key']),
-            $this->quote($s3info['credentials']['session_token'])
+            $this->db->quote($s3info['credentials']['access_key_id']),
+            $this->db->quote($s3info['credentials']['secret_access_key']),
+            $this->db->quote($s3info['credentials']['session_token'])
         );
     }
 
@@ -155,7 +155,7 @@ class Snowflake extends Writer implements WriterInterface
             $this->nameWithSchemaEscaped($tableName),
             implode(', ', $columnNames),
             implode(', ', $transformationColumns),
-            $this->quote('@' . $this->db->quoteIdentifier($stageName) . "/" . $path),
+            $this->db->quote('@' . $this->db->quoteIdentifier($stageName) . "/" . $path),
             $pattern
         );
     }
@@ -170,11 +170,6 @@ class Snowflake extends Writer implements WriterInterface
             $this->db->quoteIdentifier($schemaName),
             $this->db->quoteIdentifier($tableName)
         );
-    }
-
-    private function quote(string $value): string
-    {
-        return "'" . addslashes($value) . "'";
     }
 
     public function drop(string $tableName): void
@@ -302,9 +297,9 @@ class Snowflake extends Writer implements WriterInterface
                 AND TABLE_SCHEMA = %s
                 AND TABLE_CATALOG = %s
             ",
-            $this->quote($tableName),
-            $this->quote($this->dbParams['schema']),
-            $this->quote($this->dbParams['database'])
+            $this->db->quote($tableName),
+            $this->db->quote($this->dbParams['schema']),
+            $this->db->quote($this->dbParams['database'])
         ));
 
 
