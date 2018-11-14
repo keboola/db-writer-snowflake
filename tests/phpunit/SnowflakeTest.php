@@ -240,6 +240,51 @@ class SnowflakeTest extends BaseTest
         }
     }
 
+    public function testCreateTextColumnWithDefaultValue()
+    {
+        $connection = $this->writer->getSnowflakeConnection();
+
+        $tableName = 'textColumnWithDefault';
+        $defaultValue = 'test default';
+
+        $this->writer->drop($tableName);
+
+        $this->writer->create([
+            'dbName' => $tableName,
+            'items' => [
+                [
+                    'name' => 'id',
+                    'dbName' => 'id',
+                    'type' => 'INT',
+                ],
+                [
+                    'name' => 'description',
+                    'dbName' => 'descriptionWithDefault',
+                    'type' => 'TEXT',
+                    'default' => $defaultValue,
+                ],
+            ]
+        ]);
+
+        $sql = 'INSERT INTO %s (%s) VALUES (%s);';
+
+        $connection->query(sprintf(
+            $sql,
+            $connection->quoteIdentifier($tableName),
+            $connection->quoteIdentifier('id'),
+            1
+        ));
+
+
+        $rows = $connection->fetchAll(sprintf('SELECT * FROM %s;', $connection->quoteIdentifier($tableName)));
+        $this->assertCount(1, $rows);
+
+        $row = reset($rows);
+
+        $this->assertNotEmpty($row['descriptionWithDefault']);
+        $this->assertEquals($defaultValue, $row['descriptionWithDefault']);
+    }
+
     public function testStageName()
     {
         $this->assertFalse($this->writer->generateStageName((string) getenv('KBC_RUNID')) === Snowflake::STAGE_NAME);
