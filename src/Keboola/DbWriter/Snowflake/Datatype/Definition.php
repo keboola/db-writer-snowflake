@@ -41,7 +41,7 @@ class Definition extends Snowflake
             [
                 "nullable" => $meta['null?'] === 'Y' ? true : false,
                 "length" => $length,
-//                "default" => $meta['default'], //@FIXME default value quoting for string type
+                "default" => isset($meta['default']) ? $meta['default'] : null,
             ]
         );
     }

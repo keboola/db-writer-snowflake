@@ -120,30 +120,83 @@ class DefinitionTest extends BaseTest
         }
     }
 
-    public function testDefinitionFactory()
+    public function definitionFactory(): array
     {
-        $connection = $this->writer->getSnowflakeConnection();
+        return [
+            [
+                'VARCHAR',
+                [
+                    'length' => 50,
+                    'nullable' => true,
+                ],
+            ],
+            [
+                'VARCHAR',
+                [
+                    'length' => 50,
+                    'nullable' => true,
+                    'default' => null,
+                ],
+            ],
+            [
+                'VARCHAR',
+                [
+                    'length' => 255,
+                    'nullable' => false,
+                    'default' => 'mydefault',
+                ],
+            ],
+            [
+                'VARCHAR',
+                [
+                    'length' => 255,
+                    'nullable' => false,
+                    'default' => '',
+                ],
+            ],
+            [
+                'TEXT',
+                [
+                    'nullable' => true,
+                    'default' => 'mydefault',
+                ],
+            ],
+//            [
+//                // @FIXME after https://github.com/keboola/db-writer-snowflake/issues/50
+//                'INT',
+//                [
+//                    'nullable' => false,
+//                    'default' => 60,
+//                ]
+//            ],
+        ];
+    }
+
+    /**
+     * @dataProvider definitionFactory
+     */
+    public function testDefinitionFactory(string $columnType, array $columnOptions)
+    {
         $timestampTypeMapping = $this->writer->getTimestampTypeMapping();
 
         $tableName = 'testDefinitionFactory';
-        $expectedDefinition = new Definition(
-            'VARCHAR',
-            [
-                'length' => 50,
-                'nullable' => false,
-//                'default' => 'mydefault',
-            ]
-        );
+        $expectedDefinition = new Definition($columnType, $columnOptions);
 
         $this->writer->drop($tableName);
 
-        $sql = sprintf(
-            'CREATE TABLE %s (%s VARCHAR(50) NOT NULL DEFAULT \'mydefault\');',
-            $connection->quoteIdentifier($tableName),
-            $connection->quoteIdentifier("test")
-        );
-
-        $connection->query($sql);
+        $this->writer->create([
+            'dbName' => $tableName,
+            'items' => [
+                [
+                    "name" => "glasses",
+                    "dbName" => "test",
+                    "type" => strtolower($expectedDefinition->getType()),
+                    "size" => $expectedDefinition->getLength(),
+                    "nullable" => $expectedDefinition->isNullable(),
+                    "default" => $expectedDefinition->getDefault(),
+                ]
+            ]
+        ]);
 
         $columnsInfo = $this->writer->getTableInfo($tableName);
         $this->assertCount(1, $columnsInfo);
@@ -153,8 +206,18 @@ class DefinitionTest extends BaseTest
 
         $dbDefinition = Definition::createFromSnowflakeMetadata(reset($columnsInfo));
 
-        $this->assertEquals($expectedDefinition->getLength(), $dbDefinition->getLength());
-        $this->assertEquals($expectedDefinition->getDefault(), $dbDefinition->getDefault());
+        if ($expectedDefinition->getLength() === null) {
+            $this->assertEquals($expectedDefinition->getSnowflakeDefaultLength(), $dbDefinition->getLength());
+        } else {
+            $this->assertEquals($expectedDefinition->getLength(), $dbDefinition->getLength());
+        }
+
+        if ($expectedDefinition->getBasetype() === 'STRING' && $expectedDefinition->getDefault() !== null) {
+            $this->assertEquals($this->writer->getSnowflakeConnection()->quote($expectedDefinition->getDefault()), $dbDefinition->getDefault());
+        } else {
+            $this->assertEquals($expectedDefinition->getDefault(), $dbDefinition->getDefault());
+        }
+
         $this->assertEquals($expectedDefinition->isNullable(), $dbDefinition->isNullable());
         $this->assertEquals($expectedDefinition->getSnowflakeBaseType($timestampTypeMapping), $dbDefinition->getType());
     }
@@ -174,7 +237,6 @@ class DefinitionTest extends BaseTest
      */
     public function testDefaultLength(string $type)
     {
-        $connection = $this->writer->getSnowflakeConnection();
         $timestampTypeMapping = $this->writer->getTimestampTypeMapping();
 
         $tableName = 'testDefaultLength';
@@ -182,14 +244,19 @@ class DefinitionTest extends BaseTest
 
         $this->writer->drop($tableName);
 
-        $sql = sprintf(
-            'CREATE TABLE %s (%s %s NOT NULL);',
-            $connection->quoteIdentifier($tableName),
-            $connection->quoteIdentifier($tableName),
-            $type
-        );
-
-        $connection->query($sql);
+        $this->writer->create([
+            'dbName' => $tableName,
+            'items' => [
+                [
+                    "name" => "glasses",
+                    "dbName" => $tableName,
+                    "type" => strtolower($expectedDefinition->getType()),
+                    "size" => $expectedDefinition->getLength(),
+                    "nullable" => $expectedDefinition->isNullable(),
+                    "default" => $expectedDefinition->getDefault(),
+                ]
+            ]
+        ]);
 
         $columnsInfo = $this->writer->getTableInfo($tableName);
         $this->assertCount(1, $columnsInfo);

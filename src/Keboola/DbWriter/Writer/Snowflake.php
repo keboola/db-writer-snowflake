@@ -599,8 +599,7 @@ class Snowflake extends Writer implements WriterInterface
                 $type .= sprintf("(%s)", $col['size']);
             }
             $null = $col['nullable'] ? 'NULL' : 'NOT NULL';
-            $default = empty($col['default']) ? '' : "DEFAULT '{$col['default']}'";
-
+            $default = isset($col['default']) ? "DEFAULT '{$col['default']}'" : '';
             $sql .= sprintf(
                 "%s %s %s %s,",
                 $this->db->quoteIdentifier($col['dbName']),
