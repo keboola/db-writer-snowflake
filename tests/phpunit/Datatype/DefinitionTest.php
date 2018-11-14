@@ -161,14 +161,27 @@ class DefinitionTest extends BaseTest
                     'default' => 'mydefault',
                 ],
             ],
-//            [
-//                // @FIXME after https://github.com/keboola/db-writer-snowflake/issues/50
-//                'INT',
-//                [
-//                    'nullable' => false,
-//                    'default' => 60,
-//                ]
-//            ],
+            [
+                'INT',
+                [
+                    'nullable' => false,
+                    'default' => 60,
+                ]
+            ],
+            [
+                'INT',
+                [
+                    'nullable' => false,
+                    'default' => null,
+                ]
+            ],
+            [
+                'INT',
+                [
+                    'nullable' => false,
+                    'default' => 0,
+                ]
+            ],
         ];
     }
 
