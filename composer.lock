@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ee52651d0cdbbaec8d150306d82a44f6",
+    "content-hash": "dfa24fb1e5d1ede44195954376077818",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
@@ -397,16 +397,16 @@
         },
         {
             "name": "keboola/php-datatypes",
-            "version": "dev-erik-snow-binary",
+            "version": "dev-erik-test",
             "source": {
                 "type": "git",
                 "url": "https://github.com/keboola/php-datatypes.git",
-                "reference": "3a35c5092947c1c225650adb981f70b7c15afc7e"
+                "reference": "e5e2a56a82957d65049fef02b5c1796c70d29395"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/keboola/php-datatypes/zipball/3a35c5092947c1c225650adb981f70b7c15afc7e",
-                "reference": "3a35c5092947c1c225650adb981f70b7c15afc7e",
+                "url": "https://api.github.com/repos/keboola/php-datatypes/zipball/e5e2a56a82957d65049fef02b5c1796c70d29395",
+                "reference": "e5e2a56a82957d65049fef02b5c1796c70d29395",
                 "shasum": ""
             },
             "require-dev": {
@@ -428,7 +428,7 @@
                     "email": "ondrej.hlavacek@keboola.com"
                 }
             ],
-            "time": "2018-11-12T13:25:11+00:00"
+            "time": "2018-11-18T10:54:36+00:00"
         },
         {
             "name": "keboola/ssh-tunnel",
