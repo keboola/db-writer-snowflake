@@ -9,6 +9,27 @@ class Definition extends Snowflake
     public const TIMESTAMP_TYPE_MAPPING_LTZ = 'TIMESTAMP_LTZ';
     public const TIMESTAMP_TYPE_MAPPING_NTZ = 'TIMESTAMP_NTZ';
 
+    public static function createFromTableMapping(array $column): Definition
+    {
+        $requiredAttributes = [
+            'type',
+        ];
+
+        $missingOptions = array_diff($requiredAttributes, array_keys($column));
+        if (!empty($missingOptions)) {
+            throw new \InvalidArgumentException('Missing column defintion: ' . implode(', ', $missingOptions));
+        }
+
+        return new Definition(
+            $column['type'],
+            [
+                "nullable" => isset($column['nullable']) && $column['nullable'] ? true : false,
+                "length" => isset($column['size']) ? $column['size'] : null,
+                "default" => isset($column['default']) ? $column['default'] : null,
+            ]
+        );
+    }
+
     public static function createFromSnowflakeMetadata(array $meta): Definition
     {
         $requiredMetadata = [

@@ -520,14 +520,7 @@ class Snowflake extends Writer implements WriterInterface
     {
         $return = [];
         foreach ($columns as $columnDefinition) {
-            $return[$columnDefinition['dbName']] = new DataType\Definition(
-                $columnDefinition['type'],
-                [
-                    //@FIXME default value
-                    "nullable" => $columnDefinition['nullable'] ? true : false,
-                    "length" => !empty($columnDefinition['size']) ? (string) $columnDefinition['size'] : null,
-                ]
-            );
+            $return[$columnDefinition['dbName']] = DataType\Definition::createFromTableMapping($columnDefinition);
         }
 
         return $return;
