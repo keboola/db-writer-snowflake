@@ -610,6 +610,189 @@ class SnowflakeTest extends BaseTest
         $this->assertNull($glassesColumnInfo['default']);
     }
 
+    public function checkColumnsData(): array
+    {
+        return [
+            [
+                [
+                    [
+                        'name' => 'id',
+                        'dbName' => 'id',
+                        'type' => 'INT',
+                    ],
+                    [
+                        'name' => 'name',
+                        'dbName' => 'name',
+                        'type' => 'VARCHAR',
+                    ],
+                ],
+            ],
+            [
+                [
+                    [
+                        'name' => 'id',
+                        'dbName' => 'idRenamed',
+                        'type' => 'INT',
+                    ],
+                    [
+                        'name' => 'name',
+                        'dbName' => 'nameRenamed',
+                        'type' => 'VARCHAR',
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @dataProvider checkColumnsData
+     */
+    public function testCheckColumns(array $dbColumns): void
+    {
+        $table = [
+            'tableId' => 'testCheckColumns',
+            'dbName' => 'testCheckColumns',
+            'export' => true,
+            'incremental' => true,
+            'primaryKey' => [],
+            'items' => $dbColumns,
+        ];
+
+        $this->writer->drop($table['dbName']);
+        $this->writer->create($table);
+
+        // test with columns in different order
+        $this->writer->checkColumns(array_reverse($table['items']), $table['dbName']);
+
+        // no exception thrown, that's good
+        $this->assertTrue(true);
+    }
+
+    public function checkColumnsErrorData(): array
+    {
+        return [
+            [
+                [
+                    [
+                        'name' => 'id',
+                        'dbName' => 'id',
+                        'type' => 'INT',
+                    ],
+                    [
+                        'name' => 'name',
+                        'dbName' => 'name',
+                        'type' => 'VARCHAR',
+                    ],
+                ],
+                [
+                    [
+                        'name' => 'id',
+                        'dbName' => 'id',
+                        'type' => 'INT',
+                    ],
+                ],
+                'Some columns are missing in the mapping',
+                'name',
+            ],
+            [
+                [
+                    [
+                        'name' => 'id',
+                        'dbName' => 'idRenamed',
+                        'type' => 'INT',
+                    ],
+                    [
+                        'name' => 'name',
+                        'dbName' => 'nameRenamed',
+                        'type' => 'VARCHAR',
+                    ],
+                ],
+                [
+                    [
+                        'name' => 'id',
+                        'dbName' => 'idRenamed',
+                        'type' => 'INT',
+                    ],
+                ],
+                'Some columns are missing in the mapping',
+                'nameRenamed',
+            ],
+            [
+                [
+                    [
+                        'name' => 'name',
+                        'dbName' => 'name',
+                        'type' => 'VARCHAR',
+                    ],
+                ],
+                [
+                    [
+                        'name' => 'id',
+                        'dbName' => 'id',
+                        'type' => 'INT',
+                    ],
+                    [
+                        'name' => 'name',
+                        'dbName' => 'name',
+                        'type' => 'VARCHAR',
+                    ],
+                ],
+                'Some columns are missing in DB table',
+                'id',
+            ],
+            [
+                [
+                    [
+                        'name' => 'name',
+                        'dbName' => 'nameRenamed',
+                        'type' => 'VARCHAR',
+                    ],
+                ],
+                [
+                    [
+                        'name' => 'id',
+                        'dbName' => 'idRenamed',
+                        'type' => 'INT',
+                    ],
+                    [
+                        'name' => 'name',
+                        'dbName' => 'nameRenamed',
+                        'type' => 'VARCHAR',
+                    ],
+                ],
+                'Some columns are missing in DB table',
+                'idRenamed',
+            ],
+        ];
+    }
+
+    /**
+     * @dataProvider checkColumnsErrorData
+     */
+    public function testCheckColumnsError(array $dbColumns, array $mappingColumns, string $expError, string $expErrorColumn): void
+    {
+        $table = [
+            'tableId' => 'testCheckColumnsError',
+            'dbName' => 'testCheckColumnsError',
+            'export' => true,
+            'incremental' => true,
+            'primaryKey' => [],
+            'items' => $dbColumns,
+        ];
+
+        $this->writer->drop($table['dbName']);
+        $this->writer->create($table);
+
+        // test with columns in different order
+        try {
+            $this->writer->checkColumns($mappingColumns, $table['dbName']);
+            $this->fail('Check columns with different mapping should produce error');
+        } catch (UserException $e){
+            $this->assertContains($expError, $e->getMessage());
+            $this->assertContains($expErrorColumn, $e->getMessage());
+        }
+    }
+
     private function setUserDefaultWarehouse(?string $warehouse = null): void
     {
         $user = $this->writer->getCurrentUser();

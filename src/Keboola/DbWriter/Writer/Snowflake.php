@@ -415,7 +415,6 @@ class Snowflake extends Writer implements WriterInterface
         $columnsInDb = $this->describeTableColumns($targetTable);
         $mappingColumns = $this->describeMappingColumns($columns);
 
-
         $requiredColumnsInDb = array_keys($mappingColumns);
         $dbMissingColumns = array_values(array_udiff(array_keys($columnsInDb), $requiredColumnsInDb, 'strcasecmp'));
         if (count($dbMissingColumns) > 0) {
@@ -449,7 +448,6 @@ class Snowflake extends Writer implements WriterInterface
         $columnsInDb = $this->describeTableColumns($targetTable);
         $mappingColumns = $this->describeMappingColumns($columns);
 
-        //@FIXME rename test!
         $dataTypeErrors = [];
         foreach ($mappingColumns as $column => $definition) {
             if (!array_key_exists($column, $columnsInDb)) {
