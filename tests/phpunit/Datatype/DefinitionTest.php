@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Keboola\DbWriter\Snowflake\Tests\Datatype;
 
@@ -25,7 +26,7 @@ class DefinitionTest extends BaseTest
         }
     }
 
-    public function timestampBaseTypes()
+    public function timestampBaseTypesData(): array
     {
         return [
             ['TIMESTAMP_LTZ'],
@@ -33,7 +34,7 @@ class DefinitionTest extends BaseTest
         ];
     }
 
-    public function definitionFactoryErrors(): array
+    public function definitionFactoryErrorsData(): array
     {
         return [
             [
@@ -73,54 +74,7 @@ class DefinitionTest extends BaseTest
         ];
     }
 
-    public function writerAllowedTypes(): array
-    {
-        return array_map(
-            function ($type) {
-                return [$type];
-            },
-            Snowflake::getAllowedTypes()
-        );
-    }
-
-    public function defaultLengthData(): array
-    {
-        return array_map(
-            function ($type) {
-                return [$type];
-            },
-            \Keboola\Datatype\Definition\Snowflake::TYPES
-        );
-    }
-
-    /**
-     * @dataProvider timestampBaseTypes
-     */
-    public function testTimestampBaseTypes(string $baseType)
-    {
-        $type = 'TIMESTAMP';
-
-        $this->assertNotEquals($baseType, $type);
-
-        $definition = new Definition($type);
-        $this->assertEquals($baseType, $definition->getSnowflakeBaseType($baseType));
-    }
-
-    /**
-     * @dataProvider definitionFactoryErrors
-     */
-    public function testDefinitionFactoryErrors(array $metadata, string $expectedError)
-    {
-        try {
-            Definition::createFromSnowflakeMetadata($metadata);
-            $this->fail('Creating Definition from metadata should fail');
-        } catch (\InvalidArgumentException $e) {
-            $this->assertEquals($expectedError, $e->getMessage());
-
-        }
-    }
-
-    public function definitionFactory(): array
+    public function definitionFactoryData(): array
     {
         return [
             [
@@ -185,10 +139,57 @@ class DefinitionTest extends BaseTest
         ];
     }
 
+    public function writerAllowedTypesData(): array
+    {
+        return array_map(
+            function ($type) {
+                return [$type];
+            },
+            Snowflake::getAllowedTypes()
+        );
+    }
+
+    public function defaultLengthData(): array
+    {
+        return array_map(
+            function ($type) {
+                return [$type];
+            },
+            \Keboola\Datatype\Definition\Snowflake::TYPES
+        );
+    }
+
     /**
-     * @dataProvider definitionFactory
+     * @dataProvider timestampBaseTypesData
      */
-    public function testDefinitionFactory(string $columnType, array $columnOptions)
+    public function testTimestampBaseTypes(string $baseType): void
+    {
+        $type = 'TIMESTAMP';
+
+        $this->assertNotEquals($baseType, $type);
+
+        $definition = new Definition($type);
+        $this->assertEquals($baseType, $definition->getSnowflakeBaseType($baseType));
+    }
+
+    /**
+     * @dataProvider definitionFactoryErrorsData
+     */
+    public function testDefinitionFactoryErrors(array $metadata, string $expectedError): void
+    {
+        try {
+            Definition::createFromSnowflakeMetadata($metadata);
+            $this->fail('Creating Definition from metadata should fail');
+        } catch (\InvalidArgumentException $e) {
+            $this->assertEquals($expectedError, $e->getMessage());
+
+        }
+    }
+
+    /**
+     * @dataProvider definitionFactoryData
+     */
+    public function testDefinitionFactory(string $columnType, array $columnOptions): void
     {
         $timestampTypeMapping = $this->writer->getTimestampTypeMapping();
 
@@ -236,9 +237,9 @@ class DefinitionTest extends BaseTest
     }
 
     /**
-     * @dataProvider writerAllowedTypes
+     * @dataProvider writerAllowedTypesData
      */
-    public function testWriterAllowedTypes($type)
+    public function testWriterAllowedTypes($type): void
     {
         $definition = new Definition($type);
 
@@ -248,7 +249,7 @@ class DefinitionTest extends BaseTest
     /**
      * @dataProvider defaultLengthData
      */
-    public function testDefaultLength(string $type)
+    public function testDefaultLength(string $type): void
     {
         $timestampTypeMapping = $this->writer->getTimestampTypeMapping();
 
@@ -284,5 +285,4 @@ class DefinitionTest extends BaseTest
         $this->assertEquals($expectedDefinition->isNullable(), $dbDefinition->isNullable());
         $this->assertEquals($expectedDefinition->getSnowflakeBaseType($timestampTypeMapping), $dbDefinition->getType());
     }
-
 }
