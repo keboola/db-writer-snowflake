@@ -354,7 +354,7 @@ class Snowflake extends Writer implements WriterInterface
         return null;
     }
 
-    public function getTimestampTypeMapping()
+    public function getTimestampTypeMapping(): ?string
     {
         $sql = sprintf(
             "SHOW PARAMETERS LIKE 'TIMESTAMP_TYPE_MAPPING';",
