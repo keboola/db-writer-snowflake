@@ -352,10 +352,7 @@ class Snowflake extends Writer implements WriterInterface
 
     public function getTimestampTypeMapping(): ?string
     {
-        $sql = sprintf(
-            "SHOW PARAMETERS LIKE 'TIMESTAMP_TYPE_MAPPING';",
-            $this->db->quoteIdentifier($this->getCurrentUser())
-        );
+        $sql = "SHOW PARAMETERS LIKE 'TIMESTAMP_TYPE_MAPPING';";
 
         $config = $this->db->fetchAll($sql);
 

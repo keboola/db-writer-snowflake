@@ -1204,9 +1204,8 @@ class SnowflakeTest extends BaseTest
         $this->writer->drop($actualTable['dbName']);
         $this->writer->create($expectedTable);
 
-        // test with columns in different order
         try {
-            $this->writer->validateTable($actualTable, $actualTable['dbName']);
+            $this->writer->validateTable($actualTable);
             $this->fail('Check columns with different mapping should produce error');
         } catch (UserException $e) {
             $this->assertContains($expError, $e->getMessage());

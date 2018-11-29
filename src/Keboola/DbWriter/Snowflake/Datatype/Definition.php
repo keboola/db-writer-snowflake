@@ -32,10 +32,10 @@ class Definition extends Snowflake
 
     public static function stripDefaultValueQuoting(string $text): string
     {
-        return preg_replace(
+        return (string) preg_replace(
             '/[\']{2}/',
             '\'',
-            preg_replace(
+            (string) preg_replace(
                 '/(^[\']|[\']$)/',
                 '',
                 $text

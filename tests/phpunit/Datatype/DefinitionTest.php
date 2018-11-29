@@ -330,7 +330,7 @@ class DefinitionTest extends BaseTest
 
         $this->assertSame($expectedDefinition->getDefault(), $dbDefinition->getDefault());
         $this->assertSame($expectedDefinition->isNullable(), $dbDefinition->isNullable());
-        $this->assertSame($expectedDefinition->getSnowflakeBaseType($timestampTypeMapping), $dbDefinition->getType());
+        $this->assertSame($expectedDefinition->getSnowflakeBaseType((string) $timestampTypeMapping), $dbDefinition->getType());
     }
 
     /**
@@ -380,7 +380,7 @@ class DefinitionTest extends BaseTest
         $this->assertSame($expectedDefinition->getSnowflakeDefaultLength(), $dbDefinition->getLength());
         $this->assertSame($expectedDefinition->getDefault(), $dbDefinition->getDefault());
         $this->assertSame($expectedDefinition->isNullable(), $dbDefinition->isNullable());
-        $this->assertSame($expectedDefinition->getSnowflakeBaseType($timestampTypeMapping), $dbDefinition->getType());
+        $this->assertSame($expectedDefinition->getSnowflakeBaseType((string) $timestampTypeMapping), $dbDefinition->getType());
     }
 
     /**
