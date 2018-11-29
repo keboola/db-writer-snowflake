@@ -463,16 +463,17 @@ class Snowflake extends Writer implements WriterInterface
             $workspaceDefinition = $columnsInDb[$column];
 
             $invalidColumnMapping = false;
+
+            $definitionLength = $definition->getLength() !== null ? $definition->getLength() : $definition->getSnowflakeDefaultLength();
+
             if ($definition->getSnowflakeBaseType($timestampMapping) !== $workspaceDefinition->getType()) {
                 $invalidColumnMapping = true;
             } elseif ($definition->isNullable() !== $workspaceDefinition->isNullable()) {
                 $invalidColumnMapping = true;
-            } elseif ($definition->getLength() !== $workspaceDefinition->getLength()) {
-                if ($definition->getLength() !== null) {
-                    $invalidColumnMapping = true;
-                } elseif ($definition->getSnowflakeDefaultLength() !== $workspaceDefinition->getLength()) {
-                    $invalidColumnMapping = true;
-                }
+            } elseif ($definition->getDefault() !== $workspaceDefinition->getDefault()) {
+                $invalidColumnMapping = true;
+            } elseif ($definitionLength !== $workspaceDefinition->getLength()) {
+                $invalidColumnMapping = true;
             }
 
             if ($invalidColumnMapping) {
