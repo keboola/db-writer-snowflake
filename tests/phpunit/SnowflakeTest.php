@@ -1059,4 +1059,157 @@ class SnowflakeTest extends BaseTest
             $this->assertEmpty($this->writer->getUserDefaultWarehouse());
         }
     }
+
+    public function validateTableErrorData(): array
+    {
+        return [
+            [
+                [
+                    'tableId' => 'testValidateTableError',
+                    'dbName' => 'testValidateTableError',
+                    'export' => true,
+                    'incremental' => true,
+                    'primaryKey' => [],
+                    'items' => [
+                        [
+                            'name' => 'name',
+                            'dbName' => 'name',
+                            'type' => 'VARCHAR',
+                        ],
+                    ],
+                ],
+                [
+                    'tableId' => 'testValidateTableError',
+                    'dbName' => 'testValidateTableError',
+                    'export' => true,
+                    'incremental' => true,
+                    'primaryKey' => [],
+                    'items' => [
+                        [
+                            'name' => 'id',
+                            'dbName' => 'id',
+                            'type' => 'INT',
+                        ],
+                        [
+                            'name' => 'name',
+                            'dbName' => 'name',
+                            'type' => 'VARCHAR',
+                        ],
+                    ],
+                ],
+                'Some columns are missing',
+            ],
+            [
+                [
+                    'tableId' => 'testValidateTableError',
+                    'dbName' => 'testValidateTableError',
+                    'export' => true,
+                    'incremental' => true,
+                    'primaryKey' => ['name'],
+                    'items' => [
+                        [
+                            'name' => 'name',
+                            'dbName' => 'name',
+                            'type' => 'VARCHAR',
+                        ],
+                    ],
+                ],
+                [
+                    'tableId' => 'testValidateTableError',
+                    'dbName' => 'testValidateTableError',
+                    'export' => true,
+                    'incremental' => true,
+                    'primaryKey' => [],
+                    'items' => [
+                        [
+                            'name' => 'name',
+                            'dbName' => 'name',
+                            'type' => 'VARCHAR',
+                        ],
+                    ],
+                ],
+                'Primary key(s) in configuration does NOT match with keys in DB table',
+            ],
+            [
+                [
+                    'tableId' => 'testValidateTableError',
+                    'dbName' => 'testValidateTableError',
+                    'export' => true,
+                    'incremental' => true,
+                    'primaryKey' => [],
+                    'items' => [
+                        [
+                            'name' => 'name',
+                            'dbName' => 'name',
+                            'type' => 'VARCHAR',
+                        ],
+                    ],
+                ],
+                [
+                    'tableId' => 'testValidateTableError',
+                    'dbName' => 'testValidateTableError',
+                    'export' => true,
+                    'incremental' => true,
+                    'primaryKey' => [],
+                    'items' => [
+                        [
+                            'name' => 'name',
+                            'dbName' => 'name',
+                            'type' => 'INT',
+                        ],
+                    ],
+                ],
+                'Different mapping between incremental load and workspace for columns',
+            ],
+            [
+                [
+                    'tableId' => 'testValidateTableError',
+                    'dbName' => 'testValidateTableError',
+                    'export' => true,
+                    'incremental' => true,
+                    'primaryKey' => [],
+                    'items' => [
+                        [
+                            'name' => 'name',
+                            'dbName' => 'name',
+                            'type' => 'INT',
+                        ],
+                    ],
+                ],
+                [
+                    'tableId' => 'testValidateTableError',
+                    'dbName' => 'testValidateTableError',
+                    'export' => true,
+                    'incremental' => true,
+                    'primaryKey' => [],
+                    'items' => [
+                        [
+                            'name' => 'name',
+                            'dbName' => 'name',
+                            'type' => 'INT',
+                            'size' => 255255,
+                        ],
+                    ],
+                ],
+                'Invalid mapping for column',
+            ],
+        ];
+    }
+
+    /**
+     * @dataProvider validateTableErrorData
+     */
+    public function testValidateTableError(array $expectedTable, array $actualTable, string $expError): void
+    {
+        $this->writer->drop($actualTable['dbName']);
+        $this->writer->create($expectedTable);
+
+        // test with columns in different order
+        try {
+            $this->writer->validateTable($actualTable, $actualTable['dbName']);
+            $this->fail('Check columns with different mapping should produce error');
+        } catch (UserException $e) {
+            $this->assertContains($expError, $e->getMessage());
+        }
+    }
 }
