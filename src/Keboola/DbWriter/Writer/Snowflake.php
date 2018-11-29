@@ -3,6 +3,7 @@
 namespace Keboola\DbWriter\Writer;
 
 use Keboola\Csv\CsvFile;
+use Keboola\Datatype\Definition;
 use Keboola\DbWriter\Exception\ApplicationException;
 use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Logger;
@@ -514,7 +515,15 @@ class Snowflake extends Writer implements WriterInterface
     {
         $return = [];
         foreach ($columns as $columnDefinition) {
-            $return[$columnDefinition['dbName']] = DataType\Definition::createFromTableMapping($columnDefinition);
+            try {
+                $return[$columnDefinition['dbName']] = DataType\Definition::createFromTableMapping($columnDefinition);
+            } catch (Definition\Exception $e) {
+                throw new UserException(sprintf(
+                    "Invalid mapping for column %s: %s",
+                    $columnDefinition['dbName'],
+                    $e->getMessage()
+                ));
+            }
         }
 
         return $return;
@@ -581,13 +590,21 @@ class Snowflake extends Writer implements WriterInterface
         $sql = '';
 
         foreach ($columns as $col) {
-            $colDefinition = DataType\Definition::createFromTableMapping($col);
+            try {
+                $colDefinition = DataType\Definition::createFromTableMapping($col);
 
-            $sql .= sprintf(
-                "%s %s,",
-                $this->db->quoteIdentifier($col['dbName']),
-                $colDefinition->getSQLDefinition()
-            );
+                $sql .= sprintf(
+                    "%s %s,",
+                    $this->db->quoteIdentifier($col['dbName']),
+                    $colDefinition->getSQLDefinition()
+                );
+            } catch (Definition\Exception $e) {
+                throw new UserException(sprintf(
+                    "Invalid mapping for column %s: %s",
+                    $col['dbName'],
+                    $e->getMessage()
+                ));
+            }
         }
 
         return trim($sql, ' ,');
