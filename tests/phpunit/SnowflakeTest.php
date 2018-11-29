@@ -793,6 +793,247 @@ class SnowflakeTest extends BaseTest
         }
     }
 
+    public function checkDataTypesData(): array
+    {
+        return [
+            [
+                [
+                    [
+                        'name' => 'name',
+                        'dbName' => 'nameDefaultLength',
+                        'type' => 'VARCHAR',
+                    ],
+                    [
+                        'name' => 'age',
+                        'dbName' => 'ageDatatypeAlias',
+                        'type' => 'BIGINT',
+                    ],
+                    [
+                        'name' => 'glasses',
+                        'dbName' => 'glassesNotNullable',
+                        'type' => 'VARCHAR',
+                    ],
+                    [
+                        'name' => 'country',
+                        'dbName' => 'countryStringWithDefault',
+                        'type' => 'VARCHAR',
+                        'default' => 'cz',
+                    ],
+                    [
+                        'name' => 'region',
+                        'dbName' => 'regionIntegerWithDefault',
+                        'type' => 'BIGINT',
+                        'default' => '1',
+                    ],
+                    [
+                        'name' => 'position',
+                        'dbName' => 'positionEmptyStringDefault',
+                        'type' => 'VARCHAR',
+                        'default' => '',
+                    ],
+                ],
+                [
+                    [
+                        'name' => 'name',
+                        'dbName' => 'nameDefaultLength',
+                        'type' => 'VARCHAR',
+                        'size' => 16777216,
+                    ],
+                    [
+                        'name' => 'age',
+                        'dbName' => 'ageDatatypeAlias',
+                        'type' => 'SMALLINT',
+                    ],
+                    [
+                        'name' => 'glasses',
+                        'dbName' => 'glassesNotNullable',
+                        'type' => 'VARCHAR',
+                        'nullable' => false,
+                    ],
+                    [
+                        'name' => 'country',
+                        'dbName' => 'countryStringWithDefault',
+                        'type' => 'VARCHAR',
+                        'default' => 'cz',
+                    ],
+                    [
+                        'name' => 'region',
+                        'dbName' => 'regionIntegerWithDefault',
+                        'type' => 'BIGINT',
+                        'default' => 1,
+                    ],
+                    [
+                        'name' => 'position',
+                        'dbName' => 'positionEmptyStringDefault',
+                        'type' => 'VARCHAR',
+                        'default' => '',
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @dataProvider checkDataTypesData
+     */
+    public function testCheckDataTypes(array $dbColumns, array $mappingColumns): void
+    {
+        $table = [
+            'tableId' => 'testCheckDataTypes',
+            'dbName' => 'testCheckDataTypes',
+            'export' => true,
+            'incremental' => true,
+            'primaryKey' => [],
+            'items' => $dbColumns,
+        ];
+
+        $this->writer->drop($table['dbName']);
+        $this->writer->create($table);
+
+        // test with columns in different order
+        $this->writer->checkDataTypes(array_reverse($mappingColumns), $table['dbName']);
+
+        // no exception thrown, that's good
+        $this->assertTrue(true);
+    }
+
+    public function checkDataTypesErrorData(): array
+    {
+        return [
+            [
+                [
+                    [
+                        'name' => 'name',
+                        'dbName' => 'name',
+                        'type' => 'VARCHAR',
+                    ],
+                ],
+                [
+                    [
+                        'name' => 'name',
+                        'dbName' => 'name',
+                        'type' => 'VARCHAR',
+                        'size' => 255,
+                    ],
+                ],
+            ],
+            [
+                [
+                    [
+                        'name' => 'name',
+                        'dbName' => 'name',
+                        'type' => 'VARCHAR',
+                        'size' => 50,
+                    ],
+                ],
+                [
+                    [
+                        'name' => 'name',
+                        'dbName' => 'name',
+                        'type' => 'VARCHAR',
+                        'size' => 255,
+                    ],
+                ],
+            ],
+            [
+                [
+                    [
+                        'name' => 'age',
+                        'dbName' => 'age',
+                        'type' => 'BIGINT',
+                    ],
+                ],
+                [
+                    [
+                        'name' => 'age',
+                        'dbName' => 'age',
+                        'type' => 'FLOAT',
+                    ],
+                ],
+            ],
+            [
+                [
+                    [
+                        'name' => 'glasses',
+                        'dbName' => 'glasses',
+                        'type' => 'VARCHAR',
+                    ],
+                ],
+                [
+                    [
+                        'name' => 'glasses',
+                        'dbName' => 'glasses',
+                        'type' => 'VARCHAR',
+                        'nullable' => true,
+                    ],
+                ],
+            ],
+            [
+                [
+                    [
+                        'name' => 'country',
+                        'dbName' => 'country',
+                        'type' => 'VARCHAR',
+                        'default' => 'cz',
+                    ],
+                ],
+                [
+                    [
+                        'name' => 'country',
+                        'dbName' => 'country',
+                        'type' => 'VARCHAR',
+                        'default' => 'en',
+                    ],
+                ],
+            ],
+            [
+                [
+                    [
+                        'name' => 'country',
+                        'dbName' => 'country',
+                        'type' => 'VARCHAR',
+                        'nullable' => true,
+                        'default' => '',
+                    ],
+                ],
+                [
+                    [
+                        'name' => 'country',
+                        'dbName' => 'country',
+                        'type' => 'VARCHAR',
+                        'nullable' => true,
+                        'default' => null,
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @dataProvider checkDataTypesErrorData
+     */
+    public function testCheckDataTypesError(array $dbColumns, array $mappingColumns): void
+    {
+        $table = [
+            'tableId' => 'testCheckDataTypes',
+            'dbName' => 'testCheckDataTypes',
+            'export' => true,
+            'incremental' => true,
+            'primaryKey' => [],
+            'items' => $dbColumns,
+        ];
+
+        $this->writer->drop($table['dbName']);
+        $this->writer->create($table);
+
+        try {
+            $this->writer->checkDataTypes($mappingColumns, $table['dbName']);
+            $this->fail('Check columns with different datatype mapping should produce error');
+        } catch (UserException $e){
+            $this->assertContains('Different mapping between incremental load and workspace for columns', $e->getMessage());
+        }
+    }
+
     private function setUserDefaultWarehouse(?string $warehouse = null): void
     {
         $user = $this->writer->getCurrentUser();
