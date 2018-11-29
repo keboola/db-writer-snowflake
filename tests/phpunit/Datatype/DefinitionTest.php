@@ -116,6 +116,34 @@ class DefinitionTest extends BaseTest
                 ],
             ],
             [
+                'TEXT',
+                [
+                    'nullable' => true,
+                    'default' => ' ',
+                ],
+            ],
+            [
+                'TEXT',
+                [
+                    'nullable' => true,
+                    'default' => '\'',
+                ],
+            ],
+            [
+                'TEXT',
+                [
+                    'nullable' => true,
+                    'default' => '\'\'',
+                ],
+            ],
+            [
+                'TEXT',
+                [
+                    'nullable' => true,
+                    'default' => '"',
+                ],
+            ],
+            [
                 'INT',
                 [
                     'nullable' => false,
@@ -208,6 +236,32 @@ class DefinitionTest extends BaseTest
         ];
     }
 
+    public function stripDefaultValueQuotingData(): array
+    {
+        return [
+            [
+                "",
+                "",
+            ],
+            [
+                "''",
+                "",
+            ],
+            [
+                "' '",
+                " ",
+            ],
+            [
+                "'test'",
+                "test",
+            ],
+            [
+                "'te''st'",
+                "te'st",
+            ],
+        ];
+    }
+
     /**
      * @dataProvider timestampBaseTypesData
      */
@@ -274,12 +328,7 @@ class DefinitionTest extends BaseTest
             $this->assertTrue($expectedDefinition->getLength() === $dbDefinition->getLength());
         }
 
-        if ($expectedDefinition->getBasetype() === 'STRING' && $expectedDefinition->getDefault() !== null) {
-            $this->assertTrue($this->writer->getSnowflakeConnection()->quote($expectedDefinition->getDefault()) === $dbDefinition->getDefault());
-        } else {
-            $this->assertTrue($expectedDefinition->getDefault() === $dbDefinition->getDefault());
-        }
-
+        $this->assertTrue($expectedDefinition->getDefault() === $dbDefinition->getDefault());
         $this->assertTrue($expectedDefinition->isNullable() === $dbDefinition->isNullable());
         $this->assertTrue($expectedDefinition->getSnowflakeBaseType($timestampTypeMapping) === $dbDefinition->getType());
     }
@@ -351,5 +400,13 @@ class DefinitionTest extends BaseTest
         $this->assertTrue($expectedDefinition->getLength() === $mappingDefinition->getLength());
         $this->assertTrue($expectedDefinition->isNullable() === $mappingDefinition->isNullable());
         $this->assertTrue($expectedDefinition->getDefault() === $mappingDefinition->getDefault());
+    }
+
+    /**
+     * @dataProvider stripDefaultValueQuotingData
+     */
+    public function testStripDefaultValueQuoting(string $input, string $output): void
+    {
+        $this->assertTrue(Definition::stripDefaultValueQuoting($input) === $output);
     }
 }

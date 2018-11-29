@@ -30,6 +30,19 @@ class Definition extends Snowflake
         );
     }
 
+    public static function stripDefaultValueQuoting(string $text): string
+    {
+        return preg_replace(
+            '/[\']{2}/',
+            '\'',
+            preg_replace(
+                '/(^[\']|[\']$)/',
+                '',
+                $text
+            )
+        );
+    }
+
     public static function createFromSnowflakeMetadata(array $meta): Definition
     {
         $requiredMetadata = [
@@ -62,7 +75,7 @@ class Definition extends Snowflake
             [
                 "nullable" => $meta['null?'] === 'Y' ? true : false,
                 "length" => $length,
-                "default" => isset($meta['default']) ? $meta['default'] : null,
+                "default" => isset($meta['default']) ? self::stripDefaultValueQuoting((string) $meta['default']) : null,
             ]
         );
     }
