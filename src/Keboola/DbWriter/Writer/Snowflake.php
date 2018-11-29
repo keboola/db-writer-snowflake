@@ -586,29 +586,12 @@ class Snowflake extends Writer implements WriterInterface
         $sql = '';
 
         foreach ($columns as $col) {
-            $type = strtoupper($col['type']);
-            if (!empty($col['size']) && in_array(strtolower($col['type']), self::$typesWithSize)) {
-                $type .= sprintf("(%s)", $col['size']);
-            }
-            $null = $col['nullable'] ? 'NULL' : 'NOT NULL';
-
             $colDefinition = DataType\Definition::createFromTableMapping($col);
 
-            $default = '';
-            if ($colDefinition->getDefault() !== null) {
-                if ($colDefinition->getBasetype() === 'STRING') {
-                    $default = sprintf("DEFAULT %s", $this->db->quote($colDefinition->getDefault()));
-                } else {
-                    $default = sprintf("DEFAULT %s", addslashes($colDefinition->getDefault()));
-                }
-            }
-
             $sql .= sprintf(
-                "%s %s %s %s,",
+                "%s %s,",
                 $this->db->quoteIdentifier($col['dbName']),
-                $type,
-                $null,
-                $default
+                $colDefinition->getSQLDefinition()
             );
         }
 
