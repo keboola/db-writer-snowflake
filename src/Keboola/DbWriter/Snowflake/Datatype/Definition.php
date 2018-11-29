@@ -185,4 +185,22 @@ class Definition extends Snowflake
         }
         return $basetype;
     }
+
+    /**
+     * @return string
+     */
+    public function getSQLDefinition()
+    {
+        $definition = parent::getSQLDefinition();
+
+        if ($this->getDefault() !== null) {
+            if ($this->getBasetype() === 'STRING') {
+                $definition .= sprintf(" DEFAULT '%s'", addslashes($this->getDefault()));
+            } else {
+                $definition .= sprintf(" DEFAULT %s", addslashes($this->getDefault()));
+            }
+        }
+
+        return $definition;
+    }
 }
