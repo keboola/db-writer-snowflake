@@ -272,7 +272,7 @@ class DefinitionTest extends BaseTest
         $this->assertNotEquals($baseType, $type);
 
         $definition = new Definition($type);
-        $this->assertEquals($baseType, $definition->getSnowflakeBaseType($baseType));
+        $this->assertSame($baseType, $definition->getSnowflakeBaseType($baseType));
     }
 
     /**
@@ -284,7 +284,7 @@ class DefinitionTest extends BaseTest
             Definition::createFromSnowflakeMetadata($metadata);
             $this->fail('Creating Definition from metadata should fail');
         } catch (\InvalidArgumentException $e) {
-            $this->assertEquals($expectedError, $e->getMessage());
+            $this->assertSame($expectedError, $e->getMessage());
 
         }
     }
@@ -319,18 +319,18 @@ class DefinitionTest extends BaseTest
         $this->assertCount(1, $columnsInfo);
 
         $columnInfo = reset($columnsInfo);
-        $this->assertEquals('test', $columnInfo['name']);
+        $this->assertSame('test', $columnInfo['name']);
 
         $dbDefinition = Definition::createFromSnowflakeMetadata(reset($columnsInfo));
         if ($expectedDefinition->getLength() === null) {
-            $this->assertTrue($expectedDefinition->getSnowflakeDefaultLength() === $dbDefinition->getLength());
+            $this->assertSame($expectedDefinition->getSnowflakeDefaultLength(), $dbDefinition->getLength());
         } else {
-            $this->assertTrue($expectedDefinition->getLength() === $dbDefinition->getLength());
+            $this->assertSame($expectedDefinition->getLength(), $dbDefinition->getLength());
         }
 
-        $this->assertTrue($expectedDefinition->getDefault() === $dbDefinition->getDefault());
-        $this->assertTrue($expectedDefinition->isNullable() === $dbDefinition->isNullable());
-        $this->assertTrue($expectedDefinition->getSnowflakeBaseType($timestampTypeMapping) === $dbDefinition->getType());
+        $this->assertSame($expectedDefinition->getDefault(), $dbDefinition->getDefault());
+        $this->assertSame($expectedDefinition->isNullable(), $dbDefinition->isNullable());
+        $this->assertSame($expectedDefinition->getSnowflakeBaseType($timestampTypeMapping), $dbDefinition->getType());
     }
 
     /**
@@ -340,7 +340,7 @@ class DefinitionTest extends BaseTest
     {
         $definition = new Definition($type);
 
-        $this->assertEquals($type, $definition->getType());
+        $this->assertSame($type, $definition->getType());
     }
 
     /**
@@ -373,14 +373,14 @@ class DefinitionTest extends BaseTest
         $this->assertCount(1, $columnsInfo);
 
         $columnInfo = reset($columnsInfo);
-        $this->assertEquals($tableName, $columnInfo['name']);
+        $this->assertSame($tableName, $columnInfo['name']);
 
         $dbDefinition = Definition::createFromSnowflakeMetadata(reset($columnsInfo));
 
-        $this->assertEquals($expectedDefinition->getSnowflakeDefaultLength(), $dbDefinition->getLength());
-        $this->assertEquals($expectedDefinition->getDefault(), $dbDefinition->getDefault());
-        $this->assertEquals($expectedDefinition->isNullable(), $dbDefinition->isNullable());
-        $this->assertEquals($expectedDefinition->getSnowflakeBaseType($timestampTypeMapping), $dbDefinition->getType());
+        $this->assertSame($expectedDefinition->getSnowflakeDefaultLength(), $dbDefinition->getLength());
+        $this->assertSame($expectedDefinition->getDefault(), $dbDefinition->getDefault());
+        $this->assertSame($expectedDefinition->isNullable(), $dbDefinition->isNullable());
+        $this->assertSame($expectedDefinition->getSnowflakeBaseType($timestampTypeMapping), $dbDefinition->getType());
     }
 
     /**
@@ -396,10 +396,10 @@ class DefinitionTest extends BaseTest
 
         $mappingDefinition = Definition::createFromTableMapping($column);
 
-        $this->assertTrue($expectedDefinition->getType() === $mappingDefinition->getType());
-        $this->assertTrue($expectedDefinition->getLength() === $mappingDefinition->getLength());
-        $this->assertTrue($expectedDefinition->isNullable() === $mappingDefinition->isNullable());
-        $this->assertTrue($expectedDefinition->getDefault() === $mappingDefinition->getDefault());
+        $this->assertSame($expectedDefinition->getType(), $mappingDefinition->getType());
+        $this->assertSame($expectedDefinition->getLength(), $mappingDefinition->getLength());
+        $this->assertSame($expectedDefinition->isNullable(), $mappingDefinition->isNullable());
+        $this->assertSame($expectedDefinition->getDefault(), $mappingDefinition->getDefault());
     }
 
     /**
@@ -407,6 +407,6 @@ class DefinitionTest extends BaseTest
      */
     public function testStripDefaultValueQuoting(string $input, string $output): void
     {
-        $this->assertTrue(Definition::stripDefaultValueQuoting($input) === $output);
+        $this->assertSame(Definition::stripDefaultValueQuoting($input), $output);
     }
 }
