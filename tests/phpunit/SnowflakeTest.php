@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Keboola\DbWriter\Snowflake\Tests;
@@ -264,7 +265,7 @@ class SnowflakeTest extends BaseTest
                     'type' => 'TEXT',
                     'default' => $defaultValue,
                 ],
-            ]
+            ],
         ]);
 
         $sql = 'INSERT INTO %s (%s) VALUES (%s);';
@@ -787,7 +788,7 @@ class SnowflakeTest extends BaseTest
         try {
             $this->writer->checkColumns($mappingColumns, $table['dbName']);
             $this->fail('Check columns with different mapping should produce error');
-        } catch (UserException $e){
+        } catch (UserException $e) {
             $this->assertContains($expError, $e->getMessage());
             $this->assertContains($expErrorColumn, $e->getMessage());
         }
@@ -1029,7 +1030,7 @@ class SnowflakeTest extends BaseTest
         try {
             $this->writer->checkDataTypes($mappingColumns, $table['dbName']);
             $this->fail('Check columns with different datatype mapping should produce error');
-        } catch (UserException $e){
+        } catch (UserException $e) {
             $this->assertContains('Different mapping between incremental load and workspace for columns', $e->getMessage());
         }
     }
