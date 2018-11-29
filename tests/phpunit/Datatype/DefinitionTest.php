@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Keboola\DbWriter\Snowflake\Tests\Datatype;
@@ -39,20 +40,20 @@ class DefinitionTest extends BaseTest
         return [
             [
                 [],
-                'Missing medata: kind, type, null?, default'
+                'Missing medata: kind, type, null?, default',
             ],
             [
                 [
                     'kind' => 'COLUMN',
                 ],
-                'Missing medata: type, null?, default'
+                'Missing medata: type, null?, default',
             ],
             [
                 [
                     'kind' => 'COLUMN',
                     'type' => 'TIME',
                 ],
-                'Missing medata: null?, default'
+                'Missing medata: null?, default',
             ],
             [
                 [
@@ -60,7 +61,7 @@ class DefinitionTest extends BaseTest
                     'type' => 'TIME',
                     'null?' => 'N',
                 ],
-                'Missing medata: default'
+                'Missing medata: default',
             ],
             [
                 [
@@ -69,7 +70,7 @@ class DefinitionTest extends BaseTest
                     'null?' => 'N',
                     'default' => null,
                 ],
-                'Metadata does not contains column definition'
+                'Metadata does not contains column definition',
             ],
         ];
     }
@@ -148,21 +149,21 @@ class DefinitionTest extends BaseTest
                 [
                     'nullable' => false,
                     'default' => 60,
-                ]
+                ],
             ],
             [
                 'INT',
                 [
                     'nullable' => false,
                     'default' => null,
-                ]
+                ],
             ],
             [
                 'INT',
                 [
                     'nullable' => false,
                     'default' => 0,
-                ]
+                ],
             ],
         ];
     }
@@ -285,7 +286,6 @@ class DefinitionTest extends BaseTest
             $this->fail('Creating Definition from metadata should fail');
         } catch (\InvalidArgumentException $e) {
             $this->assertSame($expectedError, $e->getMessage());
-
         }
     }
 
@@ -311,8 +311,8 @@ class DefinitionTest extends BaseTest
                     "size" => $expectedDefinition->getLength(),
                     "nullable" => $expectedDefinition->isNullable(),
                     "default" => $expectedDefinition->getDefault(),
-                ]
-            ]
+                ],
+            ],
         ]);
 
         $columnsInfo = $this->writer->getTableInfo($tableName);
@@ -365,8 +365,8 @@ class DefinitionTest extends BaseTest
                     "size" => $expectedDefinition->getLength(),
                     "nullable" => $expectedDefinition->isNullable(),
                     "default" => $expectedDefinition->getDefault(),
-                ]
-            ]
+                ],
+            ],
         ]);
 
         $columnsInfo = $this->writer->getTableInfo($tableName);

@@ -28,11 +28,6 @@ class Snowflake extends Writer implements WriterInterface
         'date', 'time', 'timestamp', 'timestamp_ltz', 'timestamp_ntz', 'timestamp_tz',
     ];
 
-    private static $typesWithSize = [
-        'number', 'decimal', 'numeric',
-        'char', 'character', 'varchar', 'string', 'text', 'binary',
-    ];
-
     /** @var Connection */
     protected $db;
 
