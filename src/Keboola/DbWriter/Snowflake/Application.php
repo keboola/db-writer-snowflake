@@ -87,9 +87,19 @@ class Application extends BaseApplication
         /** @var Snowflake $writer */
         $writer = $this['writer'];
 
-        $writer->drop($tableConfig['dbName']);
-        $writer->create($tableConfig);
-        $writer->writeFromS3($s3info, $tableConfig);
+        $stagingTableName = uniqid('staging');
+        $stagingTableConfig = array_merge($tableConfig, [
+            'dbName' => $stagingTableName,
+        ]);
+        $writer->create($stagingTableConfig);
+        try {
+            // create dummy table for first load which will be replaced by tables swap
+            $writer->createIfNotExists($tableConfig);
+            $writer->writeFromS3($s3info, $stagingTableConfig);
+            $writer->swapTables($tableConfig['dbName'], $stagingTableName);
+        } finally {
+            $writer->drop($stagingTableName);
+        }
     }
 
     private function getManifest($tableId)
