@@ -184,6 +184,20 @@ class SnowflakeTest extends BaseTest
         }
     }
 
+    public function testCreateIfNotExists()
+    {
+        $table = reset($this->config['parameters']['tables']);
+        $dbName = $table['dbName'];
+
+        $this->assertFalse($this->writer->tableExists($dbName));
+
+        $this->writer->createIfNotExists($table);
+        $this->assertTrue($this->writer->tableExists($dbName));
+
+        $this->writer->createIfNotExists($table);
+        $this->assertTrue($this->writer->tableExists($dbName));
+    }
+
     public function createStagingData(): array
     {
         return [
