@@ -2,7 +2,9 @@
 
 namespace Keboola\DbWriter\Snowflake\Tests;
 
+use Keboola\Csv\CsvFile;
 use Keboola\DbWriter\Snowflake\Test\S3Loader;
+use Keboola\DbWriter\Writer\Snowflake;
 use Keboola\StorageApi\Client;
 use Symfony\Component\Process\Process;
 
@@ -12,6 +14,11 @@ class FunctionalTest extends BaseTest
 
     protected $dataDir = __DIR__ . '/../data/functional';
 
+    /** @var Snowflake */
+    private $writer;
+
+    private $config;
+
     protected $tmpRunDir;
 
     public function setUp()
@@ -19,9 +26,16 @@ class FunctionalTest extends BaseTest
         // cleanup & init
         $this->tmpRunDir = '/tmp/' . uniqid('wr-db-snowflake_');
         mkdir($this->tmpRunDir . '/in/tables/', 0777, true);
-        $config = $this->initConfig();
+        $this->config = $this->initConfig();
 
-        $writer = $this->getWriter($config['parameters']);
+        $writer = $this->getWriter($this->config['parameters']);
+        if ($writer instanceof Snowflake) {
+            $this->writer = $writer;
+        } else {
+            $this->fail('Writer factory must init Snowflake Writer');
+        }
+
+        $writer = $this->getWriter($this->config['parameters']);
         $s3Loader = new S3Loader(
             $this->dataDir,
             new Client([
@@ -29,7 +43,7 @@ class FunctionalTest extends BaseTest
             ])
         );
 
-        foreach ($config['parameters']['tables'] as $table) {
+        foreach ($this->config['parameters']['tables'] as $table) {
             // clean destination DB
             $writer->drop($table['dbName']);
 
@@ -48,6 +62,19 @@ class FunctionalTest extends BaseTest
 
     public function testRun()
     {
+        $this->assertFalse($this->writer->tableExists('simple'));
+        $this->assertFalse($this->writer->tableExists('special'));
+
+        foreach ($this->config['parameters']['tables'] as $table) {
+            if ($table['dbName'] === 'simple') {
+                $this->assertTrue($table['incremental']);
+            }
+
+            if ($table['dbName'] === 'special') {
+                $this->assertFalse($table['incremental']);
+            }
+        }
+
         $process = new Process(
             'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
             null,
@@ -58,6 +85,20 @@ class FunctionalTest extends BaseTest
         $process->run();
 
         $this->assertEquals(0, $process->getExitCode(), 'Output: ' . $process->getOutput());
+
+        // incremental load
+        $this->assertTrue($this->writer->tableExists('simple'));
+        $this->assertFileEquals(
+            $this->dataDir . '/in/tables/simple_merged.csv',
+            $this->createCsvFromTable('simple')->getPathname()
+        );
+
+        // full load
+        $this->assertTrue($this->writer->tableExists('special'));
+        $this->assertFileEquals(
+            $this->dataDir . '/in/tables/special.csv',
+            $this->createCsvFromTable('special')->getPathname()
+        );
     }
 
     public function testRunAllIgnored()
@@ -204,5 +245,26 @@ class FunctionalTest extends BaseTest
     private function getEntryPointPathName(): string
     {
         return __DIR__ . '/../../run.php';
+    }
+
+    private function createCsvFromTable(string $table)
+    {
+        $csv = new CsvFile(tempnam('/tmp', 'db-wr-test-tmp'));
+        $res = $this->writer->getSnowflakeConnection()->fetchAll(sprintf(
+            'SELECT * FROM "%s" ORDER BY 1 ASC',
+            $table
+        ));
+
+        $i = 0;
+        foreach ($res as $row) {
+            if ($i === 0) {
+                $csv->writeRow(array_keys($row));
+            }
+
+            $csv->writeRow($row);
+            $i++;
+        }
+
+        return $csv;
     }
 }
