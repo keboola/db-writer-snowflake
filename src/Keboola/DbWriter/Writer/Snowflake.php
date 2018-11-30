@@ -201,6 +201,29 @@ class Snowflake extends Writer implements WriterInterface
         ));
     }
 
+    public function createIfNotExists(array $table): void
+    {
+        $sqlDefinitions = [$this->getColumnsSqlDefinition($table)];
+        if (!empty($table['primaryKey'])) {
+            $sqlDefinitions [] = $this->getPrimaryKeySqlDefinition($table['primaryKey']);
+        }
+
+        $this->execQuery(sprintf(
+            "CREATE TABLE IF NOT EXISTS %s (%s);",
+            $this->quoteIdentifier($table['dbName']),
+            implode(', ', $sqlDefinitions)
+        ));
+    }
+
+    public function swapTables(string $table1, string $table2)
+    {
+        $this->execQuery(sprintf(
+            "ALTER TABLE %s SWAP WITH %s",
+            $this->quoteIdentifier($table2),
+            $this->quoteIdentifier($table1)
+        ));
+    }
+
     public function createStaging(array $table): void
     {
         $sqlDefinitions = [$this->getColumnsSqlDefinition($table)];
