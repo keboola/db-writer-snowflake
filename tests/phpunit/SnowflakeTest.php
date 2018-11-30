@@ -198,6 +198,30 @@ class SnowflakeTest extends BaseTest
         $this->assertTrue($this->writer->tableExists($dbName));
     }
 
+    public function testSwap()
+    {
+        $table1 = $this->config['parameters']['tables'][0];
+        $table2 = $this->config['parameters']['tables'][1];
+
+        $this->writer->create($table1);
+        $this->writer->create($table2);
+
+        $table1Columns = $this->writer->getSnowflakeConnection()->fetchAll("DESCRIBE TABLE \"{$table1['dbName']}\"");
+        $table2Columns = $this->writer->getSnowflakeConnection()->fetchAll("DESCRIBE TABLE \"{$table2['dbName']}\"");
+        $this->assertNotEquals($table1Columns, $table2Columns);
+
+        $this->writer->swapTables($table1['dbName'], $table2['dbName']);
+
+        $this->assertTrue($this->writer->tableExists($table1['dbName']));
+        $this->assertTrue($this->writer->tableExists($table2['dbName']));
+
+        $tableSwap1Columns = $this->writer->getSnowflakeConnection()->fetchAll("DESCRIBE TABLE \"{$table1['dbName']}\"");
+        $tableSwap2Columns = $this->writer->getSnowflakeConnection()->fetchAll("DESCRIBE TABLE \"{$table2['dbName']}\"");
+
+        $this->assertEquals($table1Columns, $tableSwap2Columns);
+        $this->assertEquals($table2Columns, $tableSwap1Columns);
+    }
+
     public function createStagingData(): array
     {
         return [
