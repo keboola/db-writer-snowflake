@@ -449,7 +449,7 @@ class Snowflake extends Writer implements WriterInterface
         $this->execQuery($sql);
     }
 
-    private function getColumnsSqlDefinition(array $table): string
+    public function getColumnsSqlDefinition(array $table): string
     {
         $columns = array_filter($table['items'], function ($item) {
             return (strtolower($item['type']) !== 'ignore');
