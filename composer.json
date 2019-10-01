@@ -30,6 +30,7 @@
         "phpcs": "phpcs -n --ignore=vendor --extensions=php .",
         "phpcbf": "phpcbf -n --ignore=vendor --extensions=php .",
         "phpstan": "phpstan analyse ./src ./tests --level=max --no-progress -c phpstan.neon",
+        "codeclimate": "test-reporter",
         "build": [
             "@phpcs",
             "@phpstan",
@@ -38,6 +39,10 @@
         "ci": [
             "@composer validate --no-check-all --strict",
             "@build"
+        ],
+        "ci-and-codeclimate": [
+            "@ci",
+            "@codeclimate"
         ]
     },
     "autoload": {
