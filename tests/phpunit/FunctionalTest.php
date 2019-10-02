@@ -21,7 +21,7 @@ class FunctionalTest extends BaseTest
 
     protected $tmpRunDir;
 
-    public function setUp()
+    public function setUp(): void
     {
         // cleanup & init
         $this->tmpRunDir = '/tmp/' . uniqid('wr-db-snowflake_');

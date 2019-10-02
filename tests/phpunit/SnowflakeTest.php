@@ -58,7 +58,7 @@ class SnowflakeTest extends BaseTest
 
     private function getInputCsv($tableId)
     {
-        return sprintf($this->dataDir . "/in/tables/%s.csv", $tableId);
+        return sprintf($this->dataDir . '/in/tables/%s.csv', $tableId);
     }
 
     private function loadDataToS3($tableId)
@@ -109,7 +109,7 @@ class SnowflakeTest extends BaseTest
         $writer =  $writerFactory->create($logger);
 
         if (!$writer instanceof Snowflake) {
-            $this->fail("Writer factory must init Snowflake Writer");
+            $this->fail('Writer factory must init Snowflake Writer');
         }
 
         $this->assertCount(0, $testHandler->getRecords());
@@ -128,10 +128,10 @@ class SnowflakeTest extends BaseTest
     {
         $conn = $this->writer->getSnowflakeConnection();
 
-        $conn->query("CREATE TABLE \"dropMe\" (
+        $conn->query('CREATE TABLE "dropMe" (
           id INT PRIMARY KEY,
           firstname VARCHAR(30) NOT NULL,
-          lastname VARCHAR(30) NOT NULL)");
+          lastname VARCHAR(30) NOT NULL)');
 
         $this->assertTrue($this->writer->tableExists('dropMe'));
 
@@ -339,10 +339,9 @@ class SnowflakeTest extends BaseTest
 
         $res = $conn->fetchAll(sprintf('SELECT * FROM "%s" ORDER BY "id" ASC', $table['dbName']));
 
-
         $resFilename = tempnam('/tmp', 'db-wr-test-tmp');
         $csv = new CsvFile($resFilename);
-        $csv->writeRow(["id","name","glasses", "age"]);
+        $csv->writeRow(['id','name','glasses', 'age']);
         foreach ($res as $row) {
             $csv->writeRow($row);
 
@@ -374,7 +373,7 @@ class SnowflakeTest extends BaseTest
         $this->writer->writeFromS3($s3Manifest, $targetTable);
 
         // second write
-        $s3Manifest = $this->loadDataToS3($table['tableId'] . "_increment");
+        $s3Manifest = $this->loadDataToS3($table['tableId'] . '_increment');
         $this->writer->create($table);
         $this->writer->writeFromS3($s3Manifest, $table);
 
@@ -386,12 +385,12 @@ class SnowflakeTest extends BaseTest
 
         $resFilename = tempnam('/tmp', 'db-wr-test-tmp');
         $csv = new CsvFile($resFilename);
-        $csv->writeRow(["id", "name", "glasses", "age"]);
+        $csv->writeRow(['id', 'name', 'glasses', 'age']);
         foreach ($res as $row) {
             $csv->writeRow($row);
         }
 
-        $expectedFilename = $this->getInputCsv($table['tableId'] . "_merged");
+        $expectedFilename = $this->getInputCsv($table['tableId'] . '_merged');
 
         $this->assertFileEquals($expectedFilename, $csv->getPathname());
     }
@@ -537,7 +536,7 @@ class SnowflakeTest extends BaseTest
 
         if ($warehouse) {
             $sql = sprintf(
-                "ALTER USER %s SET DEFAULT_WAREHOUSE = %s;",
+                'ALTER USER %s SET DEFAULT_WAREHOUSE = %s;',
                 $conn->quoteIdentifier($user),
                 $conn->quoteIdentifier($warehouse)
             );
@@ -546,7 +545,7 @@ class SnowflakeTest extends BaseTest
             $this->assertEquals($warehouse, $this->writer->getUserDefaultWarehouse());
         } else {
             $sql = sprintf(
-                "ALTER USER %s SET DEFAULT_WAREHOUSE = null;",
+                'ALTER USER %s SET DEFAULT_WAREHOUSE = null;',
                 $conn->quoteIdentifier($user)
             );
             $conn->query($sql);

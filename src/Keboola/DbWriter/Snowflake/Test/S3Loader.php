@@ -21,7 +21,7 @@ class S3Loader
 
     private function getInputCsv($tableId)
     {
-        return sprintf($this->dataDir . "/in/tables/%s.csv", $tableId);
+        return sprintf($this->dataDir . '/in/tables/%s.csv', $tableId);
     }
 
     public function upload($tableId)
@@ -29,7 +29,7 @@ class S3Loader
         $filePath = $this->getInputCsv($tableId);
         $bucketId = 'in.c-test-wr-db-redshift';
         if (!$this->storageApi->bucketExists($bucketId)) {
-            $this->storageApi->createBucket('test-wr-db-redshift', Client::STAGE_IN, "", 'snowflake');
+            $this->storageApi->createBucket('test-wr-db-redshift', Client::STAGE_IN, '', 'snowflake');
         }
 
         $sourceTableId = $this->storageApi->createTable($bucketId, $tableId, new CsvFile($filePath));
@@ -42,19 +42,19 @@ class S3Loader
             ]
         );
         $fileInfo = $this->storageApi->getFile(
-            $job["file"]["id"],
+            $job['file']['id'],
             (new GetFileOptions())->setFederationToken(true)
         );
 
         return [
-            "isSliced" => $fileInfo["isSliced"],
-            "region" => $fileInfo["region"],
-            "bucket" => $fileInfo["s3Path"]["bucket"],
-            "key" => $fileInfo["isSliced"]?$fileInfo["s3Path"]["key"] . "manifest":$fileInfo["s3Path"]["key"],
-            "credentials" => [
-                "access_key_id" => $fileInfo["credentials"]["AccessKeyId"],
-                "secret_access_key" => $fileInfo["credentials"]["SecretAccessKey"],
-                "session_token" => $fileInfo["credentials"]["SessionToken"],
+            'isSliced' => $fileInfo['isSliced'],
+            'region' => $fileInfo['region'],
+            'bucket' => $fileInfo['s3Path']['bucket'],
+            'key' => $fileInfo['isSliced']?$fileInfo['s3Path']['key'] . 'manifest':$fileInfo['s3Path']['key'],
+            'credentials' => [
+                'access_key_id' => $fileInfo['credentials']['AccessKeyId'],
+                'secret_access_key' => $fileInfo['credentials']['SecretAccessKey'],
+                'session_token' => $fileInfo['credentials']['SessionToken'],
             ],
         ];
     }
