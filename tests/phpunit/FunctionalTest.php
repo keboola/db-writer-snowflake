@@ -203,7 +203,7 @@ class FunctionalTest extends BaseTest
         $process->run();
 
         $this->assertEquals(1, $process->getExitCode());
-        $this->assertContains('Invalid warehouse', $process->getOutput());
+        $this->assertStringContainsString('Invalid warehouse', $process->getOutput());
     }
 
     public function testInvalidSchema(): void
@@ -224,7 +224,7 @@ class FunctionalTest extends BaseTest
         $process->run();
 
         $this->assertEquals(1, $process->getExitCode());
-        $this->assertContains('Invalid schema', $process->getOutput());
+        $this->assertStringContainsString('Invalid schema', $process->getOutput());
     }
 
     private function initConfig(?callable $callback = null)

@@ -77,7 +77,7 @@ class SnowflakeTest extends BaseTest
             $this->writer->createConnection($this->config['parameters']['db']);
             $this->fail('Create connection via Common inteface method should fail');
         } catch (ApplicationException $e) {
-            $this->assertContains('Method not implemented', $e->getMessage());
+            $this->assertStringContainsString('Method not implemented', $e->getMessage());
         }
     }
 
@@ -92,7 +92,7 @@ class SnowflakeTest extends BaseTest
             $this->writer->getConnection();
             $this->fail('Getting connection via Common inteface method should fail');
         } catch (ApplicationException $e) {
-            $this->assertContains('Method not implemented', $e->getMessage());
+            $this->assertStringContainsString('Method not implemented', $e->getMessage());
         }
     }
 
@@ -120,7 +120,7 @@ class SnowflakeTest extends BaseTest
 
         $this->assertCount(1, $records);
 
-        $this->assertContains('Executing query', $records[0]['message']);
+        $this->assertStringContainsString('Executing query', $records[0]['message']);
         $this->assertEquals('INFO', $records[0]['level_name']);
     }
 
@@ -442,7 +442,7 @@ class SnowflakeTest extends BaseTest
             $this->getWriter($parameters);
             $this->fail('Creating writer should fail with UserError');
         } catch (UserException $e) {
-            $this->assertContains('Invalid warehouse', $e->getMessage());
+            $this->assertStringContainsString('Invalid warehouse', $e->getMessage());
         }
     }
 
@@ -454,7 +454,7 @@ class SnowflakeTest extends BaseTest
             $this->getWriter($parameters);
             $this->fail('Creating writer should fail with UserError');
         } catch (UserException $e) {
-            $this->assertContains('Invalid schema', $e->getMessage());
+            $this->assertStringContainsString('Invalid schema', $e->getMessage());
         }
     }
 
@@ -486,7 +486,7 @@ class SnowflakeTest extends BaseTest
             $this->writer->checkPrimaryKey($table['primaryKey'], $table['dbName']);
             $this->fail('Primary key check should fail');
         } catch (UserException $e) {
-            $this->assertContains('Primary key(s) in configuration does NOT match with keys in DB table.', $e->getMessage());
+            $this->assertStringContainsString('Primary key(s) in configuration does NOT match with keys in DB table.', $e->getMessage());
         }
     }
 
@@ -506,7 +506,7 @@ class SnowflakeTest extends BaseTest
             $this->writer->upsert($table, $tmpTable['dbName']);
             $this->fail('Primary key check should fail');
         } catch (UserException $e) {
-            $this->assertContains('Primary key(s) in configuration does NOT match with keys in DB table.', $e->getMessage());
+            $this->assertStringContainsString('Primary key(s) in configuration does NOT match with keys in DB table.', $e->getMessage());
         }
     }
 
