@@ -4,12 +4,6 @@
     "type": "project",
     "description": "Keboola Snowflake DB Writer",
     "keywords": ["keboola", "snowflake", "db", "writer"],
-    "authors": [
-        {
-            "name": "Miroslav Čillík",
-            "email": "miro@keboola.com"
-        }
-    ],
     "require": {
         "php": ">=7.1",
         "keboola/db-writer-common": "^5.0"
