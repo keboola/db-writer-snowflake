@@ -527,6 +527,8 @@ class SnowflakeTest extends BaseTest
         $this->writer->upsert($table, $tmpTable['dbName']);
 
         $this->writer->checkPrimaryKey(['id', 'name'], $tmpTable['dbName']);
+
+        $this->expectNotToPerformAssertions();
     }
 
     private function setUserDefaultWarehouse($warehouse = null)
