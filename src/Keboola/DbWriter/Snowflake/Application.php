@@ -12,7 +12,7 @@ class Application extends BaseApplication
 {
     public function runAction(): string
     {
-        $tables = array_filter($this['parameters']['tables'], function ($table) {
+        $tables = array_filter((array) $this['parameters']['tables'], function ($table) {
             return ($table['export']);
         });
 

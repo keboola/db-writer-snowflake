@@ -450,7 +450,7 @@ class Snowflake extends Writer implements WriterInterface
 
     private function getColumnsSqlDefinition(array $table): string
     {
-        $columns = array_filter($table['items'], function ($item) {
+        $columns = array_filter((array) $table['items'], function ($item) {
             return (strtolower($item['type']) !== 'ignore');
         });
 

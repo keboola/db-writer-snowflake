@@ -28,7 +28,7 @@ class SnowflakeTest extends BaseTest
     /** @var S3Loader */
     private $s3Loader;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->config = $this->getConfig($this->dataDir);
 
@@ -153,7 +153,7 @@ class SnowflakeTest extends BaseTest
     public function testCreate(bool $incrementalValue, string $expectedKind)
     {
         $tables = array_filter(
-            $this->config['parameters']['tables'],
+            (array) $this->config['parameters']['tables'],
             function ($table) use ($incrementalValue) {
                 return $table['incremental'] === $incrementalValue;
             }
@@ -236,7 +236,7 @@ class SnowflakeTest extends BaseTest
     public function testCreateStaging(bool $incrementalValue, string $expectedKind)
     {
         $tables = array_filter(
-            $this->config['parameters']['tables'],
+            (array) $this->config['parameters']['tables'],
             function ($table) use ($incrementalValue) {
                 return $table['incremental'] === $incrementalValue;
             }
