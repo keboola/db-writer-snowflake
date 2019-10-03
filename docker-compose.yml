@@ -1,14 +1,8 @@
 version: '2'
 services:
-  app:
+  app: &default
     build: .
     image: keboola/wr-db-snowflake
-    volumes:
-      - .:/code
-    working_dir: /code
-    command: "./phpunit.sh"
-    tty: true
-    stdin_open: true
     environment:
       - KBC_RUNID
       - STORAGE_API_TOKEN
@@ -20,13 +14,7 @@ services:
       - DB_SCHEMA
       - DB_WAREHOUSE
 
-  php:
-    image: keboola/docker-php56-all-db
+  dev:
+    <<: *default
     volumes:
-        - .:/code
-    working_dir: /code
-    environment:
-      - AWS_ACCESS_KEY
-      - AWS_SECRET_KEY
-      - AWS_S3_BUCKET
-      - AWS_REGION
+      - .:/code

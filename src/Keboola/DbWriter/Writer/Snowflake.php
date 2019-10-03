@@ -47,9 +47,9 @@ class Snowflake extends Writer implements WriterInterface
             $this->db = $this->createSnowflakeConnection($this->dbParams);
         } catch (\Throwable $e) {
             if (strstr(strtolower($e->getMessage()), 'could not find driver')) {
-                throw new ApplicationException("Missing driver: " . $e->getMessage());
+                throw new ApplicationException('Missing driver: ' . $e->getMessage());
             }
-            throw new UserException("Error connecting to DB: " . $e->getMessage(), 0, $e);
+            throw new UserException('Error connecting to DB: ' . $e->getMessage(), 0, $e);
         }
 
         $this->validateAndSetWarehouse();
@@ -58,13 +58,13 @@ class Snowflake extends Writer implements WriterInterface
 
     public function createConnection(array $dbParams): \PDO
     {
-        throw new ApplicationException("Method not implemented");
+        throw new ApplicationException('Method not implemented');
     }
 
     public function createSnowflakeConnection($dbParams): Connection
     {
         $connection = new Connection($dbParams);
-        $connection->query(sprintf("ALTER SESSION SET STATEMENT_TIMEOUT_IN_SECONDS = %d", self::STATEMENT_TIMEOUT_IN_SECONDS));
+        $connection->query(sprintf('ALTER SESSION SET STATEMENT_TIMEOUT_IN_SECONDS = %d', self::STATEMENT_TIMEOUT_IN_SECONDS));
         return $connection;
     }
 
@@ -89,7 +89,7 @@ class Snowflake extends Writer implements WriterInterface
     private function generateDropStageCommand($stage = self::STAGE_NAME)
     {
         return sprintf(
-            "DROP STAGE IF EXISTS %s",
+            'DROP STAGE IF EXISTS %s',
             $this->quoteIdentifier($stage)
         );
     }
@@ -98,11 +98,11 @@ class Snowflake extends Writer implements WriterInterface
     {
         $csvOptions = [];
         $csvOptions[] = sprintf('FIELD_DELIMITER = %s', $this->quote(','));
-        $csvOptions[] = sprintf("FIELD_OPTIONALLY_ENCLOSED_BY = %s", $this->quote('"'));
-        $csvOptions[] = sprintf("ESCAPE_UNENCLOSED_FIELD = %s", $this->quote('\\'));
+        $csvOptions[] = sprintf('FIELD_OPTIONALLY_ENCLOSED_BY = %s', $this->quote('"'));
+        $csvOptions[] = sprintf('ESCAPE_UNENCLOSED_FIELD = %s', $this->quote('\\'));
 
         if (!$s3info['isSliced']) {
-            $csvOptions[] = "SKIP_HEADER = 1";
+            $csvOptions[] = 'SKIP_HEADER = 1';
         }
 
         return sprintf(
@@ -148,13 +148,13 @@ class Snowflake extends Writer implements WriterInterface
         }
 
         return sprintf(
-            "COPY INTO %s(%s) 
+            'COPY INTO %s(%s) 
             FROM (SELECT %s FROM %s t)
-            %s",
+            %s',
             $this->nameWithSchemaEscaped($tableName),
             implode(', ', $columnNames),
             implode(', ', $transformationColumns),
-            $this->quote('@' . $this->quoteIdentifier($stageName) . "/" . $path),
+            $this->quote('@' . $this->quoteIdentifier($stageName) . '/' . $path),
             $pattern
         );
     }
@@ -184,7 +184,7 @@ class Snowflake extends Writer implements WriterInterface
 
     public function drop(string $tableName): void
     {
-        $this->execQuery(sprintf("DROP TABLE IF EXISTS %s;", $this->quoteIdentifier($tableName)));
+        $this->execQuery(sprintf('DROP TABLE IF EXISTS %s;', $this->quoteIdentifier($tableName)));
     }
 
     public function create(array $table): void
@@ -195,7 +195,7 @@ class Snowflake extends Writer implements WriterInterface
         }
 
         $this->execQuery(sprintf(
-            "CREATE TABLE %s (%s);",
+            'CREATE TABLE %s (%s);',
             $this->quoteIdentifier($table['dbName']),
             implode(', ', $sqlDefinitions)
         ));
@@ -209,7 +209,7 @@ class Snowflake extends Writer implements WriterInterface
         }
 
         $this->execQuery(sprintf(
-            "CREATE TABLE IF NOT EXISTS %s (%s);",
+            'CREATE TABLE IF NOT EXISTS %s (%s);',
             $this->quoteIdentifier($table['dbName']),
             implode(', ', $sqlDefinitions)
         ));
@@ -218,7 +218,7 @@ class Snowflake extends Writer implements WriterInterface
     public function swapTables(string $table1, string $table2)
     {
         $this->execQuery(sprintf(
-            "ALTER TABLE %s SWAP WITH %s",
+            'ALTER TABLE %s SWAP WITH %s',
             $this->quoteIdentifier($table2),
             $this->quoteIdentifier($table1)
         ));
@@ -232,7 +232,7 @@ class Snowflake extends Writer implements WriterInterface
         }
 
         $this->execQuery(sprintf(
-            "CREATE TEMPORARY TABLE %s (%s);",
+            'CREATE TEMPORARY TABLE %s (%s);',
             $this->quoteIdentifier($table['dbName']),
             implode(', ', $sqlDefinitions)
         ));
@@ -285,7 +285,7 @@ class Snowflake extends Writer implements WriterInterface
             $valuesClause = implode(',', $valuesClauseArr);
 
             $this->execQuery(sprintf(
-                "UPDATE %s SET %s FROM %s WHERE %s",
+                'UPDATE %s SET %s FROM %s WHERE %s',
                 $targetTable,
                 $valuesClause,
                 $sourceTable,
@@ -294,7 +294,7 @@ class Snowflake extends Writer implements WriterInterface
 
             // delete updated from temp table
             $this->execQuery(sprintf(
-                "DELETE FROM %s USING %s WHERE %s",
+                'DELETE FROM %s USING %s WHERE %s',
                 $sourceTable,
                 $targetTable,
                 $joinClause
@@ -318,18 +318,17 @@ class Snowflake extends Writer implements WriterInterface
     public function tableExists(string $tableName): bool
     {
         $res = $this->db->fetchAll(sprintf(
-            "
+            '
                 SELECT *
                 FROM INFORMATION_SCHEMA.TABLES
                 WHERE TABLE_NAME = %s
                 AND TABLE_SCHEMA = %s
                 AND TABLE_CATALOG = %s
-            ",
+            ',
             $this->quote($tableName),
             $this->quote($this->dbParams['schema']),
             $this->quote($this->dbParams['database'])
         ));
-
 
         return !empty($res);
     }
@@ -340,29 +339,29 @@ class Snowflake extends Writer implements WriterInterface
         try {
             $this->db->query($query);
         } catch (\Throwable $e) {
-            throw new UserException("Query execution error: " . $e->getMessage(), 0, $e);
+            throw new UserException('Query execution error: ' . $e->getMessage(), 0, $e);
         }
     }
 
     public function showTables(string $dbName): array
     {
-        throw new ApplicationException("Method not implemented");
+        throw new ApplicationException('Method not implemented');
     }
 
     public function getTableInfo(string $tableName): array
     {
-        throw new ApplicationException("Method not implemented");
+        throw new ApplicationException('Method not implemented');
     }
 
     public function write(CsvFile $csv, array $table): void
     {
-        throw new ApplicationException("Method not implemented");
+        throw new ApplicationException('Method not implemented');
     }
 
     public function getUserDefaultWarehouse()
     {
         $sql = sprintf(
-            "DESC USER %s;",
+            'DESC USER %s;',
             $this->db->quoteIdentifier($this->getCurrentUser())
         );
 
@@ -399,7 +398,7 @@ class Snowflake extends Writer implements WriterInterface
         return rtrim(
             mb_substr(
                 sprintf(
-                    "%s-%s",
+                    '%s-%s',
                     self::STAGE_NAME,
                     str_replace('.', '-', $runId)
                 ),
@@ -412,7 +411,7 @@ class Snowflake extends Writer implements WriterInterface
 
     public function getCurrentUser()
     {
-        return $this->db->fetchAll("SELECT CURRENT_USER;")[0]['CURRENT_USER'];
+        return $this->db->fetchAll('SELECT CURRENT_USER;')[0]['CURRENT_USER'];
     }
 
     public function checkPrimaryKey(array $columns, string $targetTable): void
@@ -441,7 +440,7 @@ class Snowflake extends Writer implements WriterInterface
         }
 
         $sql = sprintf(
-            "ALTER TABLE %s ADD %s;",
+            'ALTER TABLE %s ADD %s;',
             $this->nameWithSchemaEscaped($targetTable),
             $this->getPrimaryKeySqlDefinition($columns)
         );
@@ -451,7 +450,7 @@ class Snowflake extends Writer implements WriterInterface
 
     private function getColumnsSqlDefinition(array $table): string
     {
-        $columns = array_filter($table['items'], function ($item) {
+        $columns = array_filter((array) $table['items'], function ($item) {
             return (strtolower($item['type']) !== 'ignore');
         });
 
@@ -460,7 +459,7 @@ class Snowflake extends Writer implements WriterInterface
         foreach ($columns as $col) {
             $type = strtoupper($col['type']);
             if (!empty($col['size']) && in_array(strtolower($col['type']), self::$typesWithSize)) {
-                $type .= sprintf("(%s)", $col['size']);
+                $type .= sprintf('(%s)', $col['size']);
             }
             $null = $col['nullable'] ? 'NULL' : 'NOT NULL';
             $default = empty($col['default']) ? '' : "DEFAULT '{$col['default']}'";
@@ -468,7 +467,7 @@ class Snowflake extends Writer implements WriterInterface
                 $default = '';
             }
             $sql .= sprintf(
-                "%s %s %s %s,",
+                '%s %s %s %s,',
                 $this->quoteIdentifier($col['dbName']),
                 $type,
                 $null,
@@ -484,7 +483,7 @@ class Snowflake extends Writer implements WriterInterface
         $writer = $this;
 
         return sprintf(
-            "PRIMARY KEY(%s)",
+            'PRIMARY KEY(%s)',
             implode(
                 ', ',
                 array_map(
@@ -499,7 +498,7 @@ class Snowflake extends Writer implements WriterInterface
 
     private function hideCredentialsInQuery($query)
     {
-        return preg_replace("/(AWS_[A-Z_]*\\s=\\s.)[0-9A-Za-z\\/\\+=]*./", '${1}...\'', $query);
+        return preg_replace('/(AWS_[A-Z_]*\\s=\\s.)[0-9A-Za-z\\/\\+=]*./', '${1}...\'', $query);
     }
 
     private function validateAndSetWarehouse()
@@ -550,7 +549,7 @@ class Snowflake extends Writer implements WriterInterface
 
     public function getConnection(): \PDO
     {
-        throw new ApplicationException("Method not implemented");
+        throw new ApplicationException('Method not implemented');
     }
 
     public function getSnowflakeConnection(): Connection

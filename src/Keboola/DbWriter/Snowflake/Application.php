@@ -12,7 +12,7 @@ class Application extends BaseApplication
 {
     public function runAction(): string
     {
-        $tables = array_filter($this['parameters']['tables'], function ($table) {
+        $tables = array_filter((array) $this['parameters']['tables'], function ($table) {
             return ($table['export']);
         });
 
@@ -45,17 +45,17 @@ class Application extends BaseApplication
             }
         }
 
-        return "Writer finished successfully";
+        return 'Writer finished successfully';
     }
 
     public function writeFull(CsvFile $csv, array $tableConfig): void
     {
-        throw new ApplicationException("Method not implemented");
+        throw new ApplicationException('Method not implemented');
     }
 
     public function writeIncremental(CsvFile $csv, array $tableConfig): void
     {
-        throw new ApplicationException("Method not implemented");
+        throw new ApplicationException('Method not implemented');
     }
 
     public function writeIncrementalFromS3(array $s3info, array $tableConfig): void
@@ -105,7 +105,7 @@ class Application extends BaseApplication
     private function getManifest($tableId)
     {
         return json_decode(
-            (string) file_get_contents($this['parameters']['data_dir'] . "/in/tables/" . $tableId . ".csv.manifest"),
+            (string) file_get_contents($this['parameters']['data_dir'] . '/in/tables/' . $tableId . '.csv.manifest'),
             true
         );
     }

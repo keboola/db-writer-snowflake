@@ -8,19 +8,19 @@ use Keboola\DbWriter\Snowflake\Configuration\ConfigDefinition;
 use Keboola\DbWriter\Writer\Snowflake;
 use Monolog\Handler\NullHandler;
 
-require_once(dirname(__FILE__) . "/vendor/autoload.php");
+require_once(dirname(__FILE__) . '/vendor/autoload.php');
 
 $logger = new Logger('wr-db-snowflake');
 
 $action = 'run';
 
 try {
-    $arguments = getopt("d::", ["data::"]);
-    if (!isset($arguments["data"])) {
+    $arguments = getopt('d::', ['data::']);
+    if (!isset($arguments['data'])) {
         throw new UserException('Data folder not set.');
     }
 
-    $config = json_decode(file_get_contents($arguments["data"] . "/config.json"), true);
+    $config = json_decode(file_get_contents($arguments['data'] . '/config.json'), true);
     $config['parameters']['data_dir'] = $arguments['data'];
     $config['parameters']['writer_class'] = Snowflake::WRITER;
 
