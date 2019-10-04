@@ -142,7 +142,7 @@ class Connection
         });
 
         if (count($column) === 0) {
-            throw new Exception(sprintf('Column %s in table %s not found', $table, $columnName));
+            throw new Exception(sprintf('Column %s in table %s not found', $columnName, $table));
         }
 
         return json_decode(current($column)['data_type']);
