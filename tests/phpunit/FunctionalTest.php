@@ -287,6 +287,36 @@ class FunctionalTest extends BaseTest
         $this->assertStringContainsString('Target column must be a same type as source.', $process->getOutput());
     }
 
+    public function testInvalidForeignColumn(): void
+    {
+        $this->initConfig(function ($config) {
+            $tables = array_map(function ($table) {
+                $table['items'] = array_map(function ($item) use ($table) {
+                    if ($item['name'] === 'id' && $table['tableId'] === 'simple') {
+                        $item['foreignKeyTable'] = 'special';
+                        $item['foreignKeyColumn'] = 'randomcolumn';
+                    }
+                    return $item;
+                }, $table['items']);
+                return $table;
+            }, $config['parameters']['tables']);
+            $config['parameters']['tables'] = $tables;
+            return $config;
+        });
+
+        $process = new Process(
+            'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
+            null,
+            null,
+            null,
+            self::PROCESS_TIMEOUT_SECONDS
+        );
+        $process->run();
+
+        $this->assertEquals(1, $process->getExitCode());
+        $this->assertStringContainsString('Column randomcolumn in table special not found', $process->getOutput());
+    }
+
     private function initConfig(?callable $callback = null)
     {
         $dstConfigPath = $this->tmpRunDir . '/config.json';
