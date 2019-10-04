@@ -131,7 +131,7 @@ class Connection
         }, $this->describeTableColumns($schemaName, $tableName));
     }
 
-    public function getColumnDataType($schema, $table, $columnName)
+    public function getColumnDataType(string $schema, string $table, string $columnName): \stdClass
     {
         $columns = $this->describeTableColumns($schema, $table);
         $column = array_filter($columns, function ($v) use ($columnName) {
@@ -166,7 +166,7 @@ class Connection
         return $pkCols;
     }
 
-    public function getTableUniqueKeys($schemaName, $tableName)
+    public function getTableUniqueKeys(string $schemaName, string $tableName): array
     {
         $cols = $this->fetchAll(sprintf(
             'DESC TABLE %s.%s',

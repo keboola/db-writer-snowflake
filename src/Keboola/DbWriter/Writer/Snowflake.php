@@ -492,7 +492,7 @@ class Snowflake extends Writer implements WriterInterface
         ));
     }
 
-    private function isSameTypeColumns($sourceTable, $sourceColumnName, $targetTable, $targetColumnName): bool
+    private function isSameTypeColumns(string $sourceTable, string $sourceColumnName, string $targetTable, string $targetColumnName): bool
     {
         $sourceColumnDataType = $this->db->getColumnDataType(
             $this->dbParams['schema'],
