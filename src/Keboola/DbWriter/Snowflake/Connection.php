@@ -131,6 +131,23 @@ class Connection
         }, $this->describeTableColumns($schemaName, $tableName));
     }
 
+    public function getColumnDataType($schema, $table, $columnName)
+    {
+        $columns = $this->describeTableColumns($schema, $table);
+        $column = array_filter($columns, function ($v) use ($columnName) {
+            if ($v['column_name'] !== $columnName) {
+                return false;
+            }
+            return true;
+        });
+
+        if (count($column) === 0) {
+            throw new Exception(sprintf('Column %s in table %s not found', $table, $columnName));
+        }
+
+        return json_decode(current($column)['data_type']);
+    }
+
     public function getTablePrimaryKey($schemaName, $tableName)
     {
         $cols = $this->fetchAll(sprintf(
@@ -147,6 +164,24 @@ class Connection
         }
 
         return $pkCols;
+    }
+
+    public function getTableUniqueKeys($schemaName, $tableName)
+    {
+        $cols = $this->fetchAll(sprintf(
+            'DESC TABLE %s.%s',
+            $this->quoteIdentifier($schemaName),
+            $this->quoteIdentifier($tableName)
+        ));
+        $uniqueCols = [];
+        foreach ($cols as $col) {
+            if ($col['unique key'] !== 'Y') {
+                continue;
+            }
+            $uniqueCols[] = $col['name'];
+        }
+
+        return $uniqueCols;
     }
 
     public function query($sql, array $bind = [])

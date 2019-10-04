@@ -7,6 +7,7 @@ use Keboola\DbWriter\Exception\ApplicationException;
 use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Logger;
 use Keboola\DbWriter\Snowflake\Connection;
+use Keboola\DbWriter\Snowflake\Exception;
 use Keboola\DbWriter\Writer;
 use Keboola\DbWriter\WriterInterface;
 
@@ -333,6 +334,35 @@ class Snowflake extends Writer implements WriterInterface
         return !empty($res);
     }
 
+    public function createForeignKeys(array $table): void
+    {
+        foreach ($table['items'] as $column) {
+            if (empty($column['foreignKeyTable']) || empty($column['foreignKeyColumn'])) {
+                continue;
+            }
+
+            if (!$this->tableExists($column['foreignKeyTable'])) {
+                continue;
+            }
+
+            if (!$this->isSameTypeColumns($table['dbName'], $column['name'], $column['foreignKeyTable'], $column['foreignKeyColumn'])) {
+                throw new Exception('Target column must be a same type as source.');
+            }
+
+            $this->addUniqueKeyIfMissing($column['foreignKeyTable'], $column['foreignKeyColumn']);
+
+            $this->execQuery(sprintf(
+                'ALTER TABLE %s ADD CONSTRAINT FK_%s_%s FOREIGN KEY (%s) REFERENCES %s(%s)',
+                $this->nameWithSchemaEscaped($table['dbName']),
+                $column['foreignKeyTable'],
+                $column['foreignKeyColumn'],
+                $this->quoteIdentifier($column['name']),
+                $this->nameWithSchemaEscaped($column['foreignKeyTable']),
+                $this->quoteIdentifier($column['foreignKeyColumn'])
+            ));
+        }
+    }
+
     private function execQuery($query)
     {
         $this->logger->info(sprintf("Executing query '%s'", $this->hideCredentialsInQuery($query)));
@@ -446,6 +476,40 @@ class Snowflake extends Writer implements WriterInterface
         );
 
         $this->execQuery($sql);
+    }
+
+    private function addUniqueKeyIfMissing(string $targetTable, string $targetColumn): void
+    {
+        $uniquesInDb = $this->db->getTableUniqueKeys($this->dbParams['schema'], $targetTable);
+        if (in_array($targetColumn, $uniquesInDb)) {
+            return;
+        }
+
+        $this->execQuery(sprintf(
+            'ALTER TABLE %s ADD UNIQUE (%s);',
+            $this->nameWithSchemaEscaped($targetTable),
+            $this->quoteIdentifier($targetColumn)
+        ));
+    }
+
+    private function isSameTypeColumns($sourceTable, $sourceColumnName, $targetTable, $targetColumnName): bool
+    {
+        $sourceColumnDataType = $this->db->getColumnDataType(
+            $this->dbParams['schema'],
+            $sourceTable,
+            $sourceColumnName
+        );
+
+        $targetColumnDataType = $this->db->getColumnDataType(
+            $this->dbParams['schema'],
+            $targetTable,
+            $targetColumnName
+        );
+
+        return
+            $sourceColumnDataType->type === $targetColumnDataType->type &&
+            $sourceColumnDataType->length === $targetColumnDataType->length &&
+            $sourceColumnDataType->nullable === $targetColumnDataType->nullable;
     }
 
     private function getColumnsSqlDefinition(array $table): string
