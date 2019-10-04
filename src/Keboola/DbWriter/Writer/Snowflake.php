@@ -7,7 +7,6 @@ use Keboola\DbWriter\Exception\ApplicationException;
 use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Logger;
 use Keboola\DbWriter\Snowflake\Connection;
-use Keboola\DbWriter\Snowflake\Exception;
 use Keboola\DbWriter\Writer;
 use Keboola\DbWriter\WriterInterface;
 
@@ -346,7 +345,7 @@ class Snowflake extends Writer implements WriterInterface
             }
 
             if (!$this->isSameTypeColumns($table['dbName'], $column['name'], $column['foreignKeyTable'], $column['foreignKeyColumn'])) {
-                throw new Exception('Target column must be a same type as source.');
+                throw new UserException('Target column must be a same type as source.');
             }
 
             $this->addUniqueKeyIfMissing($column['foreignKeyTable'], $column['foreignKeyColumn']);
@@ -467,7 +466,7 @@ class Snowflake extends Writer implements WriterInterface
         $existsForeignKeys = $this->db->checkTableConstraints($this->dbParams['schema'], $table);
 
         if (!$existsForeignKeys) {
-            throw new Exception(sprintf('Foreign keys on table  \'%s\' does not exists', $table));
+            throw new UserException(sprintf('Foreign keys on table  \'%s\' does not exists', $table));
         }
     }
 

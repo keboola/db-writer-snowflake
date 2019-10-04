@@ -2,6 +2,8 @@
 
 namespace Keboola\DbWriter\Snowflake;
 
+use Keboola\DbWriter\Exception\UserException;
+
 class Connection
 {
     /**
@@ -142,7 +144,7 @@ class Connection
         });
 
         if (count($column) === 0) {
-            throw new Exception(sprintf('Column %s in table %s not found', $columnName, $table));
+            throw new UserException(sprintf('Column %s in table %s not found', $columnName, $table));
         }
 
         return json_decode(current($column)['data_type']);
