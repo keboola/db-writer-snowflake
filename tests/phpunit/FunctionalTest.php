@@ -227,6 +227,36 @@ class FunctionalTest extends BaseTest
         $this->assertStringContainsString('Invalid schema', $process->getOutput());
     }
 
+    public function testForeignKeys(): void
+    {
+        $config = $this->initConfig(function ($config) {
+            $tables = array_map(function ($table) {
+                $table['items'] = array_map(function ($item) use ($table) {
+                    if ($item['name'] === 'name' && $table['tableId'] === 'simple') {
+                        $item['foreignKeyTable'] = 'special';
+                        $item['foreignKeyColumn'] = 'col1';
+                    }
+                    return $item;
+                }, $table['items']);
+                return $table;
+            }, $config['parameters']['tables']);
+            $config['parameters']['tables'] = $tables;
+            return $config;
+        });
+
+        $process = new Process(
+            'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
+            null,
+            null,
+            null,
+            self::PROCESS_TIMEOUT_SECONDS
+        );
+        $process->run();
+        $this->assertEquals(0, $process->getExitCode());
+
+        $this->writer->checkForeignKey('simple');
+    }
+
     private function initConfig(?callable $callback = null)
     {
         $dstConfigPath = $this->tmpRunDir . '/config.json';

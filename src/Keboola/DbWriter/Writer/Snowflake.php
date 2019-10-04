@@ -462,6 +462,15 @@ class Snowflake extends Writer implements WriterInterface
         }
     }
 
+    public function checkForeignKey(string $table): void
+    {
+        $existsForeignKeys = $this->db->checkTableConstraints($this->dbParams['schema'], $table);
+
+        if (!$existsForeignKeys) {
+            throw new Exception(sprintf('Foreign keys on table  \'%s\' does not exists', $table));
+        }
+    }
+
     private function addPrimaryKeyIfMissing(array $columns, string $targetTable): void
     {
         $primaryKeysInDb = $this->db->getTablePrimaryKey($this->dbParams['schema'], $targetTable);

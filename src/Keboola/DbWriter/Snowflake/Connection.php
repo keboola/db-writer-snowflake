@@ -184,6 +184,17 @@ class Connection
         return $uniqueCols;
     }
 
+    public function checkTableConstraints(string $schemaName, string $tableName, string $type = 'FOREIGN KEY'): bool
+    {
+        $rows = $this->fetchAll(sprintf(
+            "SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s' AND CONSTRAINT_TYPE = '%s'",
+            $schemaName,
+            $tableName,
+            $type
+        ));
+        return count($rows) > 0;
+    }
+
     public function query($sql, array $bind = [])
     {
         $stmt = odbc_prepare($this->connection, $sql);
