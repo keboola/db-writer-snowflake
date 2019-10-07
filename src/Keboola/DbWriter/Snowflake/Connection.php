@@ -186,7 +186,7 @@ class Connection
         return $uniqueCols;
     }
 
-    public function checkTableConstraints(string $schemaName, string $tableName, string $type = 'FOREIGN KEY'): bool
+    public function getTableConstraints(string $schemaName, string $tableName, string $type = 'FOREIGN KEY'): array
     {
         $rows = $this->fetchAll(sprintf(
             "SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s' AND CONSTRAINT_TYPE = '%s'",
@@ -194,7 +194,7 @@ class Connection
             $tableName,
             $type
         ));
-        return count($rows) > 0;
+        return $rows;
     }
 
     public function query($sql, array $bind = [])

@@ -254,7 +254,7 @@ class FunctionalTest extends BaseTest
         $process->run();
         $this->assertEquals(0, $process->getExitCode());
 
-        $this->writer->checkForeignKey('simple');
+        $this->writer->checkForeignKey('simple', 'special', 'col1');
     }
 
     public function testInvalidForeignKeyColumnType(): void

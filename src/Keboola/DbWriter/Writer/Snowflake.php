@@ -466,12 +466,20 @@ class Snowflake extends Writer implements WriterInterface
         }
     }
 
-    public function checkForeignKey(string $table): void
+    public function checkForeignKey(string $sourceTable, string $targetTable, string $targetColumn): void
     {
-        $existsForeignKeys = $this->db->checkTableConstraints($this->dbParams['schema'], $table);
+        $foreignKeys = $this->db->getTableConstraints($this->dbParams['schema'], $sourceTable);
 
-        if (!$existsForeignKeys) {
-            throw new UserException(sprintf('Foreign keys on table  \'%s\' does not exists', $table));
+        $constraint = array_filter($foreignKeys, function ($item) use ($targetTable, $targetColumn) {
+            $constraintName = sprintf('FK_%s_%s', strtoupper($targetTable), strtoupper($targetColumn));
+            if ($item['CONSTRAINT_NAME'] === $constraintName) {
+                return true;
+            }
+            return false;
+        });
+
+        if (!$constraint) {
+            throw new UserException(sprintf('Foreign keys on table  \'%s\' does not exists', $sourceTable));
         }
     }
 
