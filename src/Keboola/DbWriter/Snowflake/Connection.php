@@ -136,18 +136,18 @@ class Connection
     public function getColumnDataType(string $schema, string $table, string $columnName): \stdClass
     {
         $columns = $this->describeTableColumns($schema, $table);
-        $column = array_filter($columns, function ($v) use ($columnName) {
+        $column = array_values(array_filter($columns, function ($v) use ($columnName) {
             if ($v['column_name'] !== $columnName) {
                 return false;
             }
             return true;
-        });
+        }));
 
         if (count($column) === 0) {
             throw new UserException(sprintf('Column \'%s\' in table \'%s\' not found', $columnName, $table));
         }
 
-        return json_decode(current($column)['data_type']);
+        return json_decode($column[0]['data_type']);
     }
 
     public function getTablePrimaryKey($schemaName, $tableName)
