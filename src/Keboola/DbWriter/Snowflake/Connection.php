@@ -144,7 +144,7 @@ class Connection
         });
 
         if (count($column) === 0) {
-            throw new UserException(sprintf('Column %s in table %s not found', $columnName, $table));
+            throw new UserException(sprintf('Column \'%s\' in table \'%s\' not found', $columnName, $table));
         }
 
         return json_decode(current($column)['data_type']);

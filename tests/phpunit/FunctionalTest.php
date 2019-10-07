@@ -284,7 +284,7 @@ class FunctionalTest extends BaseTest
         $process->run();
 
         $this->assertEquals(1, $process->getExitCode());
-        $this->assertStringContainsString('Target column must be a same type as source.', $process->getOutput());
+        $this->assertStringContainsString('Foreign key column \'col1\' in table \'special\' must be the same type as column \'id\' in source table', $process->getOutput());
     }
 
     public function testInvalidForeignColumn(): void
@@ -314,7 +314,7 @@ class FunctionalTest extends BaseTest
         $process->run();
 
         $this->assertEquals(1, $process->getExitCode());
-        $this->assertStringContainsString('Column randomcolumn in table special not found', $process->getOutput());
+        $this->assertStringContainsString('Column \'randomcolumn\' in table \'special\' not found', $process->getOutput());
     }
 
     private function initConfig(?callable $callback = null)

@@ -345,7 +345,12 @@ class Snowflake extends Writer implements WriterInterface
             }
 
             if (!$this->isSameTypeColumns($table['dbName'], $column['name'], $column['foreignKeyTable'], $column['foreignKeyColumn'])) {
-                throw new UserException('Target column must be a same type as source.');
+                throw new UserException(sprintf(
+                    'Foreign key column \'%s\' in table \'%s\' must be the same type as column \'%s\' in source table',
+                    $column['foreignKeyColumn'],
+                    $column['foreignKeyTable'],
+                    $column['name']
+                ));
             }
 
             $this->addUniqueKeyIfMissing($column['foreignKeyTable'], $column['foreignKeyColumn']);
