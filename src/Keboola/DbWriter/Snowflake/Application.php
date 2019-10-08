@@ -6,54 +6,74 @@ use Keboola\Csv\CsvFile;
 use \Keboola\DbWriter\Application as BaseApplication;
 use Keboola\DbWriter\Exception\ApplicationException;
 use Keboola\DbWriter\Exception\UserException;
+use Keboola\DbWriter\Logger;
+use Keboola\DbWriter\Snowflake\Configuration\ConfigDefinition;
+use Keboola\DbWriter\Snowflake\Configuration\ConfigRowDefinition;
 use Keboola\DbWriter\Writer\Snowflake;
 
 class Application extends BaseApplication
 {
+    public function __construct(array $config, Logger $logger)
+    {
+        if (!isset($config['parameters']['tables'])) {
+            $configDefinition = new ConfigRowDefinition();
+        } else {
+            $configDefinition = new ConfigDefinition();
+        }
+
+        parent::__construct($config, $logger, $configDefinition);
+    }
+
     public function runAction(): string
     {
-        $tables = array_filter((array) $this['parameters']['tables'], function ($table) {
-            return ($table['export']);
-        });
-
-        foreach ($tables as $key => $tableConfig) {
-            $manifest = $this->getManifest($tableConfig['tableId']);
-
-            $tableConfig['items'] = $this->reorderColumns(
-                $this->createHeadersCsvFile($manifest['columns']),
-                $tableConfig['items']
-            );
-            $tables[$key] = $tableConfig;
-
-            if (empty($tableConfig['items'])) {
-                continue;
+        if (isset($this['parameters']['tables'])) {
+            $tables = array_filter((array) $this['parameters']['tables'], function ($table) {
+                return ($table['export']);
+            });
+            foreach ($tables as $key => $tableConfig) {
+                $tables[$key] = $this->proccessRunAction($tableConfig);
             }
-
-            try {
-                if ($tableConfig['incremental']) {
-                    $this->writeIncrementalFromS3($manifest['s3'], $tableConfig);
-                } else {
-                    $this->writeFullFromS3($manifest['s3'], $tableConfig);
-                }
-            } catch (Exception $e) {
-                $this['logger']->error($e->getMessage());
-                throw new UserException($e->getMessage(), 0, $e);
-            } catch (UserException $e) {
-                $this['logger']->error($e->getMessage());
-                throw $e;
-            } catch (\Throwable $e) {
-                throw new ApplicationException($e->getMessage(), 2, $e);
+            foreach ($tables as $table) {
+                /** @var Snowflake $writer */
+                $writer = $this['writer'];
+                $writer->createForeignKeys($table);
             }
+        } else {
+            $this->proccessRunAction($this['parameters']);
         }
-
-        foreach ($tables as $table) {
-            /** @var Snowflake $writer */
-            $writer = $this['writer'];
-
-            $writer->createForeignKeys($table);
-        }
-
         return 'Writer finished successfully';
+    }
+
+    private function proccessRunAction($tableConfig)
+    {
+        $manifest = $this->getManifest($tableConfig['tableId']);
+
+        $tableConfig['items'] = $this->reorderColumns(
+            $this->createHeadersCsvFile($manifest['columns']),
+            $tableConfig['items']
+        );
+
+        if (empty($tableConfig['items'])) {
+            return $tableConfig;
+        }
+
+        try {
+            if ($tableConfig['incremental']) {
+                $this->writeIncrementalFromS3($manifest['s3'], $tableConfig);
+            } else {
+                $this->writeFullFromS3($manifest['s3'], $tableConfig);
+            }
+        } catch (Exception $e) {
+            $this['logger']->error($e->getMessage());
+            throw new UserException($e->getMessage(), 0, $e);
+        } catch (UserException $e) {
+            $this['logger']->error($e->getMessage());
+            throw $e;
+        } catch (\Throwable $e) {
+            throw new ApplicationException($e->getMessage(), 2, $e);
+        }
+
+        return $tableConfig;
     }
 
     public function writeFull(CsvFile $csv, array $tableConfig): void
