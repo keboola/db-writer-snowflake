@@ -31,20 +31,20 @@ class Application extends BaseApplication
                 return ($table['export']);
             });
             foreach ($tables as $key => $tableConfig) {
-                $tables[$key] = $this->proccessRunAction($tableConfig);
+                $tables[$key] = $this->processRunAction($tableConfig);
             }
             foreach ($tables as $table) {
                 /** @var Snowflake $writer */
                 $writer = $this['writer'];
                 $writer->createForeignKeys($table);
             }
-        } else {
-            $this->proccessRunAction($this['parameters']);
+        } elseif ($this['parameters']['export']) {
+            $this->processRunAction($this['parameters']);
         }
         return 'Writer finished successfully';
     }
 
-    private function proccessRunAction($tableConfig)
+    private function processRunAction($tableConfig)
     {
         $manifest = $this->getManifest($tableConfig['tableId']);
 
