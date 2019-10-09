@@ -16,13 +16,14 @@ class Application extends BaseApplication
             return ($table['export']);
         });
 
-        foreach ($tables as $tableConfig) {
+        foreach ($tables as $key => $tableConfig) {
             $manifest = $this->getManifest($tableConfig['tableId']);
 
             $tableConfig['items'] = $this->reorderColumns(
                 $this->createHeadersCsvFile($manifest['columns']),
                 $tableConfig['items']
             );
+            $tables[$key] = $tableConfig;
 
             if (empty($tableConfig['items'])) {
                 continue;
@@ -43,6 +44,13 @@ class Application extends BaseApplication
             } catch (\Throwable $e) {
                 throw new ApplicationException($e->getMessage(), 2, $e);
             }
+        }
+
+        foreach ($tables as $table) {
+            /** @var Snowflake $writer */
+            $writer = $this['writer'];
+
+            $writer->createForeignKeys($table);
         }
 
         return 'Writer finished successfully';

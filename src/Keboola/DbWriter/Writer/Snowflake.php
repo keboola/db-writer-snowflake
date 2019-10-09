@@ -333,6 +333,40 @@ class Snowflake extends Writer implements WriterInterface
         return !empty($res);
     }
 
+    public function createForeignKeys(array $table): void
+    {
+        foreach ($table['items'] as $column) {
+            if (empty($column['foreignKeyTable']) || empty($column['foreignKeyColumn'])) {
+                continue;
+            }
+
+            if (!$this->tableExists($column['foreignKeyTable'])) {
+                continue;
+            }
+
+            if (!$this->isSameTypeColumns($table['dbName'], $column['dbName'], $column['foreignKeyTable'], $column['foreignKeyColumn'])) {
+                throw new UserException(sprintf(
+                    'Foreign key column \'%s\' in table \'%s\' must be the same type as column \'%s\' in source table',
+                    $column['foreignKeyColumn'],
+                    $column['foreignKeyTable'],
+                    $column['name']
+                ));
+            }
+
+            $this->addUniqueKeyIfMissing($column['foreignKeyTable'], $column['foreignKeyColumn']);
+
+            $this->execQuery(sprintf(
+                'ALTER TABLE %s ADD CONSTRAINT FK_%s_%s FOREIGN KEY (%s) REFERENCES %s(%s)',
+                $this->nameWithSchemaEscaped($table['dbName']),
+                $column['foreignKeyTable'],
+                $column['foreignKeyColumn'],
+                $this->quoteIdentifier($column['dbName']),
+                $this->nameWithSchemaEscaped($column['foreignKeyTable']),
+                $this->quoteIdentifier($column['foreignKeyColumn'])
+            ));
+        }
+    }
+
     private function execQuery($query)
     {
         $this->logger->info(sprintf("Executing query '%s'", $this->hideCredentialsInQuery($query)));
@@ -432,6 +466,23 @@ class Snowflake extends Writer implements WriterInterface
         }
     }
 
+    public function checkForeignKey(string $sourceTable, string $targetTable, string $targetColumn): void
+    {
+        $foreignKeys = $this->db->getTableConstraints($this->dbParams['schema'], $sourceTable);
+
+        $constraint = array_filter($foreignKeys, function ($item) use ($targetTable, $targetColumn) {
+            $constraintName = sprintf('FK_%s_%s', strtoupper($targetTable), strtoupper($targetColumn));
+            if ($item['CONSTRAINT_NAME'] === $constraintName) {
+                return true;
+            }
+            return false;
+        });
+
+        if (!$constraint) {
+            throw new UserException(sprintf('Foreign keys on table  \'%s\' does not exists', $sourceTable));
+        }
+    }
+
     private function addPrimaryKeyIfMissing(array $columns, string $targetTable): void
     {
         $primaryKeysInDb = $this->db->getTablePrimaryKey($this->dbParams['schema'], $targetTable);
@@ -446,6 +497,41 @@ class Snowflake extends Writer implements WriterInterface
         );
 
         $this->execQuery($sql);
+    }
+
+    private function addUniqueKeyIfMissing(string $targetTable, string $targetColumn): void
+    {
+        $uniquesInDb = $this->db->getTableUniqueKeys($this->dbParams['schema'], $targetTable);
+        $primaryKeysInDb = $this->db->getTablePrimaryKey($this->dbParams['schema'], $targetTable);
+        if (in_array($targetColumn, $uniquesInDb) || !empty($primaryKeysInDb)) {
+            return;
+        }
+
+        $this->execQuery(sprintf(
+            'ALTER TABLE %s ADD UNIQUE (%s);',
+            $this->nameWithSchemaEscaped($targetTable),
+            $this->quoteIdentifier($targetColumn)
+        ));
+    }
+
+    private function isSameTypeColumns(string $sourceTable, string $sourceColumnName, string $targetTable, string $targetColumnName): bool
+    {
+        $sourceColumnDataType = $this->db->getColumnDataType(
+            $this->dbParams['schema'],
+            $sourceTable,
+            $sourceColumnName
+        );
+
+        $targetColumnDataType = $this->db->getColumnDataType(
+            $this->dbParams['schema'],
+            $targetTable,
+            $targetColumnName
+        );
+
+        return
+            $sourceColumnDataType->type === $targetColumnDataType->type &&
+            $sourceColumnDataType->length === $targetColumnDataType->length &&
+            $sourceColumnDataType->nullable === $targetColumnDataType->nullable;
     }
 
     private function getColumnsSqlDefinition(array $table): string

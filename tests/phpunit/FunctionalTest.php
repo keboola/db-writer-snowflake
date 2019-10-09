@@ -227,6 +227,96 @@ class FunctionalTest extends BaseTest
         $this->assertStringContainsString('Invalid schema', $process->getOutput());
     }
 
+    public function testForeignKeys(): void
+    {
+        $this->initConfig(function ($config) {
+            $tables = array_map(function ($table) {
+                $table['items'] = array_map(function ($item) use ($table) {
+                    if ($item['name'] === 'name' && $table['tableId'] === 'simple') {
+                        $item['foreignKeyTable'] = 'special';
+                        $item['foreignKeyColumn'] = 'col1';
+                    }
+                    return $item;
+                }, $table['items']);
+                return $table;
+            }, $config['parameters']['tables']);
+            $config['parameters']['tables'] = $tables;
+            return $config;
+        });
+
+        $process = new Process(
+            'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
+            null,
+            null,
+            null,
+            self::PROCESS_TIMEOUT_SECONDS
+        );
+        $process->run();
+        $this->assertEquals(0, $process->getExitCode());
+
+        $this->writer->checkForeignKey('simple', 'special', 'col1');
+    }
+
+    public function testInvalidForeignKeyColumnType(): void
+    {
+        $this->initConfig(function ($config) {
+            $tables = array_map(function ($table) {
+                $table['items'] = array_map(function ($item) use ($table) {
+                    if ($item['name'] === 'id' && $table['tableId'] === 'simple') {
+                        $item['foreignKeyTable'] = 'special';
+                        $item['foreignKeyColumn'] = 'col1';
+                    }
+                    return $item;
+                }, $table['items']);
+                return $table;
+            }, $config['parameters']['tables']);
+            $config['parameters']['tables'] = $tables;
+            return $config;
+        });
+
+        $process = new Process(
+            'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
+            null,
+            null,
+            null,
+            self::PROCESS_TIMEOUT_SECONDS
+        );
+        $process->run();
+
+        $this->assertEquals(1, $process->getExitCode());
+        $this->assertStringContainsString('Foreign key column \'col1\' in table \'special\' must be the same type as column \'id\' in source table', $process->getOutput());
+    }
+
+    public function testInvalidForeignColumn(): void
+    {
+        $this->initConfig(function ($config) {
+            $tables = array_map(function ($table) {
+                $table['items'] = array_map(function ($item) use ($table) {
+                    if ($item['name'] === 'id' && $table['tableId'] === 'simple') {
+                        $item['foreignKeyTable'] = 'special';
+                        $item['foreignKeyColumn'] = 'randomcolumn';
+                    }
+                    return $item;
+                }, $table['items']);
+                return $table;
+            }, $config['parameters']['tables']);
+            $config['parameters']['tables'] = $tables;
+            return $config;
+        });
+
+        $process = new Process(
+            'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
+            null,
+            null,
+            null,
+            self::PROCESS_TIMEOUT_SECONDS
+        );
+        $process->run();
+
+        $this->assertEquals(1, $process->getExitCode());
+        $this->assertStringContainsString('Column \'randomcolumn\' in table \'special\' not found', $process->getOutput());
+    }
+
     private function initConfig(?callable $callback = null)
     {
         $dstConfigPath = $this->tmpRunDir . '/config.json';

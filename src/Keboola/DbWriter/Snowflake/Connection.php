@@ -2,6 +2,8 @@
 
 namespace Keboola\DbWriter\Snowflake;
 
+use Keboola\DbWriter\Exception\UserException;
+
 class Connection
 {
     /**
@@ -131,6 +133,23 @@ class Connection
         }, $this->describeTableColumns($schemaName, $tableName));
     }
 
+    public function getColumnDataType(string $schema, string $table, string $columnName): \stdClass
+    {
+        $columns = $this->describeTableColumns($schema, $table);
+        $column = array_values(array_filter($columns, function ($v) use ($columnName) {
+            if ($v['column_name'] !== $columnName) {
+                return false;
+            }
+            return true;
+        }));
+
+        if (count($column) === 0) {
+            throw new UserException(sprintf('Column \'%s\' in table \'%s\' not found', $columnName, $table));
+        }
+
+        return json_decode($column[0]['data_type']);
+    }
+
     public function getTablePrimaryKey($schemaName, $tableName)
     {
         $cols = $this->fetchAll(sprintf(
@@ -147,6 +166,35 @@ class Connection
         }
 
         return $pkCols;
+    }
+
+    public function getTableUniqueKeys(string $schemaName, string $tableName): array
+    {
+        $cols = $this->fetchAll(sprintf(
+            'DESC TABLE %s.%s',
+            $this->quoteIdentifier($schemaName),
+            $this->quoteIdentifier($tableName)
+        ));
+        $uniqueCols = [];
+        foreach ($cols as $col) {
+            if ($col['unique key'] !== 'Y') {
+                continue;
+            }
+            $uniqueCols[] = $col['name'];
+        }
+
+        return $uniqueCols;
+    }
+
+    public function getTableConstraints(string $schemaName, string $tableName, string $type = 'FOREIGN KEY'): array
+    {
+        $rows = $this->fetchAll(sprintf(
+            "SELECT * FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = '%s' AND TABLE_NAME = '%s' AND CONSTRAINT_TYPE = '%s'",
+            $schemaName,
+            $tableName,
+            $type
+        ));
+        return $rows;
     }
 
     public function query($sql, array $bind = [])
