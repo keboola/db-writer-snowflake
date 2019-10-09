@@ -344,7 +344,7 @@ class Snowflake extends Writer implements WriterInterface
                 continue;
             }
 
-            if (!$this->isSameTypeColumns($table['dbName'], $column['name'], $column['foreignKeyTable'], $column['foreignKeyColumn'])) {
+            if (!$this->isSameTypeColumns($table['dbName'], $column['dbName'], $column['foreignKeyTable'], $column['foreignKeyColumn'])) {
                 throw new UserException(sprintf(
                     'Foreign key column \'%s\' in table \'%s\' must be the same type as column \'%s\' in source table',
                     $column['foreignKeyColumn'],
@@ -360,7 +360,7 @@ class Snowflake extends Writer implements WriterInterface
                 $this->nameWithSchemaEscaped($table['dbName']),
                 $column['foreignKeyTable'],
                 $column['foreignKeyColumn'],
-                $this->quoteIdentifier($column['name']),
+                $this->quoteIdentifier($column['dbName']),
                 $this->nameWithSchemaEscaped($column['foreignKeyTable']),
                 $this->quoteIdentifier($column['foreignKeyColumn'])
             ));
@@ -502,7 +502,8 @@ class Snowflake extends Writer implements WriterInterface
     private function addUniqueKeyIfMissing(string $targetTable, string $targetColumn): void
     {
         $uniquesInDb = $this->db->getTableUniqueKeys($this->dbParams['schema'], $targetTable);
-        if (in_array($targetColumn, $uniquesInDb)) {
+        $primaryKeysInDb = $this->db->getTablePrimaryKey($this->dbParams['schema'], $targetTable);
+        if (in_array($targetColumn, $uniquesInDb) || !empty($primaryKeysInDb)) {
             return;
         }
 
