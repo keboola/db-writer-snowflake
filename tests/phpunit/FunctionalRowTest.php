@@ -2,7 +2,6 @@
 
 namespace Keboola\DbWriter\Snowflake\Tests;
 
-use Keboola\Csv\CsvFile;
 use Keboola\DbWriter\Snowflake\Test\S3Loader;
 use Keboola\DbWriter\Writer\Snowflake;
 use Keboola\StorageApi\Client;
@@ -13,13 +12,6 @@ class FunctionalRowTest extends BaseTest
     private const PROCESS_TIMEOUT_SECONDS = 180;
 
     protected $dataDir = __DIR__ . '/../data/functional-row';
-
-    /** @var Snowflake */
-    private $writer;
-
-    private $config;
-
-    protected $tmpRunDir;
 
     public function setUp(): void
     {
@@ -80,44 +72,27 @@ class FunctionalRowTest extends BaseTest
         );
     }
 
-    private function initConfig(?callable $callback = null)
+    public function testTestConnection()
     {
-        $dstConfigPath = $this->tmpRunDir . '/config.json';
+        $this->initConfig(function ($config) {
+            $config['action'] = 'testConnection';
+            return $config;
+        });
 
-        $config = $this->getConfig($this->dataDir);
-        if ($callback !== null) {
-            $config = $callback($config);
-        }
+        $process = new Process(
+            'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
+            null,
+            null,
+            null,
+            self::PROCESS_TIMEOUT_SECONDS
+        );
+        $process->run();
 
-        @unlink($dstConfigPath);
-        file_put_contents($dstConfigPath, json_encode($config));
+        $this->assertEquals(0, $process->getExitCode());
 
-        return $config;
-    }
+        $data = json_decode($process->getOutput(), true);
 
-    private function getEntryPointPathName(): string
-    {
-        return __DIR__ . '/../../run.php';
-    }
-
-    private function createCsvFromTable(string $table)
-    {
-        $csv = new CsvFile(tempnam('/tmp', 'db-wr-test-tmp'));
-        $res = $this->writer->getSnowflakeConnection()->fetchAll(sprintf(
-            'SELECT * FROM "%s" ORDER BY 1 ASC',
-            $table
-        ));
-
-        $i = 0;
-        foreach ($res as $row) {
-            if ($i === 0) {
-                $csv->writeRow(array_keys($row));
-            }
-
-            $csv->writeRow($row);
-            $i++;
-        }
-
-        return $csv;
+        $this->assertArrayHasKey('status', $data);
+        $this->assertEquals('success', $data['status']);
     }
 }

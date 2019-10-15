@@ -2,7 +2,6 @@
 
 namespace Keboola\DbWriter\Snowflake\Tests;
 
-use Keboola\Csv\CsvFile;
 use Keboola\DbWriter\Snowflake\Test\S3Loader;
 use Keboola\DbWriter\Writer\Snowflake;
 use Keboola\StorageApi\Client;
@@ -13,13 +12,6 @@ class FunctionalTest extends BaseTest
     private const PROCESS_TIMEOUT_SECONDS = 180;
 
     protected $dataDir = __DIR__ . '/../data/functional';
-
-    /** @var Snowflake */
-    private $writer;
-
-    private $config;
-
-    protected $tmpRunDir;
 
     public function setUp(): void
     {
@@ -315,46 +307,5 @@ class FunctionalTest extends BaseTest
 
         $this->assertEquals(1, $process->getExitCode());
         $this->assertStringContainsString('Column \'randomcolumn\' in table \'special\' not found', $process->getOutput());
-    }
-
-    private function initConfig(?callable $callback = null)
-    {
-        $dstConfigPath = $this->tmpRunDir . '/config.json';
-
-        $config = $this->getConfig($this->dataDir);
-        if ($callback !== null) {
-            $config = $callback($config);
-        }
-
-        @unlink($dstConfigPath);
-        file_put_contents($dstConfigPath, json_encode($config));
-
-        return $config;
-    }
-
-    private function getEntryPointPathName(): string
-    {
-        return __DIR__ . '/../../run.php';
-    }
-
-    private function createCsvFromTable(string $table)
-    {
-        $csv = new CsvFile(tempnam('/tmp', 'db-wr-test-tmp'));
-        $res = $this->writer->getSnowflakeConnection()->fetchAll(sprintf(
-            'SELECT * FROM "%s" ORDER BY 1 ASC',
-            $table
-        ));
-
-        $i = 0;
-        foreach ($res as $row) {
-            if ($i === 0) {
-                $csv->writeRow(array_keys($row));
-            }
-
-            $csv->writeRow($row);
-            $i++;
-        }
-
-        return $csv;
     }
 }
