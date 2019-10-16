@@ -18,6 +18,7 @@ class ActionConfigRowDefinition implements ConfigurationInterface
         $rootNode = $treeBuilder->root('parameters');
 
         $rootNode
+            ->ignoreExtraKeys(false)
             ->children()
                 ->scalarNode('data_dir')
                     ->isRequired()
