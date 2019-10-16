@@ -4,7 +4,6 @@ use Keboola\DbWriter\Exception\ApplicationException;
 use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Logger;
 use Keboola\DbWriter\Snowflake\Application;
-use Keboola\DbWriter\Snowflake\Configuration\ConfigDefinition;
 use Keboola\DbWriter\Writer\Snowflake;
 use Monolog\Handler\NullHandler;
 
@@ -26,7 +25,7 @@ try {
 
     $action = isset($config['action']) ? $config['action'] : $action;
 
-    $app = new Application($config, $logger, new ConfigDefinition());
+    $app = new Application($config, $logger);
 
     if ($app['action'] !== 'run') {
         $app['logger']->setHandlers(array(new NullHandler(Logger::INFO)));

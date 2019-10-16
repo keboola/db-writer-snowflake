@@ -17,11 +17,6 @@ class SnowflakeTest extends BaseTest
 {
     protected $dataDir = __DIR__ . '/../data/snowflake';
 
-    /** @var Snowflake */
-    private $writer;
-
-    private $config;
-
     /** @var Client */
     private $storageApi;
 
