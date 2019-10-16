@@ -95,4 +95,46 @@ class FunctionalRowTest extends BaseTest
         $this->assertArrayHasKey('status', $data);
         $this->assertEquals('success', $data['status']);
     }
+
+    public function testInvalidWarehouse(): void
+    {
+        $this->initConfig(function ($config) {
+            $config['action'] = 'testConnection';
+            $config['parameters']['db']['warehouse'] = uniqid();
+            return $config;
+        });
+
+        $process = new Process(
+            'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
+            null,
+            null,
+            null,
+            self::PROCESS_TIMEOUT_SECONDS
+        );
+        $process->run();
+
+        $this->assertEquals(1, $process->getExitCode());
+        $this->assertStringContainsString('Invalid warehouse', $process->getOutput());
+    }
+
+    public function testInvalidSchema(): void
+    {
+        $this->initConfig(function ($config) {
+            $config['action'] = 'testConnection';
+            $config['parameters']['db']['schema'] = uniqid();
+            return $config;
+        });
+
+        $process = new Process(
+            'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
+            null,
+            null,
+            null,
+            self::PROCESS_TIMEOUT_SECONDS
+        );
+        $process->run();
+
+        $this->assertEquals(1, $process->getExitCode());
+        $this->assertStringContainsString('Invalid schema', $process->getOutput());
+    }
 }
