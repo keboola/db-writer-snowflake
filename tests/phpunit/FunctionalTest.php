@@ -181,6 +181,7 @@ class FunctionalTest extends BaseTest
     public function testInvalidWarehouse(): void
     {
         $this->initConfig(function ($config) {
+            $config['action'] = 'testConnection';
             $config['parameters']['db']['warehouse'] = uniqid();
             return $config;
         });
@@ -201,6 +202,7 @@ class FunctionalTest extends BaseTest
     public function testInvalidSchema(): void
     {
         $this->initConfig(function ($config) {
+            $config['action'] = 'testConnection';
             $config['parameters']['db']['schema'] = uniqid();
             return $config;
         });
