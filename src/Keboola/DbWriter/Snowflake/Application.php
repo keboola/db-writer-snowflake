@@ -7,6 +7,7 @@ use \Keboola\DbWriter\Application as BaseApplication;
 use Keboola\DbWriter\Exception\ApplicationException;
 use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Logger;
+use Keboola\DbWriter\Snowflake\Configuration\ActionConfigRowDefinition;
 use Keboola\DbWriter\Snowflake\Configuration\ConfigDefinition;
 use Keboola\DbWriter\Snowflake\Configuration\ConfigRowDefinition;
 use Keboola\DbWriter\Writer\Snowflake;
@@ -15,10 +16,15 @@ class Application extends BaseApplication
 {
     public function __construct(array $config, Logger $logger)
     {
-        if (!isset($config['parameters']['tables'])) {
-            $configDefinition = new ConfigRowDefinition();
-        } else {
+        $action = !is_null($config['action']) ?: 'run';
+        if (isset($config['parameters']['tables'])) {
             $configDefinition = new ConfigDefinition();
+        } else {
+            if ($action === 'run') {
+                $configDefinition = new ConfigRowDefinition;
+            } else {
+                $configDefinition = new ActionConfigRowDefinition();
+            }
         }
 
         parent::__construct($config, $logger, $configDefinition);

@@ -76,6 +76,12 @@ class FunctionalRowTest extends BaseTest
     {
         $this->initConfig(function ($config) {
             $config['action'] = 'testConnection';
+            $config['parameters'] = array_filter($config['parameters'], function ($key) {
+                if (in_array($key, ['data_dir'. 'writer_class', 'db'])) {
+                    return true;
+                }
+                return false;
+            }, ARRAY_FILTER_USE_KEY);
             return $config;
         });
 
@@ -99,7 +105,6 @@ class FunctionalRowTest extends BaseTest
     public function testInvalidWarehouse(): void
     {
         $this->initConfig(function ($config) {
-            $config['action'] = 'testConnection';
             $config['parameters']['db']['warehouse'] = uniqid();
             return $config;
         });
@@ -120,7 +125,6 @@ class FunctionalRowTest extends BaseTest
     public function testInvalidSchema(): void
     {
         $this->initConfig(function ($config) {
-            $config['action'] = 'testConnection';
             $config['parameters']['db']['schema'] = uniqid();
             return $config;
         });

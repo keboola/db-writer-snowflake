@@ -138,6 +138,7 @@ class FunctionalTest extends BaseTest
     {
         $this->initConfig(function ($config) {
             $config['action'] = 'testConnection';
+            unset($config['parameters']['tables']);
             return $config;
         });
 
