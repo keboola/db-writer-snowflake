@@ -526,6 +526,29 @@ class SnowflakeTest extends BaseTest
         $this->expectNotToPerformAssertions();
     }
 
+    public function testQueryTagging(): void
+    {
+        $connection = $this->writer->createSnowflakeConnection($this->config['parameters']['db']);
+
+        $connection->fetchAll('SELECT current_date;');
+
+        $queries = $connection->fetchAll(
+            '
+                SELECT 
+                    QUERY_TEXT, QUERY_TAG 
+                FROM 
+                    TABLE(INFORMATION_SCHEMA.QUERY_HISTORY_BY_SESSION())
+                WHERE QUERY_TEXT = \'SELECT current_date;\' 
+                ORDER BY START_TIME DESC 
+                LIMIT 1
+            '
+        );
+
+        $runId = sprintf('{"runId":"%s"}', getenv('KBC_RUNID'));
+
+        $this->assertEquals($runId, $queries[0]['QUERY_TAG']);
+    }
+
     private function setUserDefaultWarehouse($warehouse = null)
     {
         $user = $this->writer->getCurrentUser();
