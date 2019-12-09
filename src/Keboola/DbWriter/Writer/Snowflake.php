@@ -63,6 +63,10 @@ class Snowflake extends Writer implements WriterInterface
 
     public function createSnowflakeConnection($dbParams): Connection
     {
+        if (getenv('KBC_RUNID')) {
+            $dbParams['runId'] = getenv('KBC_RUNID');
+        }
+
         $connection = new Connection($dbParams);
         $connection->query(sprintf('ALTER SESSION SET STATEMENT_TIMEOUT_IN_SECONDS = %d', self::STATEMENT_TIMEOUT_IN_SECONDS));
         return $connection;
