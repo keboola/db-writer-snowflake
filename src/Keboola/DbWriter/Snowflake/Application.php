@@ -21,7 +21,7 @@ class Application extends BaseApplication
             $configDefinition = new ConfigDefinition();
         } else {
             if ($action === 'run') {
-                $configDefinition = new ConfigRowDefinition;
+                $configDefinition = new ConfigRowDefinition();
             } else {
                 $configDefinition = new ActionConfigRowDefinition();
             }
@@ -44,7 +44,7 @@ class Application extends BaseApplication
                 $writer = $this['writer'];
                 $writer->createForeignKeys($table);
             }
-        } elseif ($this['parameters']['export']) {
+        } elseif (!isset($this['parameters']['export']) || $this['parameters']['export']) {
             $this->processRunAction($this['parameters']);
         }
         return 'Writer finished successfully';
@@ -64,7 +64,7 @@ class Application extends BaseApplication
         }
 
         try {
-            if ($tableConfig['incremental']) {
+            if (isset($tableConfig['incremental']) && $tableConfig['incremental']) {
                 $this->writeIncrementalFromS3($manifest['s3'], $tableConfig);
             } else {
                 $this->writeFullFromS3($manifest['s3'], $tableConfig);
