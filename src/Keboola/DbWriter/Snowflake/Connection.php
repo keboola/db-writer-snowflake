@@ -65,7 +65,7 @@ class Connection
         if (isset($options['warehouse'])) {
             $dsn .= ';Warehouse=' . $this->quoteIdentifier($options['warehouse']);
         }
-        $dsn .= ";CLIENT_SESSION_KEEP_ALIVE=TRUE";
+        $dsn .= ';CLIENT_SESSION_KEEP_ALIVE=TRUE';
 
         $attemptNumber = 0;
         do {
