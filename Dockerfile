@@ -1,7 +1,7 @@
 FROM php:7.3
 
 ENV DEBIAN_FRONTEND noninteractive
-ARG SNOWFLAKE_ODBC_VERSION=2.21.1
+ARG SNOWFLAKE_ODBC_VERSION=2.19.16
 ARG SNOWFLAKE_GPG_KEY=EC218558EABB25A1
 ARG COMPOSER_FLAGS="--prefer-dist --no-interaction"
 ENV COMPOSER_ALLOW_SUPERUSER=1
@@ -43,7 +43,7 @@ WORKDIR /code
 #snoflake download + verify package
 COPY docker/snowflake/snowflake-policy.pol /etc/debsig/policies/$SNOWFLAKE_GPG_KEY/generic.pol
 COPY docker/snowflake/simba.snowflake.ini /usr/lib/snowflake/odbc/lib/simba.snowflake.ini
-ADD https://sfc-repo.snowflakecomputing.com/odbc/linux/$SNOWFLAKE_ODBC_VERSION/snowflake-odbc-$SNOWFLAKE_ODBC_VERSION.x86_64.deb /tmp/snowflake-odbc.deb
+ADD https://sfc-repo.azure.snowflakecomputing.com/odbc/linux/$SNOWFLAKE_ODBC_VERSION/snowflake-odbc-$SNOWFLAKE_ODBC_VERSION.x86_64.deb /tmp/snowflake-odbc.deb
 
 RUN mkdir -p ~/.gnupg \
     && chmod 700 ~/.gnupg \
