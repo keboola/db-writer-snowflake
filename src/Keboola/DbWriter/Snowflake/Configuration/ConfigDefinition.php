@@ -29,6 +29,7 @@ class ConfigDefinition implements ConfigurationInterface
                 ->end()
                 ->arrayNode('db')
                     ->children()
+                        ->scalarNode('runId')->end()
                         ->scalarNode('driver')->end()
                         ->scalarNode('host')
                             ->isRequired()
