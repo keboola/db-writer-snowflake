@@ -63,8 +63,7 @@ class Snowflake extends Writer implements WriterInterface
 
     public function createSnowflakeConnection($dbParams): Connection
     {
-        $runId = $dbParams['runId'] ?? null;
-        $runId = (!$runId && getenv('KBC_RUNID')) ? getenv('KBC_RUNID') : $runId;
+        $runId = $dbParams['runId'] ?? getenv('KBC_RUNID');
         if ($runId) {
             $dbParams['runId'] = $runId;
         }
