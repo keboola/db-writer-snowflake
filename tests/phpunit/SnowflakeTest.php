@@ -526,9 +526,13 @@ class SnowflakeTest extends BaseTest
         $this->expectNotToPerformAssertions();
     }
 
-    public function testQueryTagging(): void
+    /**
+     * @dataProvider queryTaggingProvider
+     */
+    public function testQueryTagging(array $additionalDbConfig, string $expectedRunId): void
     {
-        $connection = $this->writer->createSnowflakeConnection($this->config['parameters']['db']);
+        $dbConfig = array_merge($this->config['parameters']['db'], $additionalDbConfig);
+        $connection = $this->writer->createSnowflakeConnection($dbConfig);
 
         $connection->fetchAll('SELECT current_date;');
 
@@ -544,7 +548,7 @@ class SnowflakeTest extends BaseTest
             '
         );
 
-        $runId = sprintf('{"runId":"%s"}', getenv('KBC_RUNID'));
+        $runId = sprintf('{"runId":"%s"}', $expectedRunId);
 
         $this->assertEquals($runId, $queries[0]['QUERY_TAG']);
     }
@@ -572,5 +576,19 @@ class SnowflakeTest extends BaseTest
 
             $this->assertEmpty($this->writer->getUserDefaultWarehouse());
         }
+    }
+
+    public function queryTaggingProvider(): array
+    {
+        return [
+            [
+                [],
+                getenv('KBC_RUNID'),
+            ],
+            [
+                ['runId' => '123456'],
+                '123456',
+            ],
+        ];
     }
 }
