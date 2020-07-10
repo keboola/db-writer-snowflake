@@ -15,11 +15,11 @@
         "symfony/config": "^4.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^8.3",
         "squizlabs/php_codesniffer": "^3.2",
         "codeclimate/php-test-reporter": "^0.3",
         "keboola/coding-standard": "^8.0",
-        "phpstan/phpstan-shim": "^0.11.16"
+        "phpstan/phpstan-shim": "^0.11.16",
+        "phpunit/phpunit": "^9.2"
     },
     "config": {
         "process-timeout": 1800
