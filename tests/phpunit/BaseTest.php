@@ -8,14 +8,11 @@ use Keboola\DbWriter\Writer\Snowflake;
 
 abstract class BaseTest extends CommonBaseTest
 {
-    /** @var Snowflake */
-    protected $writer;
+    protected Snowflake $writer;
 
-    /** @var array */
-    protected $config;
+    protected array $config;
 
-    /** @var string */
-    protected $tmpRunDir;
+    protected string $tmpRunDir;
 
     protected function getConfig(?string $dataDir = null): array
     {

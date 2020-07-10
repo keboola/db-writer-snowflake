@@ -8,11 +8,9 @@ use Keboola\StorageApi\Options\GetFileOptions;
 
 class S3Loader
 {
-    /** @var string  */
-    private $dataDir;
+    private string $dataDir;
 
-    /** @var Client */
-    private $storageApi;
+    private Client $storageApi;
 
     public function __construct(string $dataDir, Client $storageApiClient)
     {

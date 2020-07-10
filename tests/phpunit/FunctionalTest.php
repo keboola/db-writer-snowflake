@@ -11,6 +11,7 @@ class FunctionalTest extends BaseTest
 {
     private const PROCESS_TIMEOUT_SECONDS = 180;
 
+    /** @var string  */
     protected $dataDir = __DIR__ . '/../data/functional';
 
     public function setUp(): void

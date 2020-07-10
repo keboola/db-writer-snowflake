@@ -1,4 +1,4 @@
-FROM php:7.3
+FROM php:7.4-cli
 
 ENV DEBIAN_FRONTEND noninteractive
 ARG SNOWFLAKE_ODBC_VERSION=2.19.16

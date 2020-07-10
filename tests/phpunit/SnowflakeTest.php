@@ -17,11 +17,9 @@ class SnowflakeTest extends BaseTest
 {
     protected $dataDir = __DIR__ . '/../data/snowflake';
 
-    /** @var Client */
-    private $storageApi;
+    private Client $storageApi;
 
-    /** @var S3Loader */
-    private $s3Loader;
+    private S3Loader $s3Loader;
 
     public function setUp(): void
     {
