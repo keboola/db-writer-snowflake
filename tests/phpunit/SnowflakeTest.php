@@ -271,15 +271,15 @@ class SnowflakeTest extends BaseTest
         $tableName = 'firstTable';
 
         $tmpName = $this->writer->generateTmpName($tableName);
-        $this->assertRegExp('/' . $tableName . '/ui', $tmpName);
-        $this->assertRegExp('/temp/ui', $tmpName);
+        $this->assertMatchesRegularExpression('/' . $tableName . '/ui', $tmpName);
+        $this->assertMatchesRegularExpression('/temp/ui', $tmpName);
         $this->assertLessThanOrEqual(256, mb_strlen($tmpName));
 
         $tableName = str_repeat('firstTableWithLongName', 15);
 
         $this->assertGreaterThanOrEqual(256, mb_strlen($tableName));
         $tmpName = $this->writer->generateTmpName($tableName);
-        $this->assertRegExp('/temp/ui', $tmpName);
+        $this->assertMatchesRegularExpression('/temp/ui', $tmpName);
         $this->assertLessThanOrEqual(256, mb_strlen($tmpName));
     }
 
@@ -405,7 +405,7 @@ class SnowflakeTest extends BaseTest
             $this->getWriter($config['parameters']);
             $this->fail('Create writer without warehouse should fail');
         } catch (UserException $e) {
-            $this->assertRegExp('/Snowflake user has any \"DEFAULT_WAREHOUSE\" specified/ui', $e->getMessage());
+            $this->assertMatchesRegularExpression('/Snowflake user has any \"DEFAULT_WAREHOUSE\" specified/ui', $e->getMessage());
         }
 
         // run with warehouse param
