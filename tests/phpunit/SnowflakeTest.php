@@ -40,6 +40,7 @@ class SnowflakeTest extends BaseTest
         }
 
         $this->storageApi = new Client([
+            'url' => getenv('KBC_URL'),
             'token' => getenv('STORAGE_API_TOKEN'),
         ]);
 

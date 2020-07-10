@@ -31,6 +31,7 @@ class FunctionalTest extends BaseTest
         $s3Loader = new S3Loader(
             $this->dataDir,
             new Client([
+                'url' =>getenv('KBC_URL'),
                 'token' => getenv('STORAGE_API_TOKEN'),
             ])
         );
