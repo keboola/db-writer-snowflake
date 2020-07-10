@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "71af45ea72e2756c3bfbd0cffa2517d8",
+    "content-hash": "2f26a1ae71d6c2e5cf31398818a80385",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
@@ -1735,26 +1735,24 @@
             "time": "2020-07-08T12:44:21+00:00"
         },
         {
-            "name": "phpstan/phpstan-shim",
-            "version": "0.11.16",
+            "name": "phpstan/phpstan",
+            "version": "0.12.32",
             "source": {
                 "type": "git",
-                "url": "https://github.com/phpstan/phpstan-shim.git",
-                "reference": "cf44220c5c015b5e974c22c93341bdcdc9ee3a1e"
+                "url": "https://github.com/phpstan/phpstan.git",
+                "reference": "d03863f504c8432b3de4d1881f73f6acb8c0e67c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan-shim/zipball/cf44220c5c015b5e974c22c93341bdcdc9ee3a1e",
-                "reference": "cf44220c5c015b5e974c22c93341bdcdc9ee3a1e",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/d03863f504c8432b3de4d1881f73f6acb8c0e67c",
+                "reference": "d03863f504c8432b3de4d1881f73f6acb8c0e67c",
                 "shasum": ""
             },
             "require": {
-                "php": "~7.1"
+                "php": "^7.1"
             },
-            "replace": {
-                "nikic/php-parser": "^4.0.2",
-                "phpstan/phpdoc-parser": "^0.3.3",
-                "phpstan/phpstan": "self.version"
+            "conflict": {
+                "phpstan/phpstan-shim": "*"
             },
             "bin": [
                 "phpstan",
@@ -1763,7 +1761,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "0.11-dev"
+                    "dev-master": "0.12-dev"
                 }
             },
             "autoload": {
@@ -1775,9 +1773,22 @@
             "license": [
                 "MIT"
             ],
-            "description": "PHPStan Phar distribution",
-            "abandoned": "phpstan/phpstan",
-            "time": "2019-09-17T11:49:39+00:00"
+            "description": "PHPStan - PHP Static Analysis Tool",
+            "funding": [
+                {
+                    "url": "https://github.com/ondrejmirtes",
+                    "type": "github"
+                },
+                {
+                    "url": "https://www.patreon.com/phpstan",
+                    "type": "patreon"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/phpstan/phpstan",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2020-07-01T11:57:52+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",

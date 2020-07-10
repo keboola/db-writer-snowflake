@@ -2,20 +2,16 @@
 
 namespace Keboola\DbWriter\Snowflake\Configuration;
 
+use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
 class ConfigDefinition implements ConfigurationInterface
 {
-    /**
-     * Generates the configuration tree builder.
-     *
-     * @return \Symfony\Component\Config\Definition\Builder\TreeBuilder The tree builder
-     */
-    public function getConfigTreeBuilder()
+    public function getConfigTreeBuilder(): TreeBuilder
     {
-        $treeBuilder = new TreeBuilder();
-        $rootNode = $treeBuilder->root('parameters');
+        $treeBuilder = new TreeBuilder('parameters');
+        $rootNode = $treeBuilder->getRootNode();
 
         $rootNode
             ->children()
@@ -111,11 +107,13 @@ class ConfigDefinition implements ConfigurationInterface
         return $treeBuilder;
     }
 
-    public function addSshNode()
+    public function addSshNode(): ArrayNodeDefinition
     {
-        $builder = new TreeBuilder();
-        $node = $builder->root('ssh');
+        $builder = new TreeBuilder('ssh');
 
+        /** @var ArrayNodeDefinition $node */
+        $node = $builder->getRootNode();
+        // @formatter:off
         $node
             ->children()
                 ->booleanNode('enabled')->end()
@@ -140,6 +138,7 @@ class ConfigDefinition implements ConfigurationInterface
                 ->scalarNode('user')->end()
             ->end()
         ;
+        // @formatter:on
 
         return $node;
     }

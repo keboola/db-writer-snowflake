@@ -51,7 +51,7 @@ class FunctionalRowTest extends BaseTest
         );
     }
 
-    public function testRun()
+    public function testRun(): void
     {
         $this->assertFalse($this->writer->tableExists('simple'));
         $process = new Process(
@@ -73,7 +73,7 @@ class FunctionalRowTest extends BaseTest
         );
     }
 
-    public function testTestConnection()
+    public function testTestConnection(): void
     {
         $this->initConfig(function ($config) {
             $config['action'] = 'testConnection';

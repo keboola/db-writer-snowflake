@@ -53,7 +53,7 @@ class FunctionalTest extends BaseTest
         }
     }
 
-    public function testRun()
+    public function testRun(): void
     {
         $this->assertFalse($this->writer->tableExists('simple'));
         $this->assertFalse($this->writer->tableExists('special'));
@@ -94,7 +94,7 @@ class FunctionalTest extends BaseTest
         );
     }
 
-    public function testRunAllIgnored()
+    public function testRunAllIgnored(): void
     {
         $config = $this->initConfig(function ($config) {
             $tables = array_map(function ($table) {
@@ -135,7 +135,7 @@ class FunctionalTest extends BaseTest
         $this->assertEquals(0, $process->getExitCode());
     }
 
-    public function testTestConnection()
+    public function testTestConnection(): void
     {
         $this->initConfig(function ($config) {
             $config['action'] = 'testConnection';
@@ -160,7 +160,7 @@ class FunctionalTest extends BaseTest
         $this->assertEquals('success', $data['status']);
     }
 
-    public function testUserException()
+    public function testUserException(): void
     {
         $this->initConfig(function ($config) {
             $config['parameters']['tables'][0]['items'][1]['type'] = 'int';

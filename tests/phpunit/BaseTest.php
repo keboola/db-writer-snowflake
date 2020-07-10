@@ -11,8 +11,10 @@ abstract class BaseTest extends CommonBaseTest
     /** @var Snowflake */
     protected $writer;
 
+    /** @var array */
     protected $config;
 
+    /** @var string */
     protected $tmpRunDir;
 
     protected function getConfig(?string $dataDir = null): array
@@ -26,7 +28,7 @@ abstract class BaseTest extends CommonBaseTest
         return $config;
     }
 
-    protected function initConfig(?callable $callback = null)
+    protected function initConfig(?callable $callback = null): array
     {
         $dstConfigPath = $this->tmpRunDir . '/config.json';
 
@@ -46,7 +48,7 @@ abstract class BaseTest extends CommonBaseTest
         return __DIR__ . '/../../run.php';
     }
 
-    protected function createCsvFromTable(string $table)
+    protected function createCsvFromTable(string $table): CsvFile
     {
         $csv = new CsvFile(tempnam('/tmp', 'db-wr-test-tmp'));
         $res = $this->writer->getSnowflakeConnection()->fetchAll(sprintf(
