@@ -54,7 +54,7 @@ class FunctionalRowTest extends BaseTest
     public function testRun(): void
     {
         $this->assertFalse($this->writer->tableExists('simple'));
-        $process = new Process(
+        $process = Process::fromShellCommandline(
             'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
             null,
             null,
@@ -86,7 +86,7 @@ class FunctionalRowTest extends BaseTest
             return $config;
         });
 
-        $process = new Process(
+        $process = Process::fromShellCommandline(
             'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
             null,
             null,
@@ -110,7 +110,7 @@ class FunctionalRowTest extends BaseTest
             return $config;
         });
 
-        $process = new Process(
+        $process = Process::fromShellCommandline(
             'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
             null,
             null,
@@ -130,7 +130,7 @@ class FunctionalRowTest extends BaseTest
             return $config;
         });
 
-        $process = new Process(
+        $process = Process::fromShellCommandline(
             'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
             null,
             null,

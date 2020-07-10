@@ -69,7 +69,7 @@ class FunctionalTest extends BaseTest
             }
         }
 
-        $process = new Process(
+        $process = Process::fromShellCommandline(
             'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
             null,
             null,
@@ -124,7 +124,7 @@ class FunctionalTest extends BaseTest
             );
         }
 
-        $process = new Process(
+        $process = Process::fromShellCommandline(
             'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir,
             null,
             null,
@@ -144,7 +144,7 @@ class FunctionalTest extends BaseTest
             return $config;
         });
 
-        $process = new Process(
+        $process = Process::fromShellCommandline(
             'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
             null,
             null,
@@ -168,7 +168,7 @@ class FunctionalTest extends BaseTest
             return $config;
         });
 
-        $process = new Process(
+        $process = Process::fromShellCommandline(
             'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
             null,
             null,
@@ -188,7 +188,7 @@ class FunctionalTest extends BaseTest
             return $config;
         });
 
-        $process = new Process(
+        $process = Process::fromShellCommandline(
             'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
             null,
             null,
@@ -209,7 +209,7 @@ class FunctionalTest extends BaseTest
             return $config;
         });
 
-        $process = new Process(
+        $process = Process::fromShellCommandline(
             'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
             null,
             null,
@@ -239,7 +239,7 @@ class FunctionalTest extends BaseTest
             return $config;
         });
 
-        $process = new Process(
+        $process = Process::fromShellCommandline(
             'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
             null,
             null,
@@ -269,7 +269,7 @@ class FunctionalTest extends BaseTest
             return $config;
         });
 
-        $process = new Process(
+        $process = Process::fromShellCommandline(
             'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
             null,
             null,
@@ -299,7 +299,7 @@ class FunctionalTest extends BaseTest
             return $config;
         });
 
-        $process = new Process(
+        $process = Process::fromShellCommandline(
             'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
             null,
             null,
