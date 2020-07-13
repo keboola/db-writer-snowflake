@@ -3,6 +3,7 @@
 namespace Keboola\DbWriter\Writer;
 
 use Keboola\Csv\CsvFile;
+use Keboola\DbWriter\Adapter\IAdapter;
 use Keboola\DbWriter\Exception\ApplicationException;
 use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Logger;
@@ -40,6 +41,8 @@ class Snowflake extends Writer implements WriterInterface
     /** @var Logger */
     protected $logger;
 
+    protected IAdapter $adapter;
+
     public function __construct(array $dbParams, Logger $logger)
     {
         $this->logger = $logger;
@@ -75,16 +78,22 @@ class Snowflake extends Writer implements WriterInterface
         return $connection;
     }
 
-    public function writeFromS3(array $s3info, array $table): void
+    public function writeFromAdapter(array $table): void
     {
         $this->execQuery($this->generateDropStageCommand()); // remove old db wr stage
 
         $stageName = $this->generateStageName((string) getenv('KBC_RUNID'));
 
-        $this->execQuery($this->generateCreateStageCommand($stageName, $s3info));
+        $this->execQuery($this->adapter->generateCreateStageCommand($stageName));
 
         try {
-            $this->execQuery($this->generateCopyCommand($table['dbName'], $stageName, $s3info, $table['items']));
+            $this->execQuery(
+                $this->adapter->generateCopyCommand(
+                    $this->nameWithSchemaEscaped($table['dbName']),
+                    $stageName,
+                    $table['items']
+                )
+            );
         } catch (UserException $e) {
             $this->execQuery($this->generateDropStageCommand($stageName));
             throw $e;
@@ -101,71 +110,6 @@ class Snowflake extends Writer implements WriterInterface
         );
     }
 
-    private function generateCreateStageCommand(string $stageName, array $s3info): string
-    {
-        $csvOptions = [];
-        $csvOptions[] = sprintf('FIELD_DELIMITER = %s', $this->quote(','));
-        $csvOptions[] = sprintf('FIELD_OPTIONALLY_ENCLOSED_BY = %s', $this->quote('"'));
-        $csvOptions[] = sprintf('ESCAPE_UNENCLOSED_FIELD = %s', $this->quote('\\'));
-
-        if (!$s3info['isSliced']) {
-            $csvOptions[] = 'SKIP_HEADER = 1';
-        }
-
-        return sprintf(
-            "CREATE OR REPLACE STAGE %s
-             FILE_FORMAT = (TYPE=CSV %s)
-             URL = 's3://%s'
-             CREDENTIALS = (AWS_KEY_ID = %s AWS_SECRET_KEY = %s  AWS_TOKEN = %s)
-            ",
-            $this->quoteIdentifier($stageName),
-            implode(' ', $csvOptions),
-            $s3info['bucket'],
-            $this->quote($s3info['credentials']['access_key_id']),
-            $this->quote($s3info['credentials']['secret_access_key']),
-            $this->quote($s3info['credentials']['session_token'])
-        );
-    }
-
-    private function generateCopyCommand(string $tableName, string $stageName, array $s3info, array $columns): string
-    {
-        $columnNames = array_map(function ($column) {
-            return $this->quoteIdentifier($column['dbName']);
-        }, $columns);
-
-        $transformationColumns = array_map(
-            function ($column, $index) {
-                if (!empty($column['nullable'])) {
-                    return sprintf("IFF(t.$%d = '', null, t.$%d)", $index + 1, $index + 1);
-                }
-                return sprintf('t.$%d', $index + 1);
-            },
-            $columns,
-            array_keys($columns)
-        );
-
-        $path = $s3info['key'];
-        $pattern = '';
-        if ($s3info['isSliced']) {
-            // key ends with manifest
-            if (strrpos($s3info['key'], 'manifest') === strlen($s3info['key']) - strlen('manifest')) {
-                $path = substr($s3info['key'], 0, strlen($s3info['key']) - strlen('manifest'));
-                $pattern = 'PATTERN="^.*(?<!manifest)$"';
-            }
-        }
-
-        return sprintf(
-            'COPY INTO %s(%s) 
-            FROM (SELECT %s FROM %s t)
-            %s',
-            $this->nameWithSchemaEscaped($tableName),
-            implode(', ', $columnNames),
-            implode(', ', $transformationColumns),
-            $this->quote('@' . $this->quoteIdentifier($stageName) . '/' . $path),
-            $pattern
-        );
-    }
-
     protected function nameWithSchemaEscaped(string $tableName, ?string $schemaName = null): string
     {
         if ($schemaName === null) {
@@ -178,12 +122,12 @@ class Snowflake extends Writer implements WriterInterface
         );
     }
 
-    private function quote(string $value): string
+    public static function quote(string $value): string
     {
         return "'" . addslashes($value) . "'";
     }
 
-    private function quoteIdentifier(string $value): string
+    public static function quoteIdentifier(string $value): string
     {
         $q = '"';
         return ($q . str_replace("$q", "$q$q", $value) . $q);
@@ -648,5 +592,11 @@ class Snowflake extends Writer implements WriterInterface
     public function getSnowflakeConnection(): Connection
     {
         return $this->db;
+    }
+
+    public function setAdapter(IAdapter $adapter): self
+    {
+        $this->adapter = $adapter;
+        return $this;
     }
 }

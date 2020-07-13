@@ -3,6 +3,7 @@
 namespace Keboola\DbWriter\Snowflake\Tests;
 
 use Keboola\Csv\CsvFile;
+use Keboola\DbWriter\Adapter\S3Adapter;
 use Keboola\DbWriter\Exception\ApplicationException;
 use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Logger;
@@ -293,7 +294,8 @@ class SnowflakeTest extends BaseTest
 
         $this->writer->drop($table['dbName']);
         $this->writer->create($table);
-        $this->writer->writeFromS3($s3manifest, $table);
+        $this->writer->setAdapter(new S3Adapter($s3manifest));
+        $this->writer->writeFromAdapter($table);
 
         /** @var Connection $conn */
         $conn = new Connection($this->config['parameters']['db']);
@@ -364,12 +366,14 @@ class SnowflakeTest extends BaseTest
 
         // first write
         $this->writer->create($targetTable);
-        $this->writer->writeFromS3($s3Manifest, $targetTable);
+        $this->writer->setAdapter(new S3Adapter($s3Manifest));
+        $this->writer->writeFromAdapter($targetTable);
 
         // second write
         $s3Manifest = $this->loadDataToS3($table['tableId'] . '_increment');
         $this->writer->create($table);
-        $this->writer->writeFromS3($s3Manifest, $table);
+        $this->writer->setAdapter(new S3Adapter($s3Manifest));
+        $this->writer->writeFromAdapter($table);
 
         $this->writer->upsert($table, $targetTable['dbName']);
 
@@ -420,7 +424,8 @@ class SnowflakeTest extends BaseTest
         $s3Manifest = $this->loadDataToS3($table['tableId']);
 
         $writer->create($table);
-        $writer->writeFromS3($s3Manifest, $table);
+        $writer->setAdapter(new S3Adapter($s3Manifest));
+        $writer->writeFromAdapter($table);
 
         // restore default warehouse
         $this->setUserDefaultWarehouse($warehouse);
