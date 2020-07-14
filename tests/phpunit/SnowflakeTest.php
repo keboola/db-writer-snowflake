@@ -8,9 +8,9 @@ use Keboola\DbWriter\Exception\ApplicationException;
 use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Logger;
 use Keboola\DbWriter\Snowflake\Connection;
+use Keboola\DbWriter\Snowflake\SnowflakeWriterFactory;
 use Keboola\DbWriter\Snowflake\Test\S3Loader;
 use Keboola\DbWriter\Writer\Snowflake;
-use Keboola\DbWriter\WriterFactory;
 use Keboola\StorageApi\Client;
 use Monolog\Handler\TestHandler;
 
@@ -92,15 +92,10 @@ class SnowflakeTest extends BaseTest
         $logger = new Logger($this->appName);
         $logger->pushHandler($testHandler);
 
-        $writerFactory = new WriterFactory($this->config['parameters']);
+        $writerFactory = new SnowflakeWriterFactory($this->config['parameters']);
 
         /** @var Snowflake $writer */
         $writer =  $writerFactory->create($logger);
-
-        if (!$writer instanceof Snowflake) {
-            $this->fail('Writer factory must init Snowflake Writer');
-        }
-
         $this->assertCount(0, $testHandler->getRecords());
 
         $writer->testConnection();
@@ -399,7 +394,7 @@ class SnowflakeTest extends BaseTest
         unset($config['parameters']['db']['warehouse']);
 
         try {
-            $this->getWriter($config['parameters']);
+            $this->getSnowflakeWriter($config['parameters']);
             $this->fail('Create writer without warehouse should fail');
         } catch (UserException $e) {
             $this->assertMatchesRegularExpression('/Snowflake user has any \"DEFAULT_WAREHOUSE\" specified/ui', $e->getMessage());
@@ -426,7 +421,7 @@ class SnowflakeTest extends BaseTest
         $parameters['db']['warehouse'] = uniqid();
 
         try {
-            $this->getWriter($parameters);
+            $this->getSnowflakeWriter($parameters);
             $this->fail('Creating writer should fail with UserError');
         } catch (UserException $e) {
             $this->assertStringContainsString('Invalid warehouse', $e->getMessage());
@@ -438,7 +433,7 @@ class SnowflakeTest extends BaseTest
         $parameters = $this->config['parameters'];
         $parameters['db']['schema'] = uniqid();
         try {
-            $this->getWriter($parameters);
+            $this->getSnowflakeWriter($parameters);
             $this->fail('Creating writer should fail with UserError');
         } catch (UserException $e) {
             $this->assertStringContainsString('Invalid schema', $e->getMessage());
