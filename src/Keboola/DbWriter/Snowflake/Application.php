@@ -3,6 +3,8 @@
 namespace Keboola\DbWriter\Snowflake;
 
 use Keboola\Csv\CsvFile;
+use Keboola\DbWriter\Adapter\IAdapter;
+use Keboola\DbWriter\Adapter\S3Adapter;
 use \Keboola\DbWriter\Application as BaseApplication;
 use Keboola\DbWriter\Exception\ApplicationException;
 use Keboola\DbWriter\Exception\UserException;
@@ -28,6 +30,11 @@ class Application extends BaseApplication
         }
 
         parent::__construct($config, $logger, $configDefinition);
+
+        $app = $this;
+        $this['writer_factory'] = function () use ($app) {
+            return new SnowflakeWriterFactory($app['parameters']);
+        };
     }
 
     public function runAction(): string
@@ -64,10 +71,11 @@ class Application extends BaseApplication
         }
 
         try {
+            $adapter = $this->getAdapter($manifest);
             if (isset($tableConfig['incremental']) && $tableConfig['incremental']) {
-                $this->writeIncrementalFromS3($manifest['s3'], $tableConfig);
+                $this->writeIncrementalFromAdapter($tableConfig, $adapter);
             } else {
-                $this->writeFullFromS3($manifest['s3'], $tableConfig);
+                $this->writeFullFromAdapter($tableConfig, $adapter);
             }
         } catch (Exception $e) {
             $this['logger']->error($e->getMessage());
@@ -92,10 +100,10 @@ class Application extends BaseApplication
         throw new ApplicationException('Method not implemented');
     }
 
-    public function writeIncrementalFromS3(array $s3info, array $tableConfig): void
+    public function writeIncrementalFromAdapter(array $tableConfig, IAdapter $adapter): void
     {
         /** @var Snowflake $writer */
-        $writer = $this['writer'];
+        $writer = $this['writer_factory']->create($this['logger'], $adapter);
 
         // write to staging table
         $stageTable = $tableConfig;
@@ -103,7 +111,7 @@ class Application extends BaseApplication
 
         $writer->drop($stageTable['dbName']);
         $writer->createStaging($stageTable);
-        $writer->writeFromS3($s3info, $stageTable);
+        $writer->writeFromAdapter($stageTable);
 
         // create destination table if not exists
         $dstTableExists = $writer->tableExists($tableConfig['dbName']);
@@ -116,10 +124,10 @@ class Application extends BaseApplication
         $writer->upsert($stageTable, $tableConfig['dbName']);
     }
 
-    public function writeFullFromS3(array $s3info, array $tableConfig): void
+    public function writeFullFromAdapter(array $tableConfig, IAdapter $adapter): void
     {
         /** @var Snowflake $writer */
-        $writer = $this['writer'];
+        $writer = $this['writer_factory']->create($this['logger'], $adapter);
 
         $stagingTableName = uniqid('staging');
         $stagingTableConfig = array_merge($tableConfig, [
@@ -129,7 +137,7 @@ class Application extends BaseApplication
         try {
             // create dummy table for first load which will be replaced by tables swap
             $writer->createIfNotExists($tableConfig);
-            $writer->writeFromS3($s3info, $stagingTableConfig);
+            $writer->writeFromAdapter($stagingTableConfig);
             $writer->swapTables($tableConfig['dbName'], $stagingTableName);
         } finally {
             $writer->drop($stagingTableName);
@@ -152,5 +160,13 @@ class Application extends BaseApplication
         unset($csv);
 
         return new CsvFile($fileName);
+    }
+
+    private function getAdapter(array $manifest): IAdapter
+    {
+        if (isset($manifest['s3'])) {
+            return new S3Adapter($manifest['s3']);
+        }
+        throw new UserException('Unknown input adapter');
     }
 }

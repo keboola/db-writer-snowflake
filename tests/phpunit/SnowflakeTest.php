@@ -3,13 +3,14 @@
 namespace Keboola\DbWriter\Snowflake\Tests;
 
 use Keboola\Csv\CsvFile;
+use Keboola\DbWriter\Adapter\S3Adapter;
 use Keboola\DbWriter\Exception\ApplicationException;
 use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Logger;
 use Keboola\DbWriter\Snowflake\Connection;
+use Keboola\DbWriter\Snowflake\SnowflakeWriterFactory;
 use Keboola\DbWriter\Snowflake\Test\S3Loader;
 use Keboola\DbWriter\Writer\Snowflake;
-use Keboola\DbWriter\WriterFactory;
 use Keboola\StorageApi\Client;
 use Monolog\Handler\TestHandler;
 
@@ -24,13 +25,7 @@ class SnowflakeTest extends BaseTest
     public function setUp(): void
     {
         $this->config = $this->getConfig($this->dataDir);
-
-        $writer = $this->getWriter($this->config['parameters']);
-        if ($writer instanceof Snowflake) {
-            $this->writer = $writer;
-        } else {
-            $this->fail('Writer factory must init Snowflake Writer');
-        }
+        $this->writer = $this->getSnowflakeWriter($this->config['parameters']);
 
         $tables = $this->config['parameters']['tables'];
         foreach ($tables as $table) {
@@ -97,15 +92,10 @@ class SnowflakeTest extends BaseTest
         $logger = new Logger($this->appName);
         $logger->pushHandler($testHandler);
 
-        $writerFactory = new WriterFactory($this->config['parameters']);
+        $writerFactory = new SnowflakeWriterFactory($this->config['parameters']);
 
         /** @var Snowflake $writer */
         $writer =  $writerFactory->create($logger);
-
-        if (!$writer instanceof Snowflake) {
-            $this->fail('Writer factory must init Snowflake Writer');
-        }
-
         $this->assertCount(0, $testHandler->getRecords());
 
         $writer->testConnection();
@@ -291,15 +281,16 @@ class SnowflakeTest extends BaseTest
         $table = $tables[0];
         $s3manifest = $this->loadDataToS3($table['tableId']);
 
-        $this->writer->drop($table['dbName']);
-        $this->writer->create($table);
-        $this->writer->writeFromS3($s3manifest, $table);
+        $writer = $this->getSnowflakeWriter($this->config['parameters'], new S3Adapter($s3manifest));
+        $writer->drop($table['dbName']);
+        $writer->create($table);
+        $writer->writeFromAdapter($table);
 
         /** @var Connection $conn */
         $conn = new Connection($this->config['parameters']['db']);
 
         // check if writer stage does not exists
-        $stageName = $this->writer->generateStageName((string) getenv('KBC_RUNID'));
+        $stageName = $writer->generateStageName((string) getenv('KBC_RUNID'));
 
         $writerStages = array_filter(
             $conn->fetchAll(sprintf("SHOW STAGES LIKE '{$stageName}'")),
@@ -357,21 +348,22 @@ class SnowflakeTest extends BaseTest
         }
         $table = $tables[0];
 
-        $s3Manifest = $this->loadDataToS3($table['tableId']);
-
         $targetTable = $table;
         $table['dbName'] .= $table['incremental']?'_temp_' . uniqid():'';
 
         // first write
-        $this->writer->create($targetTable);
-        $this->writer->writeFromS3($s3Manifest, $targetTable);
+        $s3Manifest = $this->loadDataToS3($table['tableId']);
+        $writer = $this->getSnowflakeWriter($this->config['parameters'], new S3Adapter($s3Manifest));
+        $writer->create($targetTable);
+        $writer->writeFromAdapter($targetTable);
 
         // second write
         $s3Manifest = $this->loadDataToS3($table['tableId'] . '_increment');
-        $this->writer->create($table);
-        $this->writer->writeFromS3($s3Manifest, $table);
+        $writer = $this->getSnowflakeWriter($this->config['parameters'], new S3Adapter($s3Manifest));
+        $writer->create($table);
+        $writer->writeFromAdapter($table);
 
-        $this->writer->upsert($table, $targetTable['dbName']);
+        $writer->upsert($table, $targetTable['dbName']);
 
         /** @var Connection $conn */
         $conn = new Connection($this->config['parameters']['db']);
@@ -402,7 +394,7 @@ class SnowflakeTest extends BaseTest
         unset($config['parameters']['db']['warehouse']);
 
         try {
-            $this->getWriter($config['parameters']);
+            $this->getSnowflakeWriter($config['parameters']);
             $this->fail('Create writer without warehouse should fail');
         } catch (UserException $e) {
             $this->assertMatchesRegularExpression('/Snowflake user has any \"DEFAULT_WAREHOUSE\" specified/ui', $e->getMessage());
@@ -410,17 +402,13 @@ class SnowflakeTest extends BaseTest
 
         // run with warehouse param
         $config = $this->config;
-
-        /** @var Snowflake $writer */
-        $writer = $this->getWriter($config['parameters']);
-
         $tables = $config['parameters']['tables'];
         $table = $tables[0];
 
         $s3Manifest = $this->loadDataToS3($table['tableId']);
-
+        $writer = $this->getSnowflakeWriter($this->config['parameters'], new S3Adapter($s3Manifest));
         $writer->create($table);
-        $writer->writeFromS3($s3Manifest, $table);
+        $writer->writeFromAdapter($table);
 
         // restore default warehouse
         $this->setUserDefaultWarehouse($warehouse);
@@ -433,7 +421,7 @@ class SnowflakeTest extends BaseTest
         $parameters['db']['warehouse'] = uniqid();
 
         try {
-            $this->getWriter($parameters);
+            $this->getSnowflakeWriter($parameters);
             $this->fail('Creating writer should fail with UserError');
         } catch (UserException $e) {
             $this->assertStringContainsString('Invalid warehouse', $e->getMessage());
@@ -445,7 +433,7 @@ class SnowflakeTest extends BaseTest
         $parameters = $this->config['parameters'];
         $parameters['db']['schema'] = uniqid();
         try {
-            $this->getWriter($parameters);
+            $this->getSnowflakeWriter($parameters);
             $this->fail('Creating writer should fail with UserError');
         } catch (UserException $e) {
             $this->assertStringContainsString('Invalid schema', $e->getMessage());

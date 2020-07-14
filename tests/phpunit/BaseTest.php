@@ -3,6 +3,9 @@
 namespace Keboola\DbWriter\Snowflake\Tests;
 
 use Keboola\Csv\CsvFile;
+use Keboola\DbWriter\Adapter\IAdapter;
+use Keboola\DbWriter\Logger;
+use Keboola\DbWriter\Snowflake\SnowflakeWriterFactory;
 use Keboola\DbWriter\Test\BaseTest as CommonBaseTest;
 use Keboola\DbWriter\Writer\Snowflake;
 
@@ -64,5 +67,12 @@ abstract class BaseTest extends CommonBaseTest
         }
 
         return $csv;
+    }
+
+    protected function getSnowflakeWriter(array $parameters, ?IAdapter $adapter = null): Snowflake
+    {
+        $writerFactory = new SnowflakeWriterFactory($parameters);
+
+        return $writerFactory->create(new Logger($this->appName), $adapter);
     }
 }
