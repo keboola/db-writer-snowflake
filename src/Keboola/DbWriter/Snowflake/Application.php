@@ -50,7 +50,7 @@ class Application extends BaseApplication
         return 'Writer finished successfully';
     }
 
-    private function processRunAction($tableConfig)
+    private function processRunAction(array $tableConfig): array
     {
         $manifest = $this->getManifest($tableConfig['tableId']);
 
@@ -136,7 +136,7 @@ class Application extends BaseApplication
         }
     }
 
-    private function getManifest($tableId)
+    private function getManifest(string $tableId): array
     {
         return json_decode(
             (string) file_get_contents($this['parameters']['data_dir'] . '/in/tables/' . $tableId . '.csv.manifest'),

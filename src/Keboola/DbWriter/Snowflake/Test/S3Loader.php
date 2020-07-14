@@ -8,23 +8,22 @@ use Keboola\StorageApi\Options\GetFileOptions;
 
 class S3Loader
 {
-    private $dataDir;
+    private string $dataDir;
 
-    /** @var Client */
-    private $storageApi;
+    private Client $storageApi;
 
-    public function __construct($dataDir, $storageApiClient)
+    public function __construct(string $dataDir, Client $storageApiClient)
     {
         $this->dataDir = $dataDir;
         $this->storageApi = $storageApiClient;
     }
 
-    private function getInputCsv($tableId)
+    private function getInputCsv(string $tableId): string
     {
         return sprintf($this->dataDir . '/in/tables/%s.csv', $tableId);
     }
 
-    public function upload($tableId)
+    public function upload(string $tableId): array
     {
         $filePath = $this->getInputCsv($tableId);
         $bucketId = 'in.c-test-wr-db-redshift';

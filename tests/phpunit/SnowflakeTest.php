@@ -17,11 +17,9 @@ class SnowflakeTest extends BaseTest
 {
     protected $dataDir = __DIR__ . '/../data/snowflake';
 
-    /** @var Client */
-    private $storageApi;
+    private Client $storageApi;
 
-    /** @var S3Loader */
-    private $s3Loader;
+    private S3Loader $s3Loader;
 
     public function setUp(): void
     {
@@ -40,6 +38,7 @@ class SnowflakeTest extends BaseTest
         }
 
         $this->storageApi = new Client([
+            'url' => getenv('KBC_URL'),
             'token' => getenv('STORAGE_API_TOKEN'),
         ]);
 
@@ -51,17 +50,17 @@ class SnowflakeTest extends BaseTest
         $this->s3Loader = new S3Loader($this->dataDir, $this->storageApi);
     }
 
-    private function getInputCsv($tableId)
+    private function getInputCsv(string $tableId): string
     {
         return sprintf($this->dataDir . '/in/tables/%s.csv', $tableId);
     }
 
-    private function loadDataToS3($tableId)
+    private function loadDataToS3(string $tableId): array
     {
         return $this->s3Loader->upload($tableId);
     }
 
-    public function testCreateConnection()
+    public function testCreateConnection(): void
     {
         $connection = $this->writer->createSnowflakeConnection($this->config['parameters']['db']);
 
@@ -76,7 +75,7 @@ class SnowflakeTest extends BaseTest
         }
     }
 
-    public function testGetConnection()
+    public function testGetConnection(): void
     {
         $connection = $this->writer->getSnowflakeConnection();
 
@@ -91,7 +90,7 @@ class SnowflakeTest extends BaseTest
         }
     }
 
-    public function testConnection()
+    public function testConnection(): void
     {
         $testHandler = new TestHandler();
 
@@ -119,7 +118,7 @@ class SnowflakeTest extends BaseTest
         $this->assertEquals('INFO', $records[0]['level_name']);
     }
 
-    public function testDrop()
+    public function testDrop(): void
     {
         $conn = $this->writer->getSnowflakeConnection();
 
@@ -145,7 +144,7 @@ class SnowflakeTest extends BaseTest
     /**
      * @dataProvider createData
      */
-    public function testCreate(bool $incrementalValue, string $expectedKind)
+    public function testCreate(bool $incrementalValue, string $expectedKind): void
     {
         $tables = array_filter(
             (array) $this->config['parameters']['tables'],
@@ -179,7 +178,7 @@ class SnowflakeTest extends BaseTest
         }
     }
 
-    public function testCreateIfNotExists()
+    public function testCreateIfNotExists(): void
     {
         $table = reset($this->config['parameters']['tables']);
         $dbName = $table['dbName'];
@@ -193,7 +192,7 @@ class SnowflakeTest extends BaseTest
         $this->assertTrue($this->writer->tableExists($dbName));
     }
 
-    public function testSwap()
+    public function testSwap(): void
     {
         $table1 = $this->config['parameters']['tables'][0];
         $table2 = $this->config['parameters']['tables'][1];
@@ -228,7 +227,7 @@ class SnowflakeTest extends BaseTest
     /**
      * @dataProvider createStagingData
      */
-    public function testCreateStaging(bool $incrementalValue, string $expectedKind)
+    public function testCreateStaging(bool $incrementalValue, string $expectedKind): void
     {
         $tables = array_filter(
             (array) $this->config['parameters']['tables'],
@@ -262,29 +261,29 @@ class SnowflakeTest extends BaseTest
         }
     }
 
-    public function testStageName()
+    public function testStageName(): void
     {
         $this->assertFalse($this->writer->generateStageName((string) getenv('KBC_RUNID')) === Snowflake::STAGE_NAME);
     }
 
-    public function testTmpName()
+    public function testTmpName(): void
     {
         $tableName = 'firstTable';
 
         $tmpName = $this->writer->generateTmpName($tableName);
-        $this->assertRegExp('/' . $tableName . '/ui', $tmpName);
-        $this->assertRegExp('/temp/ui', $tmpName);
+        $this->assertMatchesRegularExpression('/' . $tableName . '/ui', $tmpName);
+        $this->assertMatchesRegularExpression('/temp/ui', $tmpName);
         $this->assertLessThanOrEqual(256, mb_strlen($tmpName));
 
         $tableName = str_repeat('firstTableWithLongName', 15);
 
         $this->assertGreaterThanOrEqual(256, mb_strlen($tableName));
         $tmpName = $this->writer->generateTmpName($tableName);
-        $this->assertRegExp('/temp/ui', $tmpName);
+        $this->assertMatchesRegularExpression('/temp/ui', $tmpName);
         $this->assertLessThanOrEqual(256, mb_strlen($tmpName));
     }
 
-    public function testWriteAsync()
+    public function testWriteAsync(): void
     {
         $tables = $this->config['parameters']['tables'];
 
@@ -350,7 +349,7 @@ class SnowflakeTest extends BaseTest
         $this->assertFileEquals($this->getInputCsv($table['tableId']), $csv->getPathname());
     }
 
-    public function testUpsert()
+    public function testUpsert(): void
     {
         $tables = $this->config['parameters']['tables'];
         foreach ($tables as $table) {
@@ -406,7 +405,7 @@ class SnowflakeTest extends BaseTest
             $this->getWriter($config['parameters']);
             $this->fail('Create writer without warehouse should fail');
         } catch (UserException $e) {
-            $this->assertRegExp('/Snowflake user has any \"DEFAULT_WAREHOUSE\" specified/ui', $e->getMessage());
+            $this->assertMatchesRegularExpression('/Snowflake user has any \"DEFAULT_WAREHOUSE\" specified/ui', $e->getMessage());
         }
 
         // run with warehouse param
@@ -553,7 +552,7 @@ class SnowflakeTest extends BaseTest
         $this->assertEquals($runId, $queries[0]['QUERY_TAG']);
     }
 
-    private function setUserDefaultWarehouse($warehouse = null)
+    private function setUserDefaultWarehouse(?string $warehouse = null): void
     {
         $user = $this->writer->getCurrentUser();
         $conn = $this->writer->getSnowflakeConnection();

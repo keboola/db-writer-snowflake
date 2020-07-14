@@ -31,6 +31,7 @@ class FunctionalRowTest extends BaseTest
         $s3Loader = new S3Loader(
             $this->dataDir,
             new Client([
+                'url' => getenv('KBC_URL'),
                 'token' => getenv('STORAGE_API_TOKEN'),
             ])
         );
@@ -50,10 +51,10 @@ class FunctionalRowTest extends BaseTest
         );
     }
 
-    public function testRun()
+    public function testRun(): void
     {
         $this->assertFalse($this->writer->tableExists('simple'));
-        $process = new Process(
+        $process = Process::fromShellCommandline(
             'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
             null,
             null,
@@ -72,7 +73,7 @@ class FunctionalRowTest extends BaseTest
         );
     }
 
-    public function testTestConnection()
+    public function testTestConnection(): void
     {
         $this->initConfig(function ($config) {
             $config['action'] = 'testConnection';
@@ -85,7 +86,7 @@ class FunctionalRowTest extends BaseTest
             return $config;
         });
 
-        $process = new Process(
+        $process = Process::fromShellCommandline(
             'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
             null,
             null,
@@ -109,7 +110,7 @@ class FunctionalRowTest extends BaseTest
             return $config;
         });
 
-        $process = new Process(
+        $process = Process::fromShellCommandline(
             'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
             null,
             null,
@@ -129,7 +130,7 @@ class FunctionalRowTest extends BaseTest
             return $config;
         });
 
-        $process = new Process(
+        $process = Process::fromShellCommandline(
             'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
             null,
             null,

@@ -16,6 +16,7 @@ class Snowflake extends Writer implements WriterInterface
     private const STATEMENT_TIMEOUT_IN_SECONDS = 10800;
     public const STAGE_NAME = 'db-writer';
 
+    /** @var string[]  */
     private static $allowedTypes = [
         'number',
         'decimal', 'numeric',
@@ -27,6 +28,7 @@ class Snowflake extends Writer implements WriterInterface
         'date', 'time', 'timestamp', 'timestamp_ltz', 'timestamp_ntz', 'timestamp_tz',
     ];
 
+    /** @var string[]  */
     private static $typesWithSize = [
         'number', 'decimal', 'numeric',
         'char', 'character', 'varchar', 'string', 'text', 'binary',
@@ -38,7 +40,7 @@ class Snowflake extends Writer implements WriterInterface
     /** @var Logger */
     protected $logger;
 
-    public function __construct($dbParams, Logger $logger)
+    public function __construct(array $dbParams, Logger $logger)
     {
         $this->logger = $logger;
         $this->dbParams = $dbParams;
@@ -61,7 +63,7 @@ class Snowflake extends Writer implements WriterInterface
         throw new ApplicationException('Method not implemented');
     }
 
-    public function createSnowflakeConnection($dbParams): Connection
+    public function createSnowflakeConnection(array $dbParams): Connection
     {
         $runId = $dbParams['runId'] ?? getenv('KBC_RUNID');
         if ($runId) {
@@ -73,7 +75,7 @@ class Snowflake extends Writer implements WriterInterface
         return $connection;
     }
 
-    public function writeFromS3($s3info, array $table)
+    public function writeFromS3(array $s3info, array $table): void
     {
         $this->execQuery($this->generateDropStageCommand()); // remove old db wr stage
 
@@ -91,7 +93,7 @@ class Snowflake extends Writer implements WriterInterface
         $this->execQuery($this->generateDropStageCommand($stageName));
     }
 
-    private function generateDropStageCommand($stage = self::STAGE_NAME)
+    private function generateDropStageCommand(string $stage = self::STAGE_NAME): string
     {
         return sprintf(
             'DROP STAGE IF EXISTS %s',
@@ -99,7 +101,7 @@ class Snowflake extends Writer implements WriterInterface
         );
     }
 
-    private function generateCreateStageCommand($stageName, $s3info)
+    private function generateCreateStageCommand(string $stageName, array $s3info): string
     {
         $csvOptions = [];
         $csvOptions[] = sprintf('FIELD_DELIMITER = %s', $this->quote(','));
@@ -125,7 +127,7 @@ class Snowflake extends Writer implements WriterInterface
         );
     }
 
-    private function generateCopyCommand($tableName, $stageName, $s3info, $columns)
+    private function generateCopyCommand(string $tableName, string $stageName, array $s3info, array $columns): string
     {
         $columnNames = array_map(function ($column) {
             return $this->quoteIdentifier($column['dbName']);
@@ -164,7 +166,7 @@ class Snowflake extends Writer implements WriterInterface
         );
     }
 
-    protected function nameWithSchemaEscaped($tableName, $schemaName = null)
+    protected function nameWithSchemaEscaped(string $tableName, ?string $schemaName = null): string
     {
         if ($schemaName === null) {
             $schemaName = $this->dbParams['schema'];
@@ -220,7 +222,7 @@ class Snowflake extends Writer implements WriterInterface
         ));
     }
 
-    public function swapTables(string $table1, string $table2)
+    public function swapTables(string $table1, string $table2): void
     {
         $this->execQuery(sprintf(
             'ALTER TABLE %s SWAP WITH %s',
@@ -372,7 +374,7 @@ class Snowflake extends Writer implements WriterInterface
         }
     }
 
-    private function execQuery($query)
+    private function execQuery(string $query): void
     {
         $this->logger->info(sprintf("Executing query '%s'", $this->hideCredentialsInQuery($query)));
         try {
@@ -397,7 +399,7 @@ class Snowflake extends Writer implements WriterInterface
         throw new ApplicationException('Method not implemented');
     }
 
-    public function getUserDefaultWarehouse()
+    public function getUserDefaultWarehouse(): ?string
     {
         $sql = sprintf(
             'DESC USER %s;',
@@ -415,7 +417,7 @@ class Snowflake extends Writer implements WriterInterface
         return null;
     }
 
-    public function testConnection()
+    public function testConnection(): void
     {
         $this->execQuery('SELECT current_date;');
     }
@@ -448,7 +450,7 @@ class Snowflake extends Writer implements WriterInterface
         );
     }
 
-    public function getCurrentUser()
+    public function getCurrentUser(): string
     {
         return $this->db->fetchAll('SELECT CURRENT_USER;')[0]['CURRENT_USER'];
     }
@@ -587,12 +589,12 @@ class Snowflake extends Writer implements WriterInterface
         );
     }
 
-    private function hideCredentialsInQuery($query)
+    private function hideCredentialsInQuery(string $query): ?string
     {
         return preg_replace('/(AWS_[A-Z_]*\\s=\\s.)[0-9A-Za-z\\/\\+=]*./', '${1}...\'', $query);
     }
 
-    private function validateAndSetWarehouse()
+    private function validateAndSetWarehouse(): void
     {
         $envWarehouse = !empty($this->dbParams['warehouse']) ? $this->dbParams['warehouse'] : null;
 
@@ -617,7 +619,7 @@ class Snowflake extends Writer implements WriterInterface
         }
     }
 
-    private function validateAndSetSchema()
+    private function validateAndSetSchema(): void
     {
         try {
             $this->db->query(sprintf(

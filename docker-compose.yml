@@ -5,6 +5,7 @@ services:
     image: keboola/wr-db-snowflake
     environment:
       - KBC_RUNID
+      - KBC_URL
       - STORAGE_API_TOKEN
       - DB_HOST
       - DB_PORT
