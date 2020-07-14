@@ -43,10 +43,11 @@ class Snowflake extends Writer implements WriterInterface
 
     protected IAdapter $adapter;
 
-    public function __construct(array $dbParams, Logger $logger)
+    public function __construct(array $dbParams, Logger $logger, IAdapter $adapter)
     {
         $this->logger = $logger;
         $this->dbParams = $dbParams;
+        $this->adapter = $adapter;
 
         try {
             $this->db = $this->createSnowflakeConnection($this->dbParams);
@@ -592,11 +593,5 @@ class Snowflake extends Writer implements WriterInterface
     public function getSnowflakeConnection(): Connection
     {
         return $this->db;
-    }
-
-    public function setAdapter(IAdapter $adapter): self
-    {
-        $this->adapter = $adapter;
-        return $this;
     }
 }

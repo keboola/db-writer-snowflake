@@ -3,6 +3,7 @@
 namespace Keboola\DbWriter\Snowflake;
 
 use Keboola\Csv\CsvFile;
+use Keboola\DbWriter\Adapter\IAdapter;
 use Keboola\DbWriter\Adapter\S3Adapter;
 use \Keboola\DbWriter\Application as BaseApplication;
 use Keboola\DbWriter\Exception\ApplicationException;
@@ -29,6 +30,11 @@ class Application extends BaseApplication
         }
 
         parent::__construct($config, $logger, $configDefinition);
+
+        $app = $this;
+        $this['writer_factory'] = function () use ($app) {
+            return new SnowflakeWriterFactory($app['parameters']);
+        };
     }
 
     public function runAction(): string
@@ -64,13 +70,12 @@ class Application extends BaseApplication
             return $tableConfig;
         }
 
-        $this->ensureAdapter($manifest, $this['writer']);
-
         try {
+            $adapter = $this->getAdapter($manifest);
             if (isset($tableConfig['incremental']) && $tableConfig['incremental']) {
-                $this->writeIncrementalFromAdapter($tableConfig);
+                $this->writeIncrementalFromAdapter($tableConfig, $adapter);
             } else {
-                $this->writeFullFromAdapter($tableConfig);
+                $this->writeFullFromAdapter($tableConfig, $adapter);
             }
         } catch (Exception $e) {
             $this['logger']->error($e->getMessage());
@@ -95,10 +100,10 @@ class Application extends BaseApplication
         throw new ApplicationException('Method not implemented');
     }
 
-    public function writeIncrementalFromAdapter(array $tableConfig): void
+    public function writeIncrementalFromAdapter(array $tableConfig, IAdapter $adapter): void
     {
         /** @var Snowflake $writer */
-        $writer = $this['writer'];
+        $writer = $this['writer_factory']->create($this['logger'], $adapter);
 
         // write to staging table
         $stageTable = $tableConfig;
@@ -119,10 +124,10 @@ class Application extends BaseApplication
         $writer->upsert($stageTable, $tableConfig['dbName']);
     }
 
-    public function writeFullFromAdapter(array $tableConfig): void
+    public function writeFullFromAdapter(array $tableConfig, IAdapter $adapter): void
     {
         /** @var Snowflake $writer */
-        $writer = $this['writer'];
+        $writer = $this['writer_factory']->create($this['logger'], $adapter);
 
         $stagingTableName = uniqid('staging');
         $stagingTableConfig = array_merge($tableConfig, [
@@ -157,11 +162,10 @@ class Application extends BaseApplication
         return new CsvFile($fileName);
     }
 
-    private function ensureAdapter(array $manifest, Snowflake $writer): bool
+    private function getAdapter(array $manifest): IAdapter
     {
         if (isset($manifest['s3'])) {
-            $writer->setAdapter(new S3Adapter($manifest['s3']));
-            return true;
+            return new S3Adapter($manifest['s3']);
         }
         throw new UserException('Unknown input adapter');
     }

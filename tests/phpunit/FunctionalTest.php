@@ -21,14 +21,7 @@ class FunctionalTest extends BaseTest
         mkdir($this->tmpRunDir . '/in/tables/', 0777, true);
         $this->config = $this->initConfig();
 
-        $writer = $this->getWriter($this->config['parameters']);
-        if ($writer instanceof Snowflake) {
-            $this->writer = $writer;
-        } else {
-            $this->fail('Writer factory must init Snowflake Writer');
-        }
-
-        $writer = $this->getWriter($this->config['parameters']);
+        $this->writer = $this->getSnowflakeWriter($this->config['parameters']);
         $s3Loader = new S3Loader(
             $this->dataDir,
             new Client([
@@ -39,7 +32,7 @@ class FunctionalTest extends BaseTest
 
         foreach ($this->config['parameters']['tables'] as $table) {
             // clean destination DB
-            $writer->drop($table['dbName']);
+            $this->writer->drop($table['dbName']);
 
             // upload source files to S3 - mimic functionality of docker-runner
             $srcManifestPath = $this->dataDir . '/in/tables/' . $table['tableId'] . '.csv.manifest';
