@@ -3,6 +3,7 @@
 namespace Keboola\DbWriter\Snowflake;
 
 use Keboola\Csv\CsvFile;
+use Keboola\DbWriter\Adapter\AbsAdapter;
 use Keboola\DbWriter\Adapter\IAdapter;
 use Keboola\DbWriter\Adapter\S3Adapter;
 use \Keboola\DbWriter\Application as BaseApplication;
@@ -166,6 +167,9 @@ class Application extends BaseApplication
     {
         if (isset($manifest['s3'])) {
             return new S3Adapter($manifest['s3']);
+        }
+        if (isset($manifest['abs'])) {
+            return new AbsAdapter($manifest['abs']);
         }
         throw new UserException('Unknown input adapter');
     }
