@@ -6,8 +6,7 @@ services:
     environment:
       - KBC_RUNID
       - KBC_URL
-      - STORAGE_API_TOKEN_S3
-      - STORAGE_API_TOKEN_ABS
+      - STORAGE_API_TOKEN
       - DB_HOST
       - DB_PORT
       - DB_USER

@@ -25,7 +25,7 @@ class FunctionalTest extends BaseTest
             $this->dataDir,
             new Client([
                 'url' =>getenv('KBC_URL'),
-                'token' => getenv('STORAGE_API_TOKEN_S3'),
+                'token' => getenv('STORAGE_API_TOKEN'),
             ])
         );
 

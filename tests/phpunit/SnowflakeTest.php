@@ -36,7 +36,7 @@ class SnowflakeTest extends BaseTest
 
         $this->storageApi = new Client([
             'url' => getenv('KBC_URL'),
-            'token' => getenv('STORAGE_API_TOKEN_S3'),
+            'token' => getenv('STORAGE_API_TOKEN'),
         ]);
 
         $bucketId = 'in.c-test-wr-db-snowflake';
