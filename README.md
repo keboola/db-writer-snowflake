@@ -75,7 +75,8 @@ App is developed on localhost using TDD.
 3. Install dependencies: `docker-compose run --rm php composer install -n`
 4. Create `.env` file:
 ```bash
-STORAGE_API_TOKEN=
+STORAGE_API_TOKEN_S3=
+STORAGE_API_TOKEN_ABS=
 KBC_RUNID=
 DB_HOST=
 DB_PORT=

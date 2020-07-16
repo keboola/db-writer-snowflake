@@ -3,13 +3,15 @@
 namespace Keboola\DbWriter\Snowflake\Tests;
 
 use Keboola\Csv\CsvFile;
+use Keboola\DbWriter\Adapter\AbsAdapter;
+use Keboola\DbWriter\Adapter\IAdapter;
 use Keboola\DbWriter\Adapter\S3Adapter;
 use Keboola\DbWriter\Exception\ApplicationException;
 use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Logger;
 use Keboola\DbWriter\Snowflake\Connection;
 use Keboola\DbWriter\Snowflake\SnowflakeWriterFactory;
-use Keboola\DbWriter\Snowflake\Test\S3Loader;
+use Keboola\DbWriter\Snowflake\Test\StageLoader;
 use Keboola\DbWriter\Writer\Snowflake;
 use Keboola\StorageApi\Client;
 use Monolog\Handler\TestHandler;
@@ -20,7 +22,7 @@ class SnowflakeTest extends BaseTest
 
     private Client $storageApi;
 
-    private S3Loader $s3Loader;
+    private StageLoader $stageLoader;
 
     public function setUp(): void
     {
@@ -34,7 +36,7 @@ class SnowflakeTest extends BaseTest
 
         $this->storageApi = new Client([
             'url' => getenv('KBC_URL'),
-            'token' => getenv('STORAGE_API_TOKEN'),
+            'token' => getenv('STORAGE_API_TOKEN_S3'),
         ]);
 
         $bucketId = 'in.c-test-wr-db-snowflake';
@@ -42,7 +44,7 @@ class SnowflakeTest extends BaseTest
             $this->storageApi->dropBucket($bucketId, ['force' => true]);
         }
 
-        $this->s3Loader = new S3Loader($this->dataDir, $this->storageApi);
+        $this->stageLoader = new StageLoader($this->dataDir, $this->storageApi);
     }
 
     private function getInputCsv(string $tableId): string
@@ -50,9 +52,9 @@ class SnowflakeTest extends BaseTest
         return sprintf($this->dataDir . '/in/tables/%s.csv', $tableId);
     }
 
-    private function loadDataToS3(string $tableId): array
+    private function loadDataToStage(string $tableId): array
     {
-        return $this->s3Loader->upload($tableId);
+        return $this->stageLoader->upload($tableId);
     }
 
     public function testCreateConnection(): void
@@ -279,9 +281,8 @@ class SnowflakeTest extends BaseTest
 
         // simple table
         $table = $tables[0];
-        $s3manifest = $this->loadDataToS3($table['tableId']);
 
-        $writer = $this->getSnowflakeWriter($this->config['parameters'], new S3Adapter($s3manifest));
+        $writer = $this->getSnowflakeWriter($this->config['parameters'], $this->getAdapter($table['tableId']));
         $writer->drop($table['dbName']);
         $writer->create($table);
         $writer->writeFromAdapter($table);
@@ -352,14 +353,15 @@ class SnowflakeTest extends BaseTest
         $table['dbName'] .= $table['incremental']?'_temp_' . uniqid():'';
 
         // first write
-        $s3Manifest = $this->loadDataToS3($table['tableId']);
-        $writer = $this->getSnowflakeWriter($this->config['parameters'], new S3Adapter($s3Manifest));
+        $writer = $this->getSnowflakeWriter($this->config['parameters'], $this->getAdapter($table['tableId']));
         $writer->create($targetTable);
         $writer->writeFromAdapter($targetTable);
 
         // second write
-        $s3Manifest = $this->loadDataToS3($table['tableId'] . '_increment');
-        $writer = $this->getSnowflakeWriter($this->config['parameters'], new S3Adapter($s3Manifest));
+        $writer = $this->getSnowflakeWriter(
+            $this->config['parameters'],
+            $this->getAdapter($table['tableId'] . '_increment')
+        );
         $writer->create($table);
         $writer->writeFromAdapter($table);
 
@@ -405,8 +407,7 @@ class SnowflakeTest extends BaseTest
         $tables = $config['parameters']['tables'];
         $table = $tables[0];
 
-        $s3Manifest = $this->loadDataToS3($table['tableId']);
-        $writer = $this->getSnowflakeWriter($this->config['parameters'], new S3Adapter($s3Manifest));
+        $writer = $this->getSnowflakeWriter($this->config['parameters'], $this->getAdapter($table['tableId']));
         $writer->create($table);
         $writer->writeFromAdapter($table);
 
@@ -577,5 +578,17 @@ class SnowflakeTest extends BaseTest
                 '123456',
             ],
         ];
+    }
+
+    private function getAdapter(string $table): IAdapter
+    {
+        $loadFile = $this->loadDataToStage($table);
+        if ($loadFile['stage'] === StageLoader::STAGE_S3) {
+            return new S3Adapter($loadFile['manifest']);
+        } elseif ($loadFile['stage'] === StageLoader::STAGE_ABS) {
+            return new AbsAdapter($loadFile['manifest']);
+        }
+
+        throw new ApplicationException(sprintf('Stage "%s" does not recognized', $loadFile['stage']));
     }
 }

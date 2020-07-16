@@ -2,8 +2,7 @@
 
 namespace Keboola\DbWriter\Snowflake\Tests;
 
-use Keboola\DbWriter\Snowflake\Test\S3Loader;
-use Keboola\DbWriter\Writer\Snowflake;
+use Keboola\DbWriter\Snowflake\Test\StageLoader;
 use Keboola\StorageApi\Client;
 use Symfony\Component\Process\Process;
 
@@ -22,11 +21,11 @@ class FunctionalTest extends BaseTest
         $this->config = $this->initConfig();
 
         $this->writer = $this->getSnowflakeWriter($this->config['parameters']);
-        $s3Loader = new S3Loader(
+        $stageLoader = new StageLoader(
             $this->dataDir,
             new Client([
                 'url' =>getenv('KBC_URL'),
-                'token' => getenv('STORAGE_API_TOKEN'),
+                'token' => getenv('STORAGE_API_TOKEN_S3'),
             ])
         );
 
@@ -34,10 +33,11 @@ class FunctionalTest extends BaseTest
             // clean destination DB
             $this->writer->drop($table['dbName']);
 
-            // upload source files to S3 - mimic functionality of docker-runner
+            // upload source files to stage (S3/ABS) - mimic functionality of docker-runner
             $srcManifestPath = $this->dataDir . '/in/tables/' . $table['tableId'] . '.csv.manifest';
             $manifestData = json_decode((string) file_get_contents($srcManifestPath), true);
-            $manifestData['s3'] = $s3Loader->upload($table['tableId']);
+            $uploadFileInfo = $stageLoader->upload($table['tableId']);
+            $manifestData[$uploadFileInfo['stage']] = $uploadFileInfo['manifest'];
 
             $dstManifestPath = $this->tmpRunDir . '/in/tables/' . $table['tableId'] . '.csv.manifest';
             file_put_contents(
