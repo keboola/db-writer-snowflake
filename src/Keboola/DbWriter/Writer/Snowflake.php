@@ -536,7 +536,11 @@ class Snowflake extends Writer implements WriterInterface
 
     private function hideCredentialsInQuery(string $query): ?string
     {
-        return preg_replace('/(AWS_[A-Z_]*\\s=\\s.)[0-9A-Za-z\\/\\+=]*./', '${1}...\'', $query);
+        return preg_replace(
+            '/(AZURE_[A-Z_]*\\s=\\s.|AWS_[A-Z_]*\\s=\\s.)[0-9A-Za-z\\/\\+=\\-&:%]*/',
+            '${1}...\'',
+            $query
+        );
     }
 
     private function validateAndSetWarehouse(): void
