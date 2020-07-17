@@ -589,6 +589,6 @@ class SnowflakeTest extends BaseTest
             return new AbsAdapter($loadFile['manifest']);
         }
 
-        throw new ApplicationException(sprintf('Staging storage type "%s" does not recognized', $loadFile['stage']));
+        throw new ApplicationException(sprintf('Staging storage type "%s" not recognized', $loadFile['stage']));
     }
 }
