@@ -11,7 +11,7 @@ use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Logger;
 use Keboola\DbWriter\Snowflake\Connection;
 use Keboola\DbWriter\Snowflake\SnowflakeWriterFactory;
-use Keboola\DbWriter\Snowflake\Test\StageLoader;
+use Keboola\DbWriter\Snowflake\Test\StagingStorageLoader;
 use Keboola\DbWriter\Writer\Snowflake;
 use Keboola\StorageApi\Client;
 use Monolog\Handler\TestHandler;
@@ -22,7 +22,7 @@ class SnowflakeTest extends BaseTest
 
     private Client $storageApi;
 
-    private StageLoader $stageLoader;
+    private StagingStorageLoader $stagingStorageLoader;
 
     public function setUp(): void
     {
@@ -44,7 +44,7 @@ class SnowflakeTest extends BaseTest
             $this->storageApi->dropBucket($bucketId, ['force' => true]);
         }
 
-        $this->stageLoader = new StageLoader($this->dataDir, $this->storageApi);
+        $this->stagingStorageLoader = new StagingStorageLoader($this->dataDir, $this->storageApi);
     }
 
     private function getInputCsv(string $tableId): string
@@ -52,9 +52,9 @@ class SnowflakeTest extends BaseTest
         return sprintf($this->dataDir . '/in/tables/%s.csv', $tableId);
     }
 
-    private function loadDataToStage(string $tableId): array
+    private function loadDataToStagingStorage(string $tableId): array
     {
-        return $this->stageLoader->upload($tableId);
+        return $this->stagingStorageLoader->upload($tableId);
     }
 
     public function testCreateConnection(): void
@@ -582,13 +582,13 @@ class SnowflakeTest extends BaseTest
 
     private function getAdapter(string $table): IAdapter
     {
-        $loadFile = $this->loadDataToStage($table);
-        if ($loadFile['stage'] === StageLoader::STAGE_S3) {
+        $loadFile = $this->loadDataToStagingStorage($table);
+        if ($loadFile['stagingStorage'] === StagingStorageLoader::STORAGE_S3) {
             return new S3Adapter($loadFile['manifest']);
-        } elseif ($loadFile['stage'] === StageLoader::STAGE_ABS) {
+        } elseif ($loadFile['stagingStorage'] === StagingStorageLoader::STORAGE_ABS) {
             return new AbsAdapter($loadFile['manifest']);
         }
 
-        throw new ApplicationException(sprintf('Stage "%s" does not recognized', $loadFile['stage']));
+        throw new ApplicationException(sprintf('Staging storage type "%s" does not recognized', $loadFile['stage']));
     }
 }

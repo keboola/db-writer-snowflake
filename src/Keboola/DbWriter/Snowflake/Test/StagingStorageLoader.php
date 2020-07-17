@@ -6,11 +6,11 @@ use Keboola\Csv\CsvFile;
 use Keboola\StorageApi\Client;
 use Keboola\StorageApi\Options\GetFileOptions;
 
-class StageLoader
+class StagingStorageLoader
 {
-    public const STAGE_ABS = 'abs';
+    public const STORAGE_ABS = 'abs';
 
-    public const STAGE_S3 = 's3';
+    public const STORAGE_S3 = 's3';
 
     private string $dataDir;
 
@@ -51,12 +51,12 @@ class StageLoader
 
         if (isset($fileInfo['absPath'])) {
             return [
-                'stage' => self::STAGE_ABS,
+                'stagingStorage' => self::STORAGE_ABS,
                 'manifest' => $this->getAbsManifest($fileInfo),
             ];
         } else {
             return [
-                'stage' => self::STAGE_S3,
+                'stagingStorage' => self::STORAGE_S3,
                 'manifest' => $this->getS3Manifest($fileInfo),
             ];
         }
