@@ -3,6 +3,7 @@
 namespace Keboola\DbWriter\Snowflake;
 
 use Keboola\Csv\CsvFile;
+use Keboola\DbWriter\Adapter\AbsAdapter;
 use Keboola\DbWriter\Adapter\IAdapter;
 use Keboola\DbWriter\Adapter\S3Adapter;
 use \Keboola\DbWriter\Application as BaseApplication;
@@ -12,6 +13,7 @@ use Keboola\DbWriter\Logger;
 use Keboola\DbWriter\Snowflake\Configuration\ActionConfigRowDefinition;
 use Keboola\DbWriter\Snowflake\Configuration\ConfigDefinition;
 use Keboola\DbWriter\Snowflake\Configuration\ConfigRowDefinition;
+use Keboola\DbWriter\Snowflake\Test\StagingStorageLoader;
 use Keboola\DbWriter\Writer\Snowflake;
 
 class Application extends BaseApplication
@@ -164,8 +166,11 @@ class Application extends BaseApplication
 
     private function getAdapter(array $manifest): IAdapter
     {
-        if (isset($manifest['s3'])) {
-            return new S3Adapter($manifest['s3']);
+        if (isset($manifest[StagingStorageLoader::STORAGE_S3])) {
+            return new S3Adapter($manifest[StagingStorageLoader::STORAGE_S3]);
+        }
+        if (isset($manifest[StagingStorageLoader::STORAGE_ABS])) {
+            return new AbsAdapter($manifest[StagingStorageLoader::STORAGE_ABS]);
         }
         throw new UserException('Unknown input adapter');
     }

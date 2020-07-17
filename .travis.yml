@@ -8,9 +8,16 @@ services:
 before_install:
   - docker-compose -v
 
-install:
-  - docker-compose build app
-  - docker-compose run --rm -e CODECLIMATE_REPO_TOKEN=$CODECLIMATE_REPO_TOKEN app composer ci-and-codeclimate
+jobs:
+  include:
+    - stage: run tests via S3 stage
+      install:
+        - docker-compose build app
+        - docker-compose run --rm -e CODECLIMATE_REPO_TOKEN=$CODECLIMATE_REPO_TOKEN -e STORAGE_API_TOKEN=$STORAGE_API_TOKEN_S3 app composer ci-and-codeclimate
+    - stage: run tests via ABS stage
+      install:
+        - docker-compose build app
+        - docker-compose run --rm -e CODECLIMATE_REPO_TOKEN=$CODECLIMATE_REPO_TOKEN -e STORAGE_API_TOKEN=$STORAGE_API_TOKEN_ABS app composer ci-and-codeclimate
 
 deploy:
   provider: script

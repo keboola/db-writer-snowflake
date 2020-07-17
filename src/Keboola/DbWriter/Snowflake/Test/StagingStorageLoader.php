@@ -6,8 +6,12 @@ use Keboola\Csv\CsvFile;
 use Keboola\StorageApi\Client;
 use Keboola\StorageApi\Options\GetFileOptions;
 
-class S3Loader
+class StagingStorageLoader
 {
+    public const STORAGE_ABS = 'abs';
+
+    public const STORAGE_S3 = 's3';
+
     private string $dataDir;
 
     private Client $storageApi;
@@ -26,9 +30,9 @@ class S3Loader
     public function upload(string $tableId): array
     {
         $filePath = $this->getInputCsv($tableId);
-        $bucketId = 'in.c-test-wr-db-redshift';
+        $bucketId = 'in.c-test-wr-db-snowflake';
         if (!$this->storageApi->bucketExists($bucketId)) {
-            $this->storageApi->createBucket('test-wr-db-redshift', Client::STAGE_IN, '', 'snowflake');
+            $this->storageApi->createBucket('test-wr-db-snowflake', Client::STAGE_IN, '', 'snowflake');
         }
 
         $sourceTableId = $this->storageApi->createTable($bucketId, $tableId, new CsvFile($filePath));
@@ -45,6 +49,21 @@ class S3Loader
             (new GetFileOptions())->setFederationToken(true)
         );
 
+        if (isset($fileInfo['absPath'])) {
+            return [
+                'stagingStorage' => self::STORAGE_ABS,
+                'manifest' => $this->getAbsManifest($fileInfo),
+            ];
+        } else {
+            return [
+                'stagingStorage' => self::STORAGE_S3,
+                'manifest' => $this->getS3Manifest($fileInfo),
+            ];
+        }
+    }
+
+    private function getS3Manifest(array $fileInfo): array
+    {
         return [
             'isSliced' => $fileInfo['isSliced'],
             'region' => $fileInfo['region'],
@@ -54,6 +73,20 @@ class S3Loader
                 'access_key_id' => $fileInfo['credentials']['AccessKeyId'],
                 'secret_access_key' => $fileInfo['credentials']['SecretAccessKey'],
                 'session_token' => $fileInfo['credentials']['SessionToken'],
+            ],
+        ];
+    }
+
+    private function getAbsManifest(array $fileInfo): array
+    {
+        return [
+            'isSliced' => $fileInfo['isSliced'],
+            'region' => $fileInfo['region'],
+            'container' => $fileInfo['absPath']['container'],
+            'name' => $fileInfo['isSliced'] ? $fileInfo['absPath']['name'] . 'manifest' : $fileInfo['absPath']['name'],
+            'credentials' => [
+                'SASConnectionString' => $fileInfo['absCredentials']['SASConnectionString'],
+                'expiration' => $fileInfo['absCredentials']['expiration'],
             ],
         ];
     }
