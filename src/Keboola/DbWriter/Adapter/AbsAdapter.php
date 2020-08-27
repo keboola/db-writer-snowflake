@@ -26,10 +26,10 @@ class AbsAdapter implements IAdapter
     {
         preg_match(
             '/BlobEndpoint=https?:\/\/(.+);SharedAccessSignature=(.+)/',
-            $absInfo['credentials']['SASConnectionString'],
+            $absInfo['credentials']['sas_connection_string'],
             $connectionInfo
         );
-        $this->isSliced = $absInfo['isSliced'];
+        $this->isSliced = $absInfo['is_sliced'];
         $this->region = $absInfo['region'];
         $this->container = $absInfo['container'];
         $this->name = $absInfo['name'];

@@ -80,12 +80,12 @@ class StagingStorageLoader
     private function getAbsManifest(array $fileInfo): array
     {
         return [
-            'isSliced' => $fileInfo['isSliced'],
+            'is_sliced' => $fileInfo['isSliced'],
             'region' => $fileInfo['region'],
             'container' => $fileInfo['absPath']['container'],
             'name' => $fileInfo['isSliced'] ? $fileInfo['absPath']['name'] . 'manifest' : $fileInfo['absPath']['name'],
             'credentials' => [
-                'SASConnectionString' => $fileInfo['absCredentials']['SASConnectionString'],
+                'sas_connection_string' => $fileInfo['absCredentials']['SASConnectionString'],
                 'expiration' => $fileInfo['absCredentials']['expiration'],
             ],
         ];
