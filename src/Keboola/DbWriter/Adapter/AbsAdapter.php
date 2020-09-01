@@ -83,10 +83,9 @@ class AbsAdapter implements IAdapter
         $path = $this->name;
         $pattern = '';
         if ($this->isSliced) {
-            // key ends with manifest
-            if (strrpos($this->name, 'manifest') === strlen($this->name) - strlen('manifest')) {
-                $path = substr($this->name, 0, strlen($this->name) - strlen('manifest'));
-                $pattern = 'PATTERN="^.*(?<!manifest)$"';
+            if (substr($path, -8) === 'manifest') {
+                $path = substr($path, 0, strlen($path) - strlen('manifest'));
+                $pattern = ' PATTERN=\'^.*(?<!manifest)$\'';
             }
         }
 
