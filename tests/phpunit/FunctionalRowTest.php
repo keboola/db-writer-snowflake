@@ -88,7 +88,7 @@ class FunctionalRowTest extends BaseTest
         );
         $process->run();
 
-        $this->assertEquals(0, $process->getExitCode());
+        $this->assertEquals(0, $process->getExitCode(), $process->getOutput() . $process->getErrorOutput());
 
         $data = json_decode($process->getOutput(), true);
 
