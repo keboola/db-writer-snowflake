@@ -15,6 +15,7 @@ use Keboola\DbWriter\Snowflake\Configuration\ConfigDefinition;
 use Keboola\DbWriter\Snowflake\Configuration\ConfigRowDefinition;
 use Keboola\DbWriter\Snowflake\Test\StagingStorageLoader;
 use Keboola\DbWriter\Writer\Snowflake;
+use Keboola\DbWriter\WriterFactory;
 
 class Application extends BaseApplication
 {
@@ -35,7 +36,7 @@ class Application extends BaseApplication
 
         $app = $this;
         $this['writer_factory'] = function () use ($app) {
-            return new SnowflakeWriterFactory($app['parameters']);
+            return $this->getWriterFactory($app['parameters']);
         };
     }
 
@@ -173,5 +174,10 @@ class Application extends BaseApplication
             return new AbsAdapter($manifest[StagingStorageLoader::STORAGE_ABS]);
         }
         throw new UserException('Unknown input adapter');
+    }
+
+    protected function getWriterFactory(array $parameters): WriterFactory
+    {
+        return new SnowflakeWriterFactory($parameters);
     }
 }

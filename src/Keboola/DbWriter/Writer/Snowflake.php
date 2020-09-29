@@ -6,7 +6,7 @@ use Keboola\Csv\CsvFile;
 use Keboola\DbWriter\Adapter\IAdapter;
 use Keboola\DbWriter\Exception\ApplicationException;
 use Keboola\DbWriter\Exception\UserException;
-use Keboola\DbWriter\Logger;
+use Monolog\Logger;
 use Keboola\DbWriter\Snowflake\Connection;
 use Keboola\DbWriter\Writer;
 use Keboola\DbWriter\WriterInterface;
