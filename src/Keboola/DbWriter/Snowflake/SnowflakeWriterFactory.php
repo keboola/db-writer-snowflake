@@ -6,10 +6,11 @@ namespace Keboola\DbWriter\Snowflake;
 
 use Keboola\DbWriter\Adapter\IAdapter;
 use Keboola\DbWriter\Adapter\NullAdapter;
-use Keboola\DbWriter\Logger;
 use Keboola\DbWriter\Writer\Snowflake;
+use Monolog\Logger;
+use Keboola\DbWriter\WriterFactory;
 
-class SnowflakeWriterFactory
+class SnowflakeWriterFactory extends WriterFactory
 {
     private array $parameters;
 
