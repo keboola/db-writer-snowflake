@@ -14,6 +14,7 @@ class FunctionalRowTest extends BaseTest
 
     public function setUp(): void
     {
+
         // cleanup & init
         $this->tmpRunDir = '/tmp/' . uniqid('wr-db-snowflake_row_');
         mkdir($this->tmpRunDir . '/in/tables/', 0777, true);
