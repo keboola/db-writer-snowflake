@@ -74,7 +74,7 @@ class AbsAdapter implements IAdapter
             $quotedFiles = array_map(
                 function ($entry) {
                     return Snowflake::quote(
-                        strtr($entry, [$this->getContainerUrl() => ''])
+                        strtr($entry, [$this->getContainerUrl() . '/' => ''])
                     );
                 },
                 $files
