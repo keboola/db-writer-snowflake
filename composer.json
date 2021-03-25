@@ -24,7 +24,7 @@
         "process-timeout": 1800
     },
     "scripts": {
-        "tests": "phpunit",
+        "tests": "XDEBUG_MODE=coverage phpunit",
         "phpcs": "phpcs -n --ignore=vendor --extensions=php .",
         "phpcbf": "phpcbf -n --ignore=vendor --extensions=php .",
         "phpstan": "phpstan analyse ./src ./tests --level=max --no-progress -c phpstan.neon",
