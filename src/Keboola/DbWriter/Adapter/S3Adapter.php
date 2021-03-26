@@ -95,7 +95,6 @@ class S3Adapter implements IAdapter
         }
 
         $client = $this->getClient();
-
         try {
             $response = $client->getObject([
                 'Bucket' => $this->bucket,
