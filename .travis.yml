@@ -25,6 +25,3 @@ deploy:
   script: ./deploy.sh
   on:
     tags: true
-
-#notifications:
-#  slack: $SLACK_INTEGRATION_DOMAIN:$SLACK_INTEGRATION_KEY

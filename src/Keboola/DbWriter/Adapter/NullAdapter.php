@@ -13,7 +13,7 @@ class NullAdapter implements IAdapter
         throw new ApplicationException('Method "generateCreateStageCommand" not implemented');
     }
 
-    public function generateCopyCommand(string $tableName, string $stageName, array $columns): string
+    public function generateCopyCommands(string $tableName, string $stageName, array $columns): iterable
     {
         throw new ApplicationException('Method "generateCopyCommand" not implemented');
     }

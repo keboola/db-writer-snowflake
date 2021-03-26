@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Keboola\DbWriter\Adapter;
 
+use Aws\Exception\AwsException;
+use Aws\S3\S3Client;
+use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Writer\Snowflake;
 
 class S3Adapter implements IAdapter
@@ -59,42 +62,69 @@ class S3Adapter implements IAdapter
         );
     }
 
-    public function generateCopyCommand(string $tableName, string $stageName, array $columns): string
+    public function generateCopyCommands(string $tableName, string $stageName, array $columns): iterable
     {
-        $columnNames = array_map(function ($column) {
-            return Snowflake::quoteIdentifier($column['dbName']);
-        }, $columns);
+        $filesToImport = $this->getManifestEntries();
+        foreach (array_chunk($filesToImport, self::SLICED_FILES_CHUNK_SIZE) as $files) {
+            $quotedFiles = array_map(
+                function ($entry) {
+                    return Snowflake::quote(
+                        strtr($entry, [$this->getS3Prefix() . '/' => ''])
+                    );
+                },
+                $files
+            );
 
-        $transformationColumns = array_map(
-            function ($column, $index) {
-                if (!empty($column['nullable'])) {
-                    return sprintf("IFF(t.$%d = '', null, t.$%d)", $index + 1, $index + 1);
-                }
-                return sprintf('t.$%d', $index + 1);
-            },
-            $columns,
-            array_keys($columns)
-        );
+            yield sprintf(
+                'COPY INTO %s(%s) 
+            FROM (SELECT %s FROM %s t)
+            FILES = (%s)',
+                $tableName,
+                implode(', ', SqlHelper::getQuotedColumnsNames($columns)),
+                implode(', ', SqlHelper::getColumnsTransformation($columns)),
+                Snowflake::quote('@' . Snowflake::quoteIdentifier($stageName) . '/'),
+                implode(',', $quotedFiles)
+            );
+        }
+    }
 
-        $path = $this->key;
-        $pattern = '';
-        if ($this->isSliced) {
-            // key ends with manifest
-            if (strrpos($this->key, 'manifest') === strlen($this->key) - strlen('manifest')) {
-                $path = substr($this->key, 0, strlen($this->key) - strlen('manifest'));
-                $pattern = 'PATTERN="^.*(?<!manifest)$"';
-            }
+    private function getManifestEntries(): array
+    {
+        if (!$this->isSliced) {
+            return [$this->getS3Prefix() . '/' . $this->key];
         }
 
-        return sprintf(
-            'COPY INTO %s(%s) 
-            FROM (SELECT %s FROM %s t)
-            %s',
-            $tableName,
-            implode(', ', $columnNames),
-            implode(', ', $transformationColumns),
-            Snowflake::quote('@' . Snowflake::quoteIdentifier($stageName) . '/' . $path),
-            $pattern
-        );
+        $client = $this->getClient();
+        try {
+            $response = $client->getObject([
+                'Bucket' => $this->bucket,
+                'Key' => ltrim($this->key, '/'),
+            ]);
+        } catch (AwsException $e) {
+            throw new UserException('Load error: ' . $e->getMessage(), $e->getCode(), $e);
+        }
+
+        $manifest = json_decode((string) $response['Body'], true);
+        return array_map(static function ($entry) {
+            return $entry['url'];
+        }, $manifest['entries']);
+    }
+
+    private function getS3Prefix(): string
+    {
+        return sprintf('s3://%s', $this->bucket);
+    }
+
+    private function getClient(): S3Client
+    {
+        return new S3Client([
+            'credentials' => [
+                'key' => $this->accessKeyId,
+                'secret' => $this->secretAccessKey,
+                'token' => $this->sessionToken,
+            ],
+            'region' => $this->region,
+            'version' => '2006-03-01',
+        ]);
     }
 }

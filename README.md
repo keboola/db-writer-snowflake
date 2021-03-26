@@ -1,11 +1,11 @@
 # Snowflake DB Writer
 
-[![Build Status](https://travis-ci.org/keboola/db-writer-snowflake.svg?branch=master)](https://travis-ci.org/keboola/db-writer-snowflake)
+[![Build Status](https://travis-ci.com/keboola/db-writer-snowflake.svg?branch=master)](https://travis-ci.com/keboola/db-writer-snowflake)
 [![Code Climate](https://codeclimate.com/github/keboola/db-writer-snowflake/badges/gpa.svg)](https://codeclimate.com/github/keboola/db-writer-snowflake)
 [![Test Coverage](https://codeclimate.com/github/keboola/db-writer-snowflake/badges/coverage.svg)](https://codeclimate.com/github/keboola/db-writer-snowflake/coverage)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/keboola/db-writer-snowflake/blob/master/LICENSE.md)
 
-Writes data to Redshift Database.
+Writes data to Snowflake Database.
 
 ## Example configuration
 
@@ -68,6 +68,31 @@ Writes data to Redshift Database.
 
 ## Development
 
+Required snowflake resource for writer:
+```sql
+CREATE DATABASE "snowflake_writer";
+USE DATABASE "snowflake_writer";
+CREATE TRANSIENT SCHEMA "snowflake_writer";
+CREATE WAREHOUSE "snowflake_writer" WITH 
+  WAREHOUSE_SIZE = 'XSMALL' 
+  WAREHOUSE_TYPE = 'STANDARD' 
+  AUTO_SUSPEND = 900 
+  AUTO_RESUME = TRUE;
+CREATE ROLE "snowflake_writer";
+GRANT USAGE ON WAREHOUSE "snowflake_writer" TO ROLE "snowflake_writer";
+GRANT USAGE ON DATABASE "snowflake_writer" TO ROLE "snowflake_writer";
+GRANT ALL ON SCHEMA "snowflake_writer" TO ROLE "snowflake_writer";
+GRANT ALL ON FUTURE TABLES IN SCHEMA "snowflake_writer" TO ROLE "snowflake_writer";
+GRANT ALL ON FUTURE VIEWS IN SCHEMA "snowflake_writer" TO ROLE "snowflake_writer";
+CREATE USER "snowflake_writer" 
+  PASSWORD = 'password' 
+  DEFAULT_ROLE = "snowflake_writer" 
+  DEFAULT_WAREHOUSE = "snowflake_writer" 
+  DEFAULT_NAMESPACE = "snowflake_writer"."snowflake_writer" 
+  MUST_CHANGE_PASSWORD = FALSE;
+GRANT ROLE "snowflake_writer" TO USER "snowflake_writer";
+```
+
 App is developed on localhost using TDD.
 
 1. Clone from repository: `git clone git@github.com:keboola/db-writer-snowflake.git`
@@ -76,6 +101,7 @@ App is developed on localhost using TDD.
 4. Create `.env` file:
 ```bash
 STORAGE_API_TOKEN=
+KBC_URL=
 KBC_RUNID=
 DB_HOST=
 DB_PORT=

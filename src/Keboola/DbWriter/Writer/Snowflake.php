@@ -88,13 +88,14 @@ class Snowflake extends Writer implements WriterInterface
         $this->execQuery($this->adapter->generateCreateStageCommand($stageName));
 
         try {
-            $this->execQuery(
-                $this->adapter->generateCopyCommand(
-                    $this->nameWithSchemaEscaped($table['dbName']),
-                    $stageName,
-                    $table['items']
-                )
+            $commands = $this->adapter->generateCopyCommands(
+                $this->nameWithSchemaEscaped($table['dbName']),
+                $stageName,
+                $table['items']
             );
+            foreach ($commands as $command) {
+                $this->execQuery($command);
+            }
         } catch (UserException $e) {
             $this->execQuery($this->generateDropStageCommand($stageName));
             throw $e;

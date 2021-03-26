@@ -5,6 +5,7 @@ namespace Keboola\DbWriter\Snowflake\Test;
 use Keboola\Csv\CsvFile;
 use Keboola\StorageApi\Client;
 use Keboola\StorageApi\Options\GetFileOptions;
+use PHPUnit\Framework\Assert;
 
 class StagingStorageLoader
 {
@@ -64,6 +65,9 @@ class StagingStorageLoader
 
     private function getS3Manifest(array $fileInfo): array
     {
+        // File is always exported to stage storage as sliced
+        Assert::assertTrue($fileInfo['isSliced']);
+
         return [
             'isSliced' => $fileInfo['isSliced'],
             'region' => $fileInfo['region'],
@@ -79,6 +83,9 @@ class StagingStorageLoader
 
     private function getAbsManifest(array $fileInfo): array
     {
+        // File is always exported to stage storage as sliced
+        Assert::assertTrue($fileInfo['isSliced']);
+
         return [
             'is_sliced' => $fileInfo['isSliced'],
             'region' => $fileInfo['region'],
