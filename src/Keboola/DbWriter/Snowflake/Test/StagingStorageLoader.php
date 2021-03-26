@@ -84,7 +84,7 @@ class StagingStorageLoader
     private function getAbsManifest(array $fileInfo): array
     {
         // File is always exported to stage storage as sliced
-        Assert::assertTrue($fileInfo['is_sliced']);
+        Assert::assertTrue($fileInfo['isSliced']);
 
         return [
             'is_sliced' => $fileInfo['isSliced'],
