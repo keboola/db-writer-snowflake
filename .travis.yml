@@ -5,46 +5,13 @@ language: bash
 services:
   - docker
 
-before_install:
-  - export APP_IMAGE=db-snowflake-writer
-  - docker build . --tag=$APP_IMAGE
 
 jobs:
   include:
-    - stage: run tests via S3 stage
-      install:
-        - docker run
-          -e CODECLIMATE_REPO_TOKEN=$CODECLIMATE_REPO_TOKEN
-          -e STORAGE_API_TOKEN=$STORAGE_API_TOKEN_S3
-          -e KBC_RUNID
-          -e KBC_URL
-          -e STORAGE_API_TOKEN
-          -e DB_HOST
-          -e DB_PORT
-          -e DB_USER
-          -e DB_PASSWORD
-          -e DB_DATABASE
-          -e DB_SCHEMA
-          -e DB_WAREHOUSE
-          $APP_IMAGE composer ci-and-codeclimate
-    - stage: run tests via ABS stage
-      install:
-        - docker run
-          -e CODECLIMATE_REPO_TOKEN=$CODECLIMATE_REPO_TOKEN
-          -e STORAGE_API_TOKEN=$STORAGE_API_TOKEN_ABS
-          -e KBC_RUNID
-          -e KBC_URL
-          -e STORAGE_API_TOKEN
-          -e DB_HOST
-          -e DB_PORT
-          -e DB_USER
-          -e DB_PASSWORD
-          -e DB_DATABASE
-          -e DB_SCHEMA
-          -e DB_WAREHOUSE
-          $APP_IMAGE composer ci-and-codeclimate
     - stage: push test image to ECR
-      install:
+      before_script:
+        - export APP_IMAGE=db-snowflake-writer
+        - docker build . --tag=$APP_IMAGE
         - docker pull quay.io/keboola/developer-portal-cli-v2:latest
         - export REPOSITORY=`docker run --rm -e KBC_DEVELOPERPORTAL_USERNAME -e KBC_DEVELOPERPORTAL_PASSWORD -e KBC_DEVELOPERPORTAL_URL quay.io/keboola/developer-portal-cli-v2:latest ecr:get-repository $KBC_DEVELOPERPORTAL_VENDOR $KBC_DEVELOPERPORTAL_APP`
         - docker tag $APP_IMAGE:latest $REPOSITORY:test
