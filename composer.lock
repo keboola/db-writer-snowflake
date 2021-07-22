@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "17cf490dcc531171a5c1616eb057ac80",
+    "content-hash": "20e6a177d5066b7711cc0c1ed8d8e8d4",
     "packages": [
         {
             "name": "aws/aws-sdk-php",
@@ -211,16 +211,16 @@
         },
         {
             "name": "guzzlehttp/psr7",
-            "version": "1.6.1",
+            "version": "1.8.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/guzzle/psr7.git",
-                "reference": "239400de7a173fe9901b9ac7c06497751f00727a"
+                "reference": "dc960a912984efb74d0a90222870c72c87f10c91"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/guzzle/psr7/zipball/239400de7a173fe9901b9ac7c06497751f00727a",
-                "reference": "239400de7a173fe9901b9ac7c06497751f00727a",
+                "url": "https://api.github.com/repos/guzzle/psr7/zipball/dc960a912984efb74d0a90222870c72c87f10c91",
+                "reference": "dc960a912984efb74d0a90222870c72c87f10c91",
                 "shasum": ""
             },
             "require": {
@@ -233,15 +233,15 @@
             },
             "require-dev": {
                 "ext-zlib": "*",
-                "phpunit/phpunit": "~4.8.36 || ^5.7.27 || ^6.5.8"
+                "phpunit/phpunit": "~4.8.36 || ^5.7.27 || ^6.5.14 || ^7.5.20 || ^8.5.8 || ^9.3.10"
             },
             "suggest": {
-                "zendframework/zend-httphandlerrunner": "Emit PSR-7 responses"
+                "laminas/laminas-httphandlerrunner": "Emit PSR-7 responses"
             },
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.6-dev"
+                    "dev-master": "1.7-dev"
                 }
             },
             "autoload": {
@@ -278,7 +278,11 @@
                 "uri",
                 "url"
             ],
-            "time": "2019-07-01T23:21:34+00:00"
+            "support": {
+                "issues": "https://github.com/guzzle/psr7/issues",
+                "source": "https://github.com/guzzle/psr7/tree/1.8.2"
+            },
+            "time": "2021-04-26T09:17:50+00:00"
         },
         {
             "name": "keboola/csv",
@@ -369,6 +373,68 @@
                 "writer"
             ],
             "time": "2020-09-09T12:37:14+00:00"
+        },
+        {
+            "name": "keboola/php-file-storage-utils",
+            "version": "v0.2.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/keboola/php-file-storage-utils.git",
+                "reference": "26f50ac6611dbac8e2179df8af34f1d27062237a"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/keboola/php-file-storage-utils/zipball/26f50ac6611dbac8e2179df8af34f1d27062237a",
+                "reference": "26f50ac6611dbac8e2179df8af34f1d27062237a",
+                "shasum": ""
+            },
+            "require": {
+                "ext-fileinfo": "*",
+                "guzzlehttp/guzzle": "^6.5|^7.2",
+                "guzzlehttp/psr7": "^1.7.0",
+                "microsoft/azure-storage-blob": "^1.5",
+                "php": ">=7.1",
+                "psr/log": "^1.1",
+                "symfony/process": "^4.4|^5.0"
+            },
+            "require-dev": {
+                "keboola/coding-standard": "^9.0",
+                "php-parallel-lint/php-parallel-lint": "^1.2",
+                "phpstan/extension-installer": "^1.0",
+                "phpstan/phpstan": "^0.12.54",
+                "phpstan/phpstan-phpunit": "^0.12.16",
+                "phpunit/phpunit": "^7"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Keboola\\FileStorage\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Keboola",
+                    "email": "devel@keboola.com"
+                }
+            ],
+            "description": "Set of helpers and abstractions above file storage providers",
+            "keywords": [
+                "aws",
+                "azure",
+                "blob",
+                "keboola",
+                "s3",
+                "storage"
+            ],
+            "support": {
+                "issues": "https://github.com/keboola/php-file-storage-utils/issues",
+                "source": "https://github.com/keboola/php-file-storage-utils/tree/v0.2.1"
+            },
+            "time": "2021-07-07T11:14:50+00:00"
         },
         {
             "name": "keboola/ssh-tunnel",
@@ -3965,5 +4031,5 @@
         "ext-pdo": "*"
     },
     "platform-dev": [],
-    "plugin-api-version": "1.1.0"
+    "plugin-api-version": "2.1.0"
 }
