@@ -6,6 +6,7 @@ namespace Keboola\DbWriter\Adapter;
 
 use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Writer\Snowflake;
+use Keboola\FileStorage\Abs\RetryMiddlewareFactory;
 use MicrosoftAzure\Storage\Blob\BlobRestProxy;
 use MicrosoftAzure\Storage\Common\Exceptions\ServiceException;
 use MicrosoftAzure\Storage\Common\Internal\Resources;
@@ -127,6 +128,9 @@ class AbsAdapter implements IAdapter
             $this->connectionAccessSignature
         );
 
-        return BlobRestProxy::createBlobService($sasConnectionString);
+        $blobRestProxy = BlobRestProxy::createBlobService($sasConnectionString);
+        $blobRestProxy->pushMiddleware(RetryMiddlewareFactory::create());
+
+        return $blobRestProxy;
     }
 }
