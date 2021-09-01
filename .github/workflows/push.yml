@@ -1,6 +1,6 @@
 name: GitHub Actions
 on: [ push ]
-concurrency: ci-${{ github.ref }} # to avoid tag collisions in the ECR
+concurrency: ci # shared KBC projects are used
 env:
   # Name of the image
   APP_IMAGE: keboola/wr-db-snowflake # must be same in docker-compose.yml
