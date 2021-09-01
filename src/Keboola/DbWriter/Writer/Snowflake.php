@@ -501,10 +501,15 @@ class Snowflake extends Writer implements WriterInterface
                 $type .= sprintf('(%s)', $col['size']);
             }
             $null = $col['nullable'] ? 'NULL' : 'NOT NULL';
-            $default = empty($col['default']) ? '' : "DEFAULT '{$col['default']}'";
+
+            // Default value must be casted to the column type
+            $default = '';
             if ($type === 'TEXT') {
                 $default = '';
+            } elseif (!empty($col['default'])) {
+                $default = sprintf('DEFAULT CAST(%s AS %s)', $this->quote($col['default']), $col['type']);
             }
+
             $sql .= sprintf(
                 '%s %s %s %s,',
                 $this->quoteIdentifier($col['dbName']),

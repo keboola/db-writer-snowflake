@@ -1,6 +1,5 @@
 # Snowflake DB Writer
-
-
+[![GitHub Actions](https://github.com/keboola/db-writer-snowflake/actions/workflows/push.yml/badge.svg)](https://github.com/keboola/db-writer-snowflake/actions/workflows/push.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/keboola/db-writer-snowflake/blob/master/LICENSE.md)
 
 Writes data to Snowflake Database.

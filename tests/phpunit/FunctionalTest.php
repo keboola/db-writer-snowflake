@@ -150,6 +150,7 @@ class FunctionalTest extends BaseTest
 
         $data = json_decode($process->getOutput(), true);
 
+        $this->assertIsArray($data);
         $this->assertArrayHasKey('status', $data);
         $this->assertEquals('success', $data['status']);
     }

@@ -51,7 +51,7 @@ class FunctionalRowTest extends BaseTest
         $this->assertEquals(0, $process->getExitCode(), 'Output: ' . $process->getOutput());
         $this->assertTrue($this->writer->tableExists('numeric'));
         $this->assertFileEquals(
-            $dataDir . '/in/tables/numeric.csv',
+            __DIR__ . '/../data/numeric.expected.csv',
             $this->createCsvFromTable('numeric')->getPathname()
         );
     }
