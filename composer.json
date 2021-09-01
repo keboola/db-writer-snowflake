@@ -16,7 +16,6 @@
         "keboola/php-file-storage-utils": "^0.2.1"
     },
     "require-dev": {
-        "codeclimate/php-test-reporter": "^0.3",
         "phpunit/phpunit": "^9.2",
         "phpstan/phpstan": "^0.12.32",
         "keboola/coding-standard": "^9.0"
@@ -29,7 +28,6 @@
         "phpcs": "phpcs -n --ignore=vendor --extensions=php .",
         "phpcbf": "phpcbf -n --ignore=vendor --extensions=php .",
         "phpstan": "phpstan analyse ./src ./tests --level=max --no-progress -c phpstan.neon",
-        "codeclimate": "test-reporter",
         "build": [
             "@phpcs",
             "@phpstan",
@@ -38,10 +36,6 @@
         "ci": [
             "@composer validate --no-check-all --strict",
             "@build"
-        ],
-        "ci-and-codeclimate": [
-            "@ci",
-            "@codeclimate"
         ]
     },
     "autoload": {

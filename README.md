@@ -1,8 +1,6 @@
 # Snowflake DB Writer
 
-[![Build Status](https://travis-ci.com/keboola/db-writer-snowflake.svg?branch=master)](https://travis-ci.com/keboola/db-writer-snowflake)
-[![Code Climate](https://codeclimate.com/github/keboola/db-writer-snowflake/badges/gpa.svg)](https://codeclimate.com/github/keboola/db-writer-snowflake)
-[![Test Coverage](https://codeclimate.com/github/keboola/db-writer-snowflake/badges/coverage.svg)](https://codeclimate.com/github/keboola/db-writer-snowflake/coverage)
+
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/keboola/db-writer-snowflake/blob/master/LICENSE.md)
 
 Writes data to Snowflake Database.
