@@ -73,7 +73,7 @@ class Connection
                 sleep(pow(2, $attemptNumber));
             }
             try {
-                $this->connection = odbc_connect($dsn, $options['user'], $options['password']);
+                $this->connection = odbc_connect($dsn, $options['user'], self::escapePassword($options['password']));
 
                 if (isset($options['runId'])) {
                     $queryTag = [
@@ -99,6 +99,15 @@ class Connection
     {
         $q = '"';
         return ($q . str_replace("$q", "$q$q", $value) . $q);
+    }
+
+    public static function escapePassword(string $password): string
+    {
+        if (is_int(strpos($password, ';'))) {
+            return '{' . str_replace('}', '}}', $password) . '}';
+        }
+
+        return $password;
     }
 
     /**
