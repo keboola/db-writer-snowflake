@@ -109,3 +109,7 @@ DB_SCHEMA=
 DB_WAREHOUSE=
 ```
 5. Run docker-compose, which will trigger phpunit: `docker-compose run --rm app`
+
+## License
+
+MIT licensed, see [LICENSE](./LICENSE) file.
