@@ -11,6 +11,8 @@ class Connection
      */
     private $connection;
 
+    private const SNOWFLAKE_APPLICATION = 'Keboola_Connection';
+
     /**
      * The connection constructor accepts the following options:
      * - host (string, required) - hostname
@@ -66,6 +68,7 @@ class Connection
             $dsn .= ';Warehouse=' . $this->quoteIdentifier($options['warehouse']);
         }
         $dsn .= ';CLIENT_SESSION_KEEP_ALIVE=TRUE';
+        $dsn .= ';application=' . $this->quoteIdentifier(self::SNOWFLAKE_APPLICATION);
 
         $attemptNumber = 0;
         do {
