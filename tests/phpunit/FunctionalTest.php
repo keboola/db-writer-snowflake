@@ -129,6 +129,52 @@ class FunctionalTest extends BaseTest
         $this->assertEquals(0, $process->getExitCode());
     }
 
+    public function testRunWithRegion(): void
+    {
+        $this->initConfig(function ($config) {
+            $config['parameters']['db']['region'] = 'US';
+            return $config;
+        });
+
+        $this->assertFalse($this->writer->tableExists('simple'));
+        $this->assertFalse($this->writer->tableExists('special'));
+
+        foreach ($this->config['parameters']['tables'] as $table) {
+            if ($table['dbName'] === 'simple') {
+                $this->assertTrue($table['incremental']);
+            }
+
+            if ($table['dbName'] === 'special') {
+                $this->assertFalse($table['incremental']);
+            }
+        }
+
+        $process = Process::fromShellCommandline(
+            'php ' . $this->getEntryPointPathName() . ' --data=' . $this->tmpRunDir . ' 2>&1',
+            null,
+            null,
+            null,
+            self::PROCESS_TIMEOUT_SECONDS
+        );
+        $process->run();
+
+        $this->assertEquals(0, $process->getExitCode(), 'Output: ' . $process->getOutput());
+
+        // incremental load
+        $this->assertTrue($this->writer->tableExists('simple'));
+        $this->assertFileEquals(
+            $this->dataDir . '/in/tables/simple_merged.csv',
+            $this->createCsvFromTable('simple')->getPathname()
+        );
+
+        // full load
+        $this->assertTrue($this->writer->tableExists('special'));
+        $this->assertFileEquals(
+            $this->dataDir . '/in/tables/special.csv',
+            $this->createCsvFromTable('special')->getPathname()
+        );
+    }
+
     public function testTestConnection(): void
     {
         $this->initConfig(function ($config) {
