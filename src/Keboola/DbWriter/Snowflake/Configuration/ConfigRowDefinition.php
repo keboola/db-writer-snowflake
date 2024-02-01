@@ -24,6 +24,7 @@ class ConfigRowDefinition implements ConfigurationInterface
                     ->cannotBeEmpty()
                 ->end()
                 ->arrayNode('db')
+                    ->ignoreExtraKeys(true)
                     ->children()
                         ->scalarNode('runId')->end()
                         ->scalarNode('driver')->end()
