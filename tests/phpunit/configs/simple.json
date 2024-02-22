@@ -1,14 +1,7 @@
 {
   "parameters": {
-    "db": {
-      "driver": "snowflake",
-      "host": null,
-      "port": null,
-      "database": null,
-      "schema": null,
-      "user": null,
-      "password": null
-    },
+    "data_dir": "/code/tests/phpunit",
+    "writer_class": "Snowflake",
     "tableId": "simple",
     "dbName": "simple",
     "export": true,
@@ -51,14 +44,10 @@
       }
     ]
   },
-  "storage": {
-    "input": {
-      "tables": [
-        {
-          "source": "simple",
-          "destination": "simple.csv"
-        }
-      ]
+  "storage": [
+    {
+      "source": "simple",
+      "destination": "simple.csv"
     }
-  }
+  ]
 }
