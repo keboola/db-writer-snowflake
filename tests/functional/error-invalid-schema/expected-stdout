@@ -1,0 +1,7 @@
+Creating ODBC connection to "Driver=SnowflakeDSIIDriver;Server=%s;Port=443;Tracing=0;Login_timeout=30;Database="%s";Schema="invalidSchema";Warehouse=%s;CLIENT_SESSION_KEEP_ALIVE=TRUE;application="Keboola_Connection"".
+Validating warehouse "%s"
+Validating schema "invalidSchema"
+odbc_exec(): SQL error: SQL compilation error: Object does not exist, or operation cannot be performed., SQL state 02000 in SQLExecDirect. Retrying... [1x]
+odbc_exec(): SQL error: SQL compilation error: Object does not exist, or operation cannot be performed., SQL state 02000 in SQLExecDirect. Retrying... [2x]
+odbc_exec(): SQL error: SQL compilation error: Object does not exist, or operation cannot be performed., SQL state 02000 in SQLExecDirect. Retrying... [3x]
+odbc_exec(): SQL error: SQL compilation error: Object does not exist, or operation cannot be performed., SQL state 02000 in SQLExecDirect. Retrying... [4x]
