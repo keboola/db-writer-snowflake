@@ -37,7 +37,13 @@ class DatadirTest extends AbstractDatadirTestCase
         putenv('SSH_PUBLIC_KEY=' . file_get_contents('/root/.ssh/id_rsa.pub'));
         parent::__construct($name, $data, $dataName);
         $connectionFactory = new SnowflakeConnectionFactory();
-        $this->connection = $connectionFactory->create($this->getDatabaseConfig(), new TestLogger());
+        $databaseConfig = $this->getDatabaseConfig();
+        $this->connection = $connectionFactory->create($databaseConfig, new TestLogger());
+
+        $this->connection->exec(sprintf(
+            'USE WAREHOUSE %s;',
+            $this->connection->quoteIdentifier($databaseConfig->getWarehouse()),
+        ));
     }
 
     protected function setUp(): void
@@ -213,6 +219,7 @@ class DatadirTest extends AbstractDatadirTestCase
             'user' => getenv('DB_USER'),
             'schema' => getenv('DB_SCHEMA'),
             '#password' => getenv('DB_PASSWORD'),
+            'warehouse' => getenv('DB_WAREHOUSE'),
         ];
 
         return SnowflakeDatabaseConfig::fromArray($config);
