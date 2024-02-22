@@ -2,27 +2,23 @@
 
 declare(strict_types=1);
 
-namespace Keboola\DbWriter\Adapter;
+namespace Keboola\DbWriter\Writer\Strategy;
 
 use Aws\Exception\AwsException;
 use Aws\S3\S3Client;
 use Keboola\DbWriter\Exception\UserException;
-use Keboola\DbWriter\Writer\Snowflake;
+use Keboola\DbWriter\Writer\QuoteTrait;
+use Keboola\DbWriterConfig\Configuration\ValueObject\ItemConfig;
 
-class S3Adapter implements IAdapter
+class S3WriteStrategy implements WriteStrategy
 {
+    use QuoteTrait;
     private bool $isSliced;
-
     private string $region;
-
     private string $bucket;
-
     private string $key;
-
     private string $accessKeyId;
-
     private string $secretAccessKey;
-
     private string $sessionToken;
 
     public function __construct(array $s3info)
@@ -39,9 +35,9 @@ class S3Adapter implements IAdapter
     public function generateCreateStageCommand(string $stageName): string
     {
         $csvOptions = [];
-        $csvOptions[] = sprintf('FIELD_DELIMITER = %s', Snowflake::quote(','));
-        $csvOptions[] = sprintf('FIELD_OPTIONALLY_ENCLOSED_BY = %s', Snowflake::quote('"'));
-        $csvOptions[] = sprintf('ESCAPE_UNENCLOSED_FIELD = %s', Snowflake::quote('\\'));
+        $csvOptions[] = sprintf('FIELD_DELIMITER = %s', $this->quote(','));
+        $csvOptions[] = sprintf('FIELD_OPTIONALLY_ENCLOSED_BY = %s', $this->quote('"'));
+        $csvOptions[] = sprintf('ESCAPE_UNENCLOSED_FIELD = %s', $this->quote('\\'));
 
         if (!$this->isSliced) {
             $csvOptions[] = 'SKIP_HEADER = 1';
@@ -53,26 +49,29 @@ class S3Adapter implements IAdapter
              URL = 's3://%s'
              CREDENTIALS = (AWS_KEY_ID = %s AWS_SECRET_KEY = %s  AWS_TOKEN = %s)
             ",
-            Snowflake::quoteIdentifier($stageName),
+            $this->quoteIdentifier($stageName),
             implode(' ', $csvOptions),
             $this->bucket,
-            Snowflake::quote($this->accessKeyId),
-            Snowflake::quote($this->secretAccessKey),
-            Snowflake::quote($this->sessionToken)
+            $this->quote($this->accessKeyId),
+            $this->quote($this->secretAccessKey),
+            $this->quote($this->sessionToken),
         );
     }
 
-    public function generateCopyCommands(string $tableName, string $stageName, array $columns): iterable
+    /**
+     * @param ItemConfig[] $items
+     */
+    public function generateCopyCommands(string $tableName, string $stageName, array $items): iterable
     {
         $filesToImport = $this->getManifestEntries();
         foreach (array_chunk($filesToImport, self::SLICED_FILES_CHUNK_SIZE) as $files) {
             $quotedFiles = array_map(
                 function ($entry) {
-                    return Snowflake::quote(
-                        strtr($entry, [$this->getS3Prefix() . '/' => ''])
+                    return $this->quote(
+                        strtr($entry, [$this->getS3Prefix() . '/' => '']),
                     );
                 },
-                $files
+                $files,
             );
 
             yield sprintf(
@@ -80,10 +79,10 @@ class S3Adapter implements IAdapter
             FROM (SELECT %s FROM %s t)
             FILES = (%s)',
                 $tableName,
-                implode(', ', SqlHelper::getQuotedColumnsNames($columns)),
-                implode(', ', SqlHelper::getColumnsTransformation($columns)),
-                Snowflake::quote('@' . Snowflake::quoteIdentifier($stageName) . '/'),
-                implode(',', $quotedFiles)
+                implode(', ', SqlHelper::getQuotedColumnsNames($items)),
+                implode(', ', SqlHelper::getColumnsTransformation($items)),
+                $this->quote('@' . $this->quoteIdentifier($stageName) . '/'),
+                implode(',', $quotedFiles),
             );
         }
     }
@@ -96,6 +95,11 @@ class S3Adapter implements IAdapter
 
         $client = $this->getClient();
         try {
+            /**
+             * @var array{
+             *     Body: string
+             * } $response
+             */
             $response = $client->getObject([
                 'Bucket' => $this->bucket,
                 'Key' => ltrim($this->key, '/'),
@@ -104,10 +108,15 @@ class S3Adapter implements IAdapter
             throw new UserException('Load error: ' . $e->getMessage(), $e->getCode(), $e);
         }
 
-        $manifest = json_decode((string) $response['Body'], true);
-        return array_map(static function ($entry) {
+        /**
+         * @var array{
+         *    entries: array<array{url: string}>
+         * } $manifest
+         */
+        $manifest = (array) json_decode((string) $response['Body'], true);
+        return array_map(static function (array $entry) {
             return $entry['url'];
-        }, $manifest['entries']);
+        }, (array) $manifest['entries']);
     }
 
     private function getS3Prefix(): string
