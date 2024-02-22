@@ -1,6 +1,8 @@
 <?php
 
-namespace Keboola\DbWriter\Snowflake\Test;
+declare(strict_types=1);
+
+namespace Keboola\DbWriter\Snowflake\PrepareTestsData;
 
 use Keboola\Csv\CsvFile;
 use Keboola\StorageApi\Client;
@@ -25,29 +27,33 @@ class StagingStorageLoader
 
     private function getInputCsv(string $tableId): string
     {
-        return sprintf($this->dataDir . '/in/tables/%s.csv', $tableId);
+        return sprintf($this->dataDir . '/%s.csv', $tableId);
     }
 
-    public function upload(string $tableId): array
+    public function upload(string $table): array
     {
-        $filePath = $this->getInputCsv($tableId);
+        $filePath = $this->getInputCsv($table);
         $bucketId = 'in.c-test-wr-db-snowflake';
+        $tableId = $bucketId . '.' . $table;
+
         if (!$this->storageApi->bucketExists($bucketId)) {
             $this->storageApi->createBucket('test-wr-db-snowflake', Client::STAGE_IN, '', 'snowflake');
         }
+        if ($this->storageApi->tableExists($tableId)) {
+            $this->storageApi->dropTable($tableId);
+        }
 
-        $sourceTableId = $this->storageApi->createTable($bucketId, $tableId, new CsvFile($filePath));
+        $sourceTableId = $this->storageApi->createTableAsync($bucketId, $table, new CsvFile($filePath));
 
-        $this->storageApi->writeTable($sourceTableId, new CsvFile($filePath));
         $job = $this->storageApi->exportTableAsync(
             $sourceTableId,
             [
                 'gzip' => true,
-            ]
+            ],
         );
         $fileInfo = $this->storageApi->getFile(
             $job['file']['id'],
-            (new GetFileOptions())->setFederationToken(true)
+            (new GetFileOptions())->setFederationToken(true),
         );
 
         if (isset($fileInfo['absPath'])) {
@@ -72,7 +78,7 @@ class StagingStorageLoader
             'isSliced' => $fileInfo['isSliced'],
             'region' => $fileInfo['region'],
             'bucket' => $fileInfo['s3Path']['bucket'],
-            'key' => $fileInfo['isSliced']?$fileInfo['s3Path']['key'] . 'manifest':$fileInfo['s3Path']['key'],
+            'key' => $fileInfo['s3Path']['key'] . 'manifest',
             'credentials' => [
                 'access_key_id' => $fileInfo['credentials']['AccessKeyId'],
                 'secret_access_key' => $fileInfo['credentials']['SecretAccessKey'],
@@ -90,7 +96,7 @@ class StagingStorageLoader
             'is_sliced' => $fileInfo['isSliced'],
             'region' => $fileInfo['region'],
             'container' => $fileInfo['absPath']['container'],
-            'name' => $fileInfo['isSliced'] ? $fileInfo['absPath']['name'] . 'manifest' : $fileInfo['absPath']['name'],
+            'name' => $fileInfo['absPath']['name'] . 'manifest',
             'credentials' => [
                 'sas_connection_string' => $fileInfo['absCredentials']['SASConnectionString'],
                 'expiration' => $fileInfo['absCredentials']['expiration'],
