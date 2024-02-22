@@ -1,0 +1,59 @@
+{
+  "parameters": {
+    "db": {
+      "host": "%env(string:DB_HOST)%",
+      "port": "%env(string:DB_PORT)%",
+      "user": "%env(string:DB_USER)%",
+      "#password": "%env(string:DB_PASSWORD)%",
+      "database": "%env(string:DB_DATABASE)%",
+      "schema": "%env(string:DB_SCHEMA)%",
+      "warehouse": "%env(string:DB_WAREHOUSE)%"
+    },
+    "tableId": "simple-datetime",
+    "dbName": "simple-datetime",
+    "items": [
+      {
+        "name": "id",
+        "dbName": "id",
+        "type": "int",
+        "size": null,
+        "nullable": null,
+        "default": null
+      },
+      {
+        "name": "col-true-null",
+        "dbName": "col-true-null",
+        "type": "datetime",
+        "size": null,
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "col-true-empty-string",
+        "dbName": "col-true-empty-string",
+        "type": "datetime",
+        "size": null,
+        "nullable": true,
+        "default": ""
+      },
+      {
+        "name": "col-true-string",
+        "dbName": "col-true-string",
+        "type": "datetime",
+        "size": null,
+        "nullable": true,
+        "default": "2020-01-01 12:01:02"
+      }
+    ]
+  },
+  "storage": {
+    "input": {
+      "tables": [
+        {
+          "source": "simple-datetime",
+          "destination": "simple-datetime.csv"
+        }
+      ]
+    }
+  }
+}
