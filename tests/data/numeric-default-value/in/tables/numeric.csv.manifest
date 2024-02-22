@@ -1,9 +1,0 @@
-{
-  "id": "simple",
-  "columns": [
-    "id",
-    "integer",
-    "float",
-    "timestamp"
-  ]
-}
