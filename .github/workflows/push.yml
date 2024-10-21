@@ -43,7 +43,7 @@ jobs:
     steps:
       -
         name: Check out the repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       -
         name: Print Docker version
         run: docker -v
@@ -61,8 +61,8 @@ jobs:
           TAG="${GITHUB_REF##*/}"
           IS_SEMANTIC_TAG=$(echo "$TAG" | grep -q '^v\?[0-9]\+\.[0-9]\+\.[0-9]\+$' && echo true || echo false)
           echo "Tag = '$TAG', is semantic tag = '$IS_SEMANTIC_TAG'"
-          echo "::set-output name=app_image_tag::$TAG"
-          echo "::set-output name=is_semantic_tag::$IS_SEMANTIC_TAG"
+          echo "is_semantic_tag=$IS_SEMANTIC_TAG" >> $GITHUB_OUTPUT
+          echo "app_image_tag=$TAG" >> $GITHUB_OUTPUT
       -
         name: Push image to ECR (S3)
         uses: keboola/action-push-to-ecr@master
@@ -99,7 +99,7 @@ jobs:
     steps:
       -
         name: Check out the repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       -
         name: Pull image from ECR
         uses: keboola/action-pull-from-ecr@master
@@ -114,7 +114,7 @@ jobs:
       -
         name: Run tests
         run: |
-          docker-compose run --rm \
+          docker compose run --rm \
           -e DB_SCHEMA=${{ env[format('DB_SCHEMA_{0}', matrix.staging_storage)] }} \
           -e KBC_URL=${{ env[format('KBC_URL_{0}', matrix.staging_storage)] }} \
           -e STORAGE_API_TOKEN=${{ env[format('STORAGE_API_TOKEN_{0}', matrix.staging_storage)] }} \
