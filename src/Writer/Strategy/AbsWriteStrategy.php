@@ -35,6 +35,7 @@ class AbsWriteStrategy implements WriteStrategy
         $this->isSliced = $absInfo['is_sliced'];
         $this->container = $absInfo['container'];
         $this->name = $absInfo['name'];
+        /** @var array $connectionInfo */
         $this->connectionEndpoint = $connectionInfo[1];
         $this->connectionAccessSignature = $connectionInfo[2];
     }

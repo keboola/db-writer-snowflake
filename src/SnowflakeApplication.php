@@ -11,13 +11,17 @@ use Keboola\DbWriter\Configuration\SnowflakeTableNodesDecorator;
 use Keboola\DbWriter\Configuration\ValueObject\SnowflakeDatabaseConfig;
 use Keboola\DbWriter\Configuration\ValueObject\SnowflakeExportConfig;
 use Keboola\DbWriter\Writer\Snowflake;
+use Keboola\DbWriter\Writer\SshTunnel;
 use Keboola\DbWriterConfig\Configuration\ConfigDefinition;
 use Keboola\DbWriterConfig\Configuration\ConfigRowDefinition;
+use Keboola\DbWriterConfig\Configuration\ValueObject\DatabaseConfig;
 use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
 
 class SnowflakeApplication extends Application
 {
     protected string $writerName = 'Snowflake';
+
+    private ?SnowflakeDatabaseConfig $databaseConfig = null;
 
     protected function run(): void
     {
@@ -72,7 +76,14 @@ class SnowflakeApplication extends Application
 
     protected function createDatabaseConfig(array $dbParams): SnowflakeDatabaseConfig
     {
-        return SnowflakeDatabaseConfig::fromArray($dbParams);
+        if (!$this->databaseConfig) {
+            $sshTunnel = new SshTunnel($this->getLogger());
+            /** @var SnowflakeDatabaseConfig $dbConfig */
+            $dbConfig = $sshTunnel->createSshTunnel(SnowflakeDatabaseConfig::fromArray($dbParams));
+            $this->databaseConfig = $dbConfig;
+        }
+
+        return $this->databaseConfig;
     }
 
     protected function createExportConfig(array $table): SnowflakeExportConfig
