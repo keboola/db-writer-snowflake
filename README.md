@@ -2,9 +2,9 @@
 [![GitHub Actions](https://github.com/keboola/db-writer-snowflake/actions/workflows/push.yml/badge.svg)](https://github.com/keboola/db-writer-snowflake/actions/workflows/push.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/keboola/db-writer-snowflake/blob/master/LICENSE.md)
 
-Writes data to Snowflake Database.
+This component writes data to a Snowflake database.
 
-## Example configuration
+## Example Configuration
 
 ```json
     {
@@ -65,7 +65,8 @@ Writes data to Snowflake Database.
 
 ## Development
 
-Required snowflake resource for writer:
+Required Snowflake resources for the writer:
+
 ```sql
 CREATE DATABASE "snowflake_writer";
 USE DATABASE "snowflake_writer";
@@ -90,12 +91,14 @@ CREATE USER "snowflake_writer"
 GRANT ROLE "snowflake_writer" TO USER "snowflake_writer";
 ```
 
-App is developed on localhost using TDD.
+The application is developed locally using Test-Driven Development (TDD).
 
-1. Clone from repository: `git clone git@github.com:keboola/db-writer-snowflake.git`
-2. Change directory: `cd db-writer-snowflake`
+### Setup Instructions
+
+1. Clone the repository: `git clone git@github.com:keboola/db-writer-snowflake.git`
+2. Change to the project directory: `cd db-writer-snowflake`
 3. Install dependencies: `docker-compose run --rm php composer install -n`
-4. Create `.env` file:
+4. Create a `.env` file:
 ```bash
 STORAGE_API_TOKEN=
 KBC_URL=
@@ -108,8 +111,8 @@ DB_PASSWORD=
 DB_SCHEMA=
 DB_WAREHOUSE=
 ```
-5. Run docker-compose, which will trigger phpunit: `docker-compose run --rm app`
+5. Run docker-compose, which will trigger PHPUnit: `docker-compose run --rm app`
 
 ## License
 
-MIT licensed, see [LICENSE](./LICENSE) file.
+MIT licensed, see the [LICENSE](./LICENSE) file.
