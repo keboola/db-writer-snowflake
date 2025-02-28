@@ -3,49 +3,83 @@
     "license": "MIT",
     "type": "project",
     "description": "Keboola Snowflake DB Writer",
-    "keywords": ["keboola", "snowflake", "db", "writer"],
+    "keywords": [
+        "keboola",
+        "snowflake",
+        "db",
+        "writer"
+    ],
     "require": {
-        "php": "^7.4",
+        "php": "^8.2",
+        "ext-PDO": "*",
         "ext-json": "*",
         "ext-mbstring": "*",
-        "ext-PDO": "*",
-        "keboola/db-writer-common": "^5.7",
-        "keboola/csv": "^1.1",
-        "keboola/storage-api-client": "^10.15",
-        "symfony/config": "^4.0",
-        "keboola/php-file-storage-utils": "^0.2.1"
+        "keboola/db-writer-adapter": "^0.1",
+        "keboola/db-writer-common": "^6.2",
+        "keboola/db-writer-config": "^0.1",
+        "keboola/php-file-storage-utils": "^0.2",
+        "microsoft/azure-storage-blob": "^1.5.4",
+        "symfony/config": "^6.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^9.2",
-        "phpstan/phpstan": "^0.12.32",
-        "keboola/coding-standard": "^9.0"
+        "cweagans/composer-patches": "^1.7",
+        "keboola/coding-standard": "^15.0",
+        "keboola/csv": "^1.5",
+        "keboola/datadir-tests": "^5.6",
+        "keboola/storage-api-client": "^14.15",
+        "phpstan/phpstan": "^1.10",
+        "phpunit/phpunit": "^9.6",
+        "symplify/vendor-patches": "^11.3"
     },
-    "config": {
-        "process-timeout": 1800
+    "autoload": {
+        "psr-4": {
+            "Keboola\\DbWriter\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Keboola\\DbWriter\\Snowflake\\Tests\\": "tests/phpunit/",
+            "Keboola\\DbWriter\\Snowflake\\TraitTests\\": "tests/traits/",
+            "Keboola\\DbWriter\\Snowflake\\FunctionalTests\\": "tests/functional/",
+            "Keboola\\DbWriter\\Snowflake\\PrepareTestsData\\": "tests/prepare-data/"
+        }
     },
     "scripts": {
-        "tests": "XDEBUG_MODE=coverage phpunit",
+        "tests": [
+            "@tests-prepare-data",
+            "@tests-phpunit",
+            "@tests-datadir"
+        ],
+        "tests-prepare-data": "php ./tests/prepare-data/prepareData.php",
+        "tests-phpunit": "phpunit --testsuite unit",
+        "tests-datadir": "phpunit --testsuite functional",
+        "tests-perf": "phpunit --testsuite perf",
         "phpcs": "phpcs -n --ignore=vendor --extensions=php .",
         "phpcbf": "phpcbf -n --ignore=vendor --extensions=php .",
-        "phpstan": "phpstan analyse ./src ./tests --level=max --no-progress -c phpstan.neon",
+        "phpstan": "phpstan analyse --no-progress --level=max ./src ./tests -c phpstan.neon",
         "build": [
             "@phpcs",
             "@phpstan",
             "@tests"
         ],
         "ci": [
-            "@composer validate --no-check-all --strict",
+            "@composer validate --no-check-publish --no-check-all",
             "@build"
         ]
     },
-    "autoload": {
-        "psr-4": {
-            "Keboola\\": "src/Keboola/"
+    "config": {
+        "sort-packages": true,
+        "process-timeout": 1800,
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "cweagans/composer-patches": true
         }
     },
-    "autoload-dev": {
-        "psr-4": {
-            "Keboola\\DbWriter\\Snowflake\\Tests\\": "tests/phpunit"
+    "extra": {
+        "patches": {
+            "microsoft/azure-storage-common": [
+                "patches/microsoft-azure-storage-common-src-common-internal-servicerestproxy-php.patch"
+            ]
         }
     }
 }

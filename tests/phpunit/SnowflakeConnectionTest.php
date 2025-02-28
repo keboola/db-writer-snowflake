@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Keboola\DbWriter\Snowflake\Tests;
 
 use Generator;
-use Keboola\DbWriter\Snowflake\Connection;
+use Keboola\DbWriter\Writer\SnowflakeConnectionFactory;
 use PHPUnit\Framework\Assert;
 use PHPUnit\Framework\TestCase;
 
@@ -17,7 +17,7 @@ class SnowflakeConnectionTest extends TestCase
      */
     public function testPasswords(string $password, string $expectedPassword): void
     {
-        Assert::assertEquals($expectedPassword, Connection::escapePassword($password));
+        Assert::assertEquals($expectedPassword, SnowflakeConnectionFactory::escapePassword($password));
     }
 
     public function passwordsDataProvider(): Generator
