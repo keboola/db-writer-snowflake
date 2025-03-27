@@ -14,8 +14,22 @@ services:
       - DB_DATABASE
       - DB_SCHEMA
       - DB_WAREHOUSE
+    links:
+      - sshproxy
+    volumes:
+      - ssh-keys:/root/.ssh
 
   dev:
     <<: *default
     volumes:
       - .:/code
+      - ./data:/data
+      - ssh-keys:/root/.ssh
+
+  sshproxy:
+    image: keboola/db-component-ssh-proxy:latest
+    volumes:
+      - ssh-keys:/root/.ssh
+
+volumes:
+  ssh-keys:

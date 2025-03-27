@@ -1,0 +1,19 @@
+Creating ODBC connection to "Driver=SnowflakeDSIIDriver;Server=%s;Port=443;Tracing=0;Login_timeout=30;Database="%s";Schema="%s";Warehouse=%s;CLIENT_SESSION_KEEP_ALIVE=TRUE;application="Keboola_Connection"".
+Validating warehouse "%s"
+Validating schema "%s"
+Creating table "simple_%s"
+Creating table "simple"
+Writing data to table "simple_%s"
+Dropping stage "%s"
+Using %s write strategy
+Creating stage "%s"
+Swapping table "simple_%s" with "simple"
+Dropping table "simple_%s"
+Creating table "special_%s"
+Creating table "special"
+Writing data to table "special_%s"
+Dropping stage "%s"
+Using %s write strategy
+Creating stage "%s"
+Swapping table "special_%s" with "special"
+Dropping table "special_%s"

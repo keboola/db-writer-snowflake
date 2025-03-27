@@ -1,0 +1,1 @@
+Foreign key column "col1" in table "special" has different type than column in table "id"

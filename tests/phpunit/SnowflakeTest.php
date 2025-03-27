@@ -1,211 +1,82 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Keboola\DbWriter\Snowflake\Tests;
 
-use Keboola\Csv\CsvFile;
-use Keboola\DbWriter\Adapter\AbsAdapter;
-use Keboola\DbWriter\Adapter\IAdapter;
-use Keboola\DbWriter\Adapter\S3Adapter;
-use Keboola\DbWriter\Exception\ApplicationException;
+use Keboola\DbWriter\Configuration\ValueObject\SnowflakeDatabaseConfig;
+use Keboola\DbWriter\Configuration\ValueObject\SnowflakeExportConfig;
 use Keboola\DbWriter\Exception\UserException;
-use Keboola\DbWriter\Logger;
-use Keboola\DbWriter\Snowflake\Connection;
-use Keboola\DbWriter\Snowflake\SnowflakeWriterFactory;
-use Keboola\DbWriter\Snowflake\Test\StagingStorageLoader;
 use Keboola\DbWriter\Writer\Snowflake;
-use Keboola\StorageApi\Client;
-use Monolog\Handler\TestHandler;
+use Keboola\DbWriter\Writer\SnowflakeConnection;
+use Keboola\DbWriter\Writer\SnowflakeConnectionFactory;
+use Keboola\DbWriter\Writer\SnowflakeQueryBuilder;
+use Keboola\DbWriter\Writer\SnowflakeWriteAdapter;
+use PHPUnit\Framework\Assert;
+use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
+use Psr\Log\Test\TestLogger;
 
-class SnowflakeTest extends BaseTest
+class SnowflakeTest extends TestCase
 {
-    protected $dataDir = __DIR__ . '/../data/snowflake';
-
-    private Client $storageApi;
-
-    private StagingStorageLoader $stagingStorageLoader;
+    private LoggerInterface $logger;
 
     public function setUp(): void
     {
-        $this->config = $this->getConfig($this->dataDir);
-        $this->writer = $this->getSnowflakeWriter($this->config['parameters']);
-
-        $tables = $this->config['parameters']['tables'];
-        foreach ($tables as $table) {
-            $this->writer->drop($table['dbName']);
-        }
-
-        $this->storageApi = new Client([
-            'url' => getenv('KBC_URL'),
-            'token' => getenv('STORAGE_API_TOKEN'),
-        ]);
-
-        $bucketId = 'in.c-test-wr-db-snowflake';
-        if ($this->storageApi->bucketExists($bucketId)) {
-            $this->storageApi->dropBucket($bucketId, ['force' => true]);
-        }
-
-        $this->stagingStorageLoader = new StagingStorageLoader($this->dataDir, $this->storageApi);
+        $this->logger = new TestLogger();
+        $this->dropAllTables();
     }
 
-    private function getInputCsv(string $tableId): string
+    public function testTmpName(): void
     {
-        return sprintf($this->dataDir . '/in/tables/%s.csv', $tableId);
+        $adapter = $this->getWriteAdapter($this->getConfig('simple'));
+
+        $tableName = 'firstTable';
+
+        $tmpName = $adapter->generateTmpName($tableName);
+        $this->assertMatchesRegularExpression('/' . $tableName . '/ui', $tmpName);
+        $this->assertMatchesRegularExpression('/temp/ui', $tmpName);
+        $this->assertLessThanOrEqual(256, mb_strlen($tmpName));
+
+        $tableName = str_repeat('firstTableWithLongName', 15);
+
+        $this->assertGreaterThanOrEqual(256, mb_strlen($tableName));
+        $tmpName = $adapter->generateTmpName($tableName);
+        $this->assertMatchesRegularExpression('/temp/ui', $tmpName);
+        $this->assertLessThanOrEqual(256, mb_strlen($tmpName));
     }
 
-    private function loadDataToStagingStorage(string $tableId): array
+    public function testCreateAndDropTable(): void
     {
-        return $this->stagingStorageLoader->upload($tableId);
-    }
+        $table = 'simple';
 
-    public function testCreateConnection(): void
-    {
-        $connection = $this->writer->createSnowflakeConnection($this->config['parameters']['db']);
+        $config = $this->getConfig($table);
+        $exportConfig = $this->getExportConfig($config);
+        $adapter = $this->getWriteAdapter($config);
+        $connection = $this->getConnection($config);
 
-        $result = $connection->fetchAll('SELECT current_date;');
-        $this->assertNotEmpty($result);
+        $adapter->create($exportConfig->getDbName(), false, $exportConfig->getItems());
 
-        try {
-            $this->writer->createConnection($this->config['parameters']['db']);
-            $this->fail('Create connection via Common inteface method should fail');
-        } catch (ApplicationException $e) {
-            $this->assertStringContainsString('Method not implemented', $e->getMessage());
-        }
-    }
+        Assert::assertTrue($adapter->tableExists($exportConfig->getDbName()));
 
-    public function testGetConnection(): void
-    {
-        $connection = $this->writer->getSnowflakeConnection();
+        // check table type
+        $tablesInfo = $connection->fetchAll(sprintf(
+            "SHOW TABLES LIKE '%s';",
+            $exportConfig->getDbName(),
+        ));
 
-        $result = $connection->fetchAll('SELECT current_date;');
-        $this->assertNotEmpty($result);
+        Assert::assertCount(1, $tablesInfo);
 
-        try {
-            $this->writer->getConnection();
-            $this->fail('Getting connection via Common inteface method should fail');
-        } catch (ApplicationException $e) {
-            $this->assertStringContainsString('Method not implemented', $e->getMessage());
-        }
-    }
+        /** @var array{schema_name: string, database_name: string, name: string, kind: string} $tableInfo */
+        $tableInfo = reset($tablesInfo);
+        Assert::assertEquals($exportConfig->getDatabaseConfig()->getSchema(), $tableInfo['schema_name']);
+        Assert::assertEquals($exportConfig->getDatabaseConfig()->getDatabase(), $tableInfo['database_name']);
+        Assert::assertEquals($exportConfig->getDbName(), $tableInfo['name']);
+        Assert::assertEquals('TRANSIENT', $tableInfo['kind']);
 
-    public function testConnection(): void
-    {
-        $testHandler = new TestHandler();
+        $adapter->drop($exportConfig->getDbName());
 
-        $logger = new Logger($this->appName);
-        $logger->pushHandler($testHandler);
-
-        $writerFactory = new SnowflakeWriterFactory($this->config['parameters']);
-
-        /** @var Snowflake $writer */
-        $writer =  $writerFactory->create($logger);
-        $this->assertCount(0, $testHandler->getRecords());
-
-        $writer->testConnection();
-
-        $records = $testHandler->getRecords();
-
-        $this->assertCount(1, $records);
-
-        $this->assertStringContainsString('Executing query', $records[0]['message']);
-        $this->assertEquals('INFO', $records[0]['level_name']);
-    }
-
-    public function testDrop(): void
-    {
-        $conn = $this->writer->getSnowflakeConnection();
-
-        $conn->query('CREATE TABLE "dropMe" (
-          id INT PRIMARY KEY,
-          firstname VARCHAR(30) NOT NULL,
-          lastname VARCHAR(30) NOT NULL)');
-
-        $this->assertTrue($this->writer->tableExists('dropMe'));
-
-        $this->writer->drop('dropMe');
-        $this->assertFalse($this->writer->tableExists('dropMe'));
-    }
-
-    public function createData(): array
-    {
-        return [
-            [true, 'TRANSIENT'],
-            [false, 'TRANSIENT'],
-        ];
-    }
-
-    /**
-     * @dataProvider createData
-     */
-    public function testCreate(bool $incrementalValue, string $expectedKind): void
-    {
-        $tables = array_filter(
-            (array) $this->config['parameters']['tables'],
-            function ($table) use ($incrementalValue) {
-                return $table['incremental'] === $incrementalValue;
-            }
-        );
-
-        $this->assertGreaterThanOrEqual(1, count($tables));
-
-        foreach ($tables as $table) {
-            $this->writer->drop($table['dbName']);
-            $this->assertFalse($this->writer->tableExists($table['dbName']));
-
-            $this->writer->create($table);
-            $this->assertTrue($this->writer->tableExists($table['dbName']));
-
-            // check table type
-            $tablesInfo = $this->writer->getSnowflakeConnection()->fetchAll(sprintf(
-                "SHOW TABLES LIKE '%s';",
-                $table['dbName']
-            ));
-
-            $this->assertCount(1, $tablesInfo);
-
-            $tableInfo = reset($tablesInfo);
-            $this->assertEquals($this->config['parameters']['db']['schema'], $tableInfo['schema_name']);
-            $this->assertEquals($this->config['parameters']['db']['database'], $tableInfo['database_name']);
-            $this->assertEquals($table['dbName'], $tableInfo['name']);
-            $this->assertEquals($expectedKind, $tableInfo['kind']);
-        }
-    }
-
-    public function testCreateIfNotExists(): void
-    {
-        $table = reset($this->config['parameters']['tables']);
-        $dbName = $table['dbName'];
-
-        $this->assertFalse($this->writer->tableExists($dbName));
-
-        $this->writer->createIfNotExists($table);
-        $this->assertTrue($this->writer->tableExists($dbName));
-
-        $this->writer->createIfNotExists($table);
-        $this->assertTrue($this->writer->tableExists($dbName));
-    }
-
-    public function testSwap(): void
-    {
-        $table1 = $this->config['parameters']['tables'][0];
-        $table2 = $this->config['parameters']['tables'][1];
-
-        $this->writer->create($table1);
-        $this->writer->create($table2);
-
-        $table1Columns = $this->writer->getSnowflakeConnection()->fetchAll("DESCRIBE TABLE \"{$table1['dbName']}\"");
-        $table2Columns = $this->writer->getSnowflakeConnection()->fetchAll("DESCRIBE TABLE \"{$table2['dbName']}\"");
-        $this->assertNotEquals($table1Columns, $table2Columns);
-
-        $this->writer->swapTables($table1['dbName'], $table2['dbName']);
-
-        $this->assertTrue($this->writer->tableExists($table1['dbName']));
-        $this->assertTrue($this->writer->tableExists($table2['dbName']));
-
-        $tableSwap1Columns = $this->writer->getSnowflakeConnection()->fetchAll("DESCRIBE TABLE \"{$table1['dbName']}\"");
-        $tableSwap2Columns = $this->writer->getSnowflakeConnection()->fetchAll("DESCRIBE TABLE \"{$table2['dbName']}\"");
-
-        $this->assertEquals($table1Columns, $tableSwap2Columns);
-        $this->assertEquals($table2Columns, $tableSwap1Columns);
+        Assert::assertFalse($adapter->tableExists($exportConfig->getDbName()));
     }
 
     public function createStagingData(): array
@@ -221,209 +92,117 @@ class SnowflakeTest extends BaseTest
      */
     public function testCreateStaging(bool $incrementalValue, string $expectedKind): void
     {
-        $tables = array_filter(
-            (array) $this->config['parameters']['tables'],
-            function ($table) use ($incrementalValue) {
-                return $table['incremental'] === $incrementalValue;
-            }
-        );
+        $config = $this->getConfig('simple');
+        $config['parameters']['incremental'] = $incrementalValue;
 
-        $this->assertGreaterThanOrEqual(1, count($tables));
+        $exportConfig = $this->getExportConfig($config);
+        $connection = $this->getConnection($config);
+        $adapter = $this->getWriteAdapter($config, $connection);
 
-        foreach ($tables as $table) {
-            $this->writer->drop($table['dbName']);
-            $this->assertFalse($this->writer->tableExists($table['dbName']));
-
-            $this->writer->createStaging($table);
-            $this->assertTrue($this->writer->tableExists($table['dbName']));
-
-            // check table type
-            $tablesInfo = $this->writer->getSnowflakeConnection()->fetchAll(sprintf(
-                "SHOW TABLES LIKE '%s';",
-                $table['dbName']
-            ));
-
-            $this->assertCount(1, $tablesInfo);
-
-            $tableInfo = reset($tablesInfo);
-            $this->assertEquals($this->config['parameters']['db']['schema'], $tableInfo['schema_name']);
-            $this->assertEquals($this->config['parameters']['db']['database'], $tableInfo['database_name']);
-            $this->assertEquals($table['dbName'], $tableInfo['name']);
-            $this->assertEquals($expectedKind, $tableInfo['kind']);
+        if ($adapter->tableExists($exportConfig->getDbName())) {
+            $adapter->drop($exportConfig->getDbName());
         }
+
+        Assert::assertFalse($adapter->tableExists($exportConfig->getDbName()));
+
+        $adapter->create($exportConfig->getDbName(), true, $exportConfig->getItems());
+
+        Assert::assertTrue($adapter->tableExists($exportConfig->getDbName()));
+
+        // check table type
+        $tablesInfo = $connection->fetchAll(sprintf(
+            "SHOW TABLES LIKE '%s';",
+            $exportConfig->getDbName(),
+        ));
+
+        Assert::assertCount(1, $tablesInfo);
+
+        /** @var array{schema_name: string, database_name: string, name: string, kind: string} $tableInfo */
+        $tableInfo = reset($tablesInfo);
+        Assert::assertEquals($exportConfig->getDatabaseConfig()->getSchema(), $tableInfo['schema_name']);
+        Assert::assertEquals($exportConfig->getDatabaseConfig()->getDatabase(), $tableInfo['database_name']);
+        Assert::assertEquals($exportConfig->getDbName(), $tableInfo['name']);
+        Assert::assertEquals($expectedKind, $tableInfo['kind']);
     }
 
-    public function testStageName(): void
+    public function testSwap(): void
     {
-        $this->assertFalse($this->writer->generateStageName((string) getenv('KBC_RUNID')) === Snowflake::STAGE_NAME);
-    }
+        $table1 = $this->getConfig('simple');
+        $table2 = $this->getConfig('special');
 
-    public function testTmpName(): void
-    {
-        $tableName = 'firstTable';
+        $connection = $this->getConnection($table1);
 
-        $tmpName = $this->writer->generateTmpName($tableName);
-        $this->assertMatchesRegularExpression('/' . $tableName . '/ui', $tmpName);
-        $this->assertMatchesRegularExpression('/temp/ui', $tmpName);
-        $this->assertLessThanOrEqual(256, mb_strlen($tmpName));
+        $exportConfig1 = $this->getExportConfig($table1);
+        $exportConfig2 = $this->getExportConfig($table2);
 
-        $tableName = str_repeat('firstTableWithLongName', 15);
+        $adapter1 = $this->getWriteAdapter($table1);
+        $adapter2 = $this->getWriteAdapter($table2);
 
-        $this->assertGreaterThanOrEqual(256, mb_strlen($tableName));
-        $tmpName = $this->writer->generateTmpName($tableName);
-        $this->assertMatchesRegularExpression('/temp/ui', $tmpName);
-        $this->assertLessThanOrEqual(256, mb_strlen($tmpName));
-    }
+        $adapter1->create($exportConfig1->getDbName(), false, $exportConfig1->getItems());
+        $adapter2->create($exportConfig2->getDbName(), false, $exportConfig2->getItems());
 
-    public function testWriteAsync(): void
-    {
-        $tables = $this->config['parameters']['tables'];
+        $table1Columns = $connection->fetchAll("DESCRIBE TABLE \"{$exportConfig1->getDbName()}\"");
+        $table2Columns = $connection->fetchAll("DESCRIBE TABLE \"{$exportConfig2->getDbName()}\"");
 
-        // simple table
-        $table = $tables[0];
+        $adapter1->swapTable($connection, $exportConfig1->getDbName(), $exportConfig2->getDbName());
 
-        $writer = $this->getSnowflakeWriter($this->config['parameters'], $this->getAdapter($table['tableId']));
-        $writer->drop($table['dbName']);
-        $writer->create($table);
-        $writer->writeFromAdapter($table);
+        $tableSwap1Columns = $connection->fetchAll("DESCRIBE TABLE \"{$exportConfig1->getDbName()}\"");
+        $tableSwap2Columns = $connection->fetchAll("DESCRIBE TABLE \"{$exportConfig2->getDbName()}\"");
 
-        /** @var Connection $conn */
-        $conn = new Connection($this->config['parameters']['db']);
-
-        // check if writer stage does not exists
-        $stageName = $writer->generateStageName((string) getenv('KBC_RUNID'));
-
-        $writerStages = array_filter(
-            $conn->fetchAll(sprintf("SHOW STAGES LIKE '{$stageName}'")),
-            function ($row) {
-                return $row['owner'] === getenv('SNOWFLAKE_DB_USER');
-            }
-        );
-
-        $this->assertCount(0, $writerStages);
-
-        // validate structure and data
-        $columnsInDb = $conn->fetchAll("DESCRIBE TABLE \"{$table['dbName']}\"");
-        $getColumnInDb = function ($columnName) use ($columnsInDb) {
-            $found = array_filter($columnsInDb, function ($currentColumn) use ($columnName) {
-                return $currentColumn['name'] === $columnName;
-            });
-            if (empty($found)) {
-                throw new \Exception("Column $columnName not found");
-            }
-            return reset($found);
-        };
-
-        foreach ($table['items'] as $columnConfiguration) {
-            $columnInDb = $getColumnInDb($columnConfiguration['dbName']);
-            if (!empty($columnConfiguration['nullable'])) {
-                $this->assertEquals('Y', $columnInDb['null?']);
-            } else {
-                $this->assertEquals('N', $columnInDb['null?']);
-            }
-        }
-
-        $res = $conn->fetchAll(sprintf('SELECT * FROM "%s" ORDER BY "id" ASC', $table['dbName']));
-
-        $resFilename = tempnam('/tmp', 'db-wr-test-tmp');
-        $csv = new CsvFile($resFilename);
-        $csv->writeRow(['id','name','glasses', 'age']);
-        foreach ($res as $row) {
-            $csv->writeRow($row);
-
-            // null test - age column is nullable
-            if (!is_numeric($row['age'])) {
-                $this->assertNull($row['age']);
-            }
-            $this->assertNotNull($row['name']);
-        }
-
-        $this->assertFileEquals($this->getInputCsv($table['tableId']), $csv->getPathname());
-    }
-
-    public function testUpsert(): void
-    {
-        $tables = $this->config['parameters']['tables'];
-        foreach ($tables as $table) {
-            $this->writer->drop($table['dbName']);
-        }
-        $table = $tables[0];
-
-        $targetTable = $table;
-        $table['dbName'] .= $table['incremental']?'_temp_' . uniqid():'';
-
-        // first write
-        $writer = $this->getSnowflakeWriter($this->config['parameters'], $this->getAdapter($table['tableId']));
-        $writer->create($targetTable);
-        $writer->writeFromAdapter($targetTable);
-
-        // second write
-        $writer = $this->getSnowflakeWriter(
-            $this->config['parameters'],
-            $this->getAdapter($table['tableId'] . '_increment')
-        );
-        $writer->create($table);
-        $writer->writeFromAdapter($table);
-
-        $writer->upsert($table, $targetTable['dbName']);
-
-        /** @var Connection $conn */
-        $conn = new Connection($this->config['parameters']['db']);
-        $res = $conn->fetchAll("SELECT * FROM \"{$targetTable['dbName']}\" ORDER BY \"id\" ASC");
-
-        $resFilename = tempnam('/tmp', 'db-wr-test-tmp');
-        $csv = new CsvFile($resFilename);
-        $csv->writeRow(['id', 'name', 'glasses', 'age']);
-        foreach ($res as $row) {
-            $csv->writeRow($row);
-        }
-
-        $expectedFilename = $this->getInputCsv($table['tableId'] . '_merged');
-
-        $this->assertFileEquals($expectedFilename, $csv->getPathname());
+        Assert::assertEquals($table1Columns, $tableSwap2Columns);
+        Assert::assertEquals($table2Columns, $tableSwap1Columns);
     }
 
     public function testDefaultWarehouse(): void
     {
-        $config = $this->config;
+        $config = $this->getConfig('simple');
+        $connection = $this->getConnection($config);
+        /** @var array{'CURRENT_USER': string}[] $currentUser */
+        $currentUser = $connection->fetchAll('SELECT CURRENT_USER;');
+        $user = (string) $currentUser[0]['CURRENT_USER'];
 
         $warehouse = $config['parameters']['db']['warehouse'];
 
-        $this->setUserDefaultWarehouse(null);
-        $this->assertEmpty($this->writer->getUserDefaultWarehouse());
-
         // run without warehouse param
         unset($config['parameters']['db']['warehouse']);
+        $this->setUserDefaultWarehouse($connection, $user, null);
+        Assert::assertEmpty($this->getUserDefaultWarehouse($connection, $user));
+        /** @var SnowflakeDatabaseConfig $databaseConfig */
+        $databaseConfig = $this->getExportConfig($config)->getDatabaseConfig();
 
         try {
-            $this->getSnowflakeWriter($config['parameters']);
+            new Snowflake($databaseConfig, $this->logger);
             $this->fail('Create writer without warehouse should fail');
         } catch (UserException $e) {
-            $this->assertMatchesRegularExpression('/Snowflake user has any \"DEFAULT_WAREHOUSE\" specified/ui', $e->getMessage());
+            $this->assertMatchesRegularExpression(
+                '/Snowflake user has any \"DEFAULT_WAREHOUSE\" specified/ui',
+                $e->getMessage(),
+            );
         }
 
         // run with warehouse param
-        $config = $this->config;
-        $tables = $config['parameters']['tables'];
-        $table = $tables[0];
+        $config['parameters']['db']['warehouse'] = $warehouse;
+        /** @var SnowflakeDatabaseConfig $databaseConfig */
+        $databaseConfig = $this->getExportConfig($config)->getDatabaseConfig();
+        $writer = new Snowflake($databaseConfig, $this->logger);
 
-        $writer = $this->getSnowflakeWriter($this->config['parameters'], $this->getAdapter($table['tableId']));
-        $writer->create($table);
-        $writer->writeFromAdapter($table);
+        $writer->testConnection();
 
         // restore default warehouse
-        $this->setUserDefaultWarehouse($warehouse);
-        $this->assertEquals($warehouse, $this->writer->getUserDefaultWarehouse());
+        $this->setUserDefaultWarehouse($connection, $user, $warehouse);
+        $this->assertEquals($warehouse, $this->getUserDefaultWarehouse($connection, $user));
     }
 
     public function testInvalidWarehouse(): void
     {
-        $parameters = $this->config['parameters'];
-        $parameters['db']['warehouse'] = uniqid();
+        $config = $this->getConfig('simple');
+        $config['parameters']['db']['warehouse'] = uniqid();
+        /** @var SnowflakeDatabaseConfig $databaseConfig */
+        $databaseConfig = $this->getExportConfig($config)->getDatabaseConfig();
 
         try {
-            $this->getSnowflakeWriter($parameters);
-            $this->fail('Creating writer should fail with UserError');
+            new Snowflake($databaseConfig, $this->logger);
+            $this->fail('Creating connection should fail with UserError');
         } catch (UserException $e) {
             $this->assertStringContainsString('Invalid warehouse', $e->getMessage());
         }
@@ -431,11 +210,14 @@ class SnowflakeTest extends BaseTest
 
     public function testInvalidSchema(): void
     {
-        $parameters = $this->config['parameters'];
-        $parameters['db']['schema'] = uniqid();
+        $config = $this->getConfig('simple');
+        $config['parameters']['db']['schema'] = uniqid();
+        /** @var SnowflakeDatabaseConfig $databaseConfig */
+        $databaseConfig = $this->getExportConfig($config)->getDatabaseConfig();
+
         try {
-            $this->getSnowflakeWriter($parameters);
-            $this->fail('Creating writer should fail with UserError');
+            new Snowflake($databaseConfig, $this->logger);
+            $this->fail('Creating connection should fail with UserError');
         } catch (UserException $e) {
             $this->assertStringContainsString('Invalid schema', $e->getMessage());
         }
@@ -443,75 +225,72 @@ class SnowflakeTest extends BaseTest
 
     public function testCheckPrimaryKey(): void
     {
-        $table = $this->config['parameters']['tables'][0];
-        $table['primaryKey'] = ['id', 'name'];
+        $config = $this->getConfig('simple');
+        $config['parameters']['primaryKey'] = ['id', 'name'];
+        $adapter = $this->getWriteAdapter($config);
+        $exportConfig = $this->getExportConfig($config);
 
-        $this->writer->create($table);
+        $adapter->create(
+            $exportConfig->getDbName(),
+            false,
+            $exportConfig->getItems(),
+            $exportConfig->getPrimaryKey(),
+        );
 
-        // test with keys in different order
-        $this->writer->checkPrimaryKey(['name', 'id'], $table['dbName']);
-
-        // no exception thrown, that's good
-        $this->assertTrue(true);
-    }
-
-    public function testCheckPrimaryKeyError(): void
-    {
-        $table = $this->config['parameters']['tables'][0];
-
-        $tableConfigWithOtherPrimaryKeys = $table;
-        $tableConfigWithOtherPrimaryKeys['items'][0]['dbName'] = 'code';
-        $tableConfigWithOtherPrimaryKeys['primaryKey'] = ['code'];
-
-        $this->writer->create($tableConfigWithOtherPrimaryKeys);
-
-        try {
-            $this->writer->checkPrimaryKey($table['primaryKey'], $table['dbName']);
-            $this->fail('Primary key check should fail');
-        } catch (UserException $e) {
-            $this->assertStringContainsString('Primary key(s) in configuration does NOT match with keys in DB table.', $e->getMessage());
-        }
-    }
-
-    public function testUpsertCheckPrimaryKeyError(): void
-    {
-        $table = $this->config['parameters']['tables'][0];
-        $table['primaryKey'] = ['id'];
-
-        $tmpTable = $table;
-        $tmpTable['dbName'] = $this->writer->generateTmpName($table['dbName']);
-
-        $this->writer->create($table);
-        $this->writer->create($tmpTable);
-
-        try {
-            $table['primaryKey'] = ['id', 'name'];
-            $this->writer->upsert($table, $tmpTable['dbName']);
-            $this->fail('Primary key check should fail');
-        } catch (UserException $e) {
-            $this->assertStringContainsString('Primary key(s) in configuration does NOT match with keys in DB table.', $e->getMessage());
-        }
+        $primaryKeys = $adapter->getPrimaryKeys($exportConfig->getDbName());
+        $primaryKeysName = array_map(
+            fn(array $row) => $row['name'],
+            $primaryKeys,
+        );
+        Assert::assertCount(2, $primaryKeys);
+        Assert::assertEquals(['id', 'name'], $primaryKeysName);
     }
 
     public function testUpsertAddMissingPrimaryKey(): void
     {
-        $table = $this->config['parameters']['tables'][0];
-        $table['primaryKey'] = [];
+        $config = $this->getConfig('simple');
+        $config['parameters']['primaryKey'] = ['id', 'name'];
+        $adapter = $this->getWriteAdapter($config);
+        $exportConfig = $this->getExportConfig($config);
 
-        $tmpTable = $table;
-        $tmpTable['dbName'] = $this->writer->generateTmpName($table['dbName']);
+        $tmpName = $adapter->generateTmpName($config['parameters']['dbName']);
 
-        $this->writer->create($table);
-        $this->writer->create($tmpTable);
+        $adapter->create($tmpName, true, $exportConfig->getItems());
+        $adapter->create($exportConfig->getDbName(), false, $exportConfig->getItems());
 
-        $this->writer->checkPrimaryKey([], $tmpTable['dbName']);
+        $primaryKeys = $adapter->getPrimaryKeys($exportConfig->getDbName());
+        Assert::assertCount(0, $primaryKeys);
 
-        $table['primaryKey'] = ['id', 'name'];
-        $this->writer->upsert($table, $tmpTable['dbName']);
+        $adapter->upsert($exportConfig, $tmpName);
 
-        $this->writer->checkPrimaryKey(['id', 'name'], $tmpTable['dbName']);
+        $primaryKeys = $adapter->getPrimaryKeys($exportConfig->getDbName());
+        Assert::assertCount(2, $primaryKeys);
+    }
 
-        $this->expectNotToPerformAssertions();
+    public function testUpsertCheckPrimaryKeyError(): void
+    {
+        $config = $this->getConfig('simple');
+        $config['parameters']['primaryKey'] = ['id', 'name'];
+        $adapter = $this->getWriteAdapter($config);
+        $exportConfig = $this->getExportConfig($config);
+
+        $tmpName = $adapter->generateTmpName($config['parameters']['dbName']);
+
+        $adapter->create($tmpName, true, $exportConfig->getItems(), ['id']);
+        $adapter->create($exportConfig->getDbName(), false, $exportConfig->getItems(), ['id']);
+
+        try {
+            $adapter->upsert($exportConfig, $tmpName);
+            $this->fail('Primary key check should fail');
+        } catch (UserException $e) {
+            $this->assertStringContainsString(
+                'Primary key(s) in configuration does NOT match with keys in DB table.',
+                $e->getMessage(),
+            );
+        } finally {
+            $adapter->drop($tmpName);
+            $adapter->drop($exportConfig->getDbName());
+        }
     }
 
     /**
@@ -519,9 +298,10 @@ class SnowflakeTest extends BaseTest
      */
     public function testQueryTagging(array $additionalDbConfig, string $expectedRunId): void
     {
-        $dbConfig = array_merge($this->config['parameters']['db'], $additionalDbConfig);
-        $connection = $this->writer->createSnowflakeConnection($dbConfig);
+        $config = $this->getConfig('simple');
+        $config['parameters']['db'] = array_merge($config['parameters']['db'], $additionalDbConfig);
 
+        $connection = $this->getConnection($config);
         $connection->fetchAll('SELECT current_date;');
 
         $queries = $connection->fetchAll(
@@ -533,37 +313,12 @@ class SnowflakeTest extends BaseTest
                 WHERE QUERY_TEXT = \'SELECT current_date;\' 
                 ORDER BY START_TIME DESC 
                 LIMIT 1
-            '
+            ',
         );
 
         $runId = sprintf('{"runId":"%s"}', $expectedRunId);
 
-        $this->assertEquals($runId, $queries[0]['QUERY_TAG']);
-    }
-
-    private function setUserDefaultWarehouse(?string $warehouse = null): void
-    {
-        $user = $this->writer->getCurrentUser();
-        $conn = $this->writer->getSnowflakeConnection();
-
-        if ($warehouse) {
-            $sql = sprintf(
-                'ALTER USER %s SET DEFAULT_WAREHOUSE = %s;',
-                $conn->quoteIdentifier($user),
-                $conn->quoteIdentifier($warehouse)
-            );
-            $conn->query($sql);
-
-            $this->assertEquals($warehouse, $this->writer->getUserDefaultWarehouse());
-        } else {
-            $sql = sprintf(
-                'ALTER USER %s SET DEFAULT_WAREHOUSE = null;',
-                $conn->quoteIdentifier($user)
-            );
-            $conn->query($sql);
-
-            $this->assertEmpty($this->writer->getUserDefaultWarehouse());
-        }
+        Assert::assertEquals($runId, $queries[0]['QUERY_TAG']);
     }
 
     public function queryTaggingProvider(): array
@@ -580,15 +335,140 @@ class SnowflakeTest extends BaseTest
         ];
     }
 
-    private function getAdapter(string $table): IAdapter
+    private function setUserDefaultWarehouse(
+        SnowflakeConnection $connection,
+        string $username,
+        ?string $warehouse = null,
+    ): void {
+        if ($warehouse) {
+            $sql = sprintf(
+                'ALTER USER %s SET DEFAULT_WAREHOUSE = %s;',
+                $connection->quoteIdentifier($username),
+                $connection->quoteIdentifier($warehouse),
+            );
+            $connection->exec($sql);
+
+            Assert::assertEquals($warehouse, $this->getUserDefaultWarehouse($connection, $username));
+        } else {
+            $sql = sprintf(
+                'ALTER USER %s SET DEFAULT_WAREHOUSE = null;',
+                $connection->quoteIdentifier($username),
+            );
+            $connection->exec($sql);
+
+            Assert::assertEmpty($this->getUserDefaultWarehouse($connection, $username));
+        }
+    }
+
+    private function getUserDefaultWarehouse(SnowflakeConnection $connection, string $username): ?string
     {
-        $loadFile = $this->loadDataToStagingStorage($table);
-        if ($loadFile['stagingStorage'] === StagingStorageLoader::STORAGE_S3) {
-            return new S3Adapter($loadFile['manifest']);
-        } elseif ($loadFile['stagingStorage'] === StagingStorageLoader::STORAGE_ABS) {
-            return new AbsAdapter($loadFile['manifest']);
+        $sql = sprintf(
+            'DESC USER %s;',
+            $connection->quoteIdentifier($username),
+        );
+
+        $config = $connection->fetchAll($sql);
+
+        /**
+         * @var array{'value': string}[] $defaultWarehouse
+         */
+        $defaultWarehouse = array_values(
+            array_filter($config, fn ($item) => $item['property'] === 'DEFAULT_WAREHOUSE'),
+        );
+
+        if (count($defaultWarehouse) !== 1) {
+            return null;
         }
 
-        throw new ApplicationException(sprintf('Staging storage type "%s" not recognized', $loadFile['stage']));
+        return $defaultWarehouse[0]['value'] === 'null' ? null : $defaultWarehouse[0]['value'];
+    }
+
+    private function dropAllTables(): void
+    {
+        $config = $this->getConfig('simple');
+        $exportConfig = $this->getExportConfig($config);
+        $connection = $this->getConnection($config);
+
+        $tables = $connection->fetchAll(
+            sprintf(
+                'SELECT TABLE_NAME FROM information_schema.tables WHERE TABLE_SCHEMA = \'%s\';',
+                $exportConfig->getDatabaseConfig()->getSchema(),
+            ),
+        );
+
+        /** @var string[] $tables */
+        $tables = array_map(function ($item) {
+            return $item['TABLE_NAME'];
+        }, $tables);
+
+        foreach ($tables as $tableName) {
+            $connection->exec(sprintf(
+                'DROP TABLE IF EXISTS %s.%s',
+                $connection->quoteIdentifier($exportConfig->getDatabaseConfig()->getSchema()),
+                $connection->quoteIdentifier($tableName),
+            ));
+        }
+    }
+
+    private function getWriteAdapter(array $config, ?SnowflakeConnection $connection = null): SnowflakeWriteAdapter
+    {
+        /** @var SnowflakeDatabaseConfig $databaseConfig */
+        $databaseConfig = $this->getExportConfig($config)->getDatabaseConfig();
+
+        return new SnowflakeWriteAdapter(
+            $connection ?? $this->getConnection($config),
+            new SnowflakeQueryBuilder($databaseConfig),
+            $this->logger,
+        );
+    }
+
+    private function getConnection(array $config): SnowflakeConnection
+    {
+        $snowflakeConnectionFactory = new SnowflakeConnectionFactory();
+        /** @var SnowflakeDatabaseConfig $databaseConfig */
+        $databaseConfig = $this->getExportConfig($config)->getDatabaseConfig();
+
+        $connection = $snowflakeConnectionFactory->create(
+            $databaseConfig,
+            $this->logger,
+        );
+        $connection->exec(sprintf(
+            'USE WAREHOUSE %s;',
+            $connection->quoteIdentifier($databaseConfig->getWarehouse()),
+        ));
+
+        return $connection;
+    }
+
+    private function getExportConfig(array $config): SnowflakeExportConfig
+    {
+        return SnowflakeExportConfig::fromArray(
+            $config['parameters'],
+            $config['storage'],
+            SnowflakeDatabaseConfig::fromArray($config['parameters']['db']),
+        );
+    }
+
+    private function getConfig(string $table): array
+    {
+        $tableConfig = (string) file_get_contents(sprintf(
+            '%s/configs/%s.json',
+            __DIR__,
+            $table,
+        ));
+
+        /** @var array $config */
+        $config = json_decode($tableConfig, true);
+        $config['parameters']['db'] = [
+            'host' => (string) getenv('DB_HOST'),
+            'port' => (string) getenv('DB_PORT'),
+            'database' => (string) getenv('DB_DATABASE'),
+            'schema' => (string) getenv('DB_SCHEMA'),
+            'user' => (string) getenv('DB_USER'),
+            '#password' => (string) getenv('DB_PASSWORD'),
+            'warehouse' => (string) getenv('DB_WAREHOUSE'),
+        ];
+
+        return $config;
     }
 }
