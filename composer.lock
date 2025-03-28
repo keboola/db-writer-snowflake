@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "db7b4e225c2cce6a989661bf994d92b2",
+    "content-hash": "dac8bcb71171ed8a1db6ba1e23d8274b",
     "packages": [
         {
             "name": "guzzlehttp/guzzle",
@@ -370,6 +370,49 @@
                 "source": "https://github.com/keboola/common-exceptions/tree/1.2.1"
             },
             "time": "2022-10-02T21:12:00+00:00"
+        },
+        {
+            "name": "keboola/db-adapter-snowflake",
+            "version": "1.5.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/keboola/db-adapter-snowflake.git",
+                "reference": "2cf9c90915e05603ff7228ade717dac7c61d1720"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/keboola/db-adapter-snowflake/zipball/2cf9c90915e05603ff7228ade717dac7c61d1720",
+                "reference": "2cf9c90915e05603ff7228ade717dac7c61d1720",
+                "shasum": ""
+            },
+            "require": {
+                "ext-odbc": "*",
+                "ext-openssl": "*",
+                "php": "^8.0"
+            },
+            "require-dev": {
+                "keboola/coding-standard": ">=7.0.2",
+                "keboola/datadir-tests": "^5.3",
+                "keboola/php-temp": "^2.0",
+                "php-parallel-lint/php-parallel-lint": "^1.3",
+                "phpstan/phpstan": "^1.8",
+                "phpunit/phpunit": "^9.5",
+                "symfony/process": "^5.4"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Keboola\\SnowflakeDbAdapter\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "support": {
+                "source": "https://github.com/keboola/db-adapter-snowflake/tree/1.5.0"
+            },
+            "time": "2025-03-04T12:24:33+00:00"
         },
         {
             "name": "keboola/db-writer-adapter",

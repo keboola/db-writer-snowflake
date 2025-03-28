@@ -19,6 +19,7 @@ readonly class SnowflakeDatabaseConfig extends DatabaseConfig
         private ?string $runId,
         string $user,
         ?string $password,
+        private ?string $keyPair,
         ?string $schema,
         ?SshConfig $sshConfig,
         ?SslConfig $sslConfig,
@@ -39,7 +40,8 @@ readonly class SnowflakeDatabaseConfig extends DatabaseConfig
             $config['warehouse'] ?? null,
             $runId ?: null,
             $config['user'],
-            $config['#password'],
+            $config['#password'] ?? '',
+            $config['#keyPair'] ?? null,
             $config['schema'],
             $sshEnabled ? SshConfig::fromArray($config['ssh']) : null,
             $sslEnabled ? SslConfig::fromArray($config['ssl']) : null,
@@ -70,5 +72,15 @@ readonly class SnowflakeDatabaseConfig extends DatabaseConfig
             throw new PropertyNotSetException('Property "runId" is not set.');
         }
         return $this->runId;
+    }
+
+    public function hasKeyPair(): bool
+    {
+        return $this->keyPair !== null;
+    }
+
+    public function getKeyPair(): ?string
+    {
+        return $this->keyPair;
     }
 }
