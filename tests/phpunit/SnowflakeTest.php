@@ -27,6 +27,19 @@ class SnowflakeTest extends TestCase
         $this->dropAllTables();
     }
 
+    public function testKeyPair(): void
+    {
+        $config = $this->getConfig('simple');
+        $config['parameters']['db']['#password'] = '';
+        $config['parameters']['db']['#keyPair'] = (string) getenv('DB_KEYPAIR');
+
+        $connection = $this->getConnection($config);
+
+        $connection->fetchAll('SELECT 1');
+
+        $this->expectNotToPerformAssertions();
+    }
+
     public function testTmpName(): void
     {
         $adapter = $this->getWriteAdapter($this->getConfig('simple'));
