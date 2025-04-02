@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Keboola\DbWriter\Snowflake\Tests;
 
+use Keboola\Component\UserException as ComponentUserException;
 use Keboola\DbWriter\Configuration\ValueObject\SnowflakeDatabaseConfig;
 use Keboola\DbWriter\Configuration\ValueObject\SnowflakeExportConfig;
 use Keboola\DbWriter\Exception\UserException;
@@ -29,7 +30,7 @@ class SnowflakeTest extends TestCase
 
     public function testKeyPairAndPassword(): void
     {
-        self::expectException(\Keboola\Component\UserException::class);
+        self::expectException(ComponentUserException::class);
 
         $config = $this->getConfig('simple');
         $config['parameters']['db']['#keyPair'] = (string) getenv('DB_KEYPAIR');
