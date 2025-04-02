@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Keboola\DbWriter\Configuration\ValueObject;
 
+use Keboola\Component\UserException;
 use Keboola\DbWriterConfig\Configuration\ValueObject\DatabaseConfig;
 use Keboola\DbWriterConfig\Configuration\ValueObject\SshConfig;
 use Keboola\DbWriterConfig\Configuration\ValueObject\SslConfig;
@@ -24,6 +25,14 @@ readonly class SnowflakeDatabaseConfig extends DatabaseConfig
         ?SshConfig $sshConfig,
         ?SslConfig $sslConfig,
     ) {
+        if (empty($password) && $keyPair === null) {
+            throw new UserException('Either "password" or "keyPair" must be provided.');
+        }
+
+        if (!empty($password) && !empty($keyPair)) {
+            throw new UserException('Both "password" and "keyPair" cannot be set at the same time.');
+        }
+
         parent::__construct($host, $port, $database, $user, $password, $schema, $sshConfig, $sslConfig);
     }
 

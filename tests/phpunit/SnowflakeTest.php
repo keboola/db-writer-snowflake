@@ -27,6 +27,16 @@ class SnowflakeTest extends TestCase
         $this->dropAllTables();
     }
 
+    public function testKeyPairAndPassword(): void
+    {
+        self::expectException(\Keboola\Component\UserException::class);
+
+        $config = $this->getConfig('simple');
+        $config['parameters']['db']['#keyPair'] = (string) getenv('DB_KEYPAIR');
+
+        $this->getConnection($config);
+    }
+
     public function testKeyPair(): void
     {
         $config = $this->getConfig('simple');
