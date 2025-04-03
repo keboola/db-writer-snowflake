@@ -31,9 +31,22 @@ class SnowflakeTest extends TestCase
     public function testKeyPairAndPassword(): void
     {
         self::expectException(ComponentUserException::class);
+        self::expectExceptionMessage('Both "password" and "keyPair" cannot be set at the same time.');
 
         $config = $this->getConfig('simple');
         $config['parameters']['db']['#keyPair'] = (string) getenv('DB_KEYPAIR');
+
+        $this->getConnection($config);
+    }
+
+    public function testEmptyKeyPairAndPassword(): void
+    {
+        self::expectException(ComponentUserException::class);
+        self::expectExceptionMessage('Either "password" or "keyPair" must be provided.');
+
+        $config = $this->getConfig('simple');
+        $config['parameters']['db']['#keyPair'] = null;
+        $config['parameters']['db']['#password'] = '';
 
         $this->getConnection($config);
     }
