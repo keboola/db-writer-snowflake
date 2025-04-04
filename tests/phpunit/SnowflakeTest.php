@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Keboola\DbWriter\Snowflake\Tests;
 
+use Keboola\Component\UserException as ComponentUserException;
 use Keboola\DbWriter\Configuration\ValueObject\SnowflakeDatabaseConfig;
 use Keboola\DbWriter\Configuration\ValueObject\SnowflakeExportConfig;
 use Keboola\DbWriter\Exception\UserException;
@@ -25,6 +26,42 @@ class SnowflakeTest extends TestCase
     {
         $this->logger = new TestLogger();
         $this->dropAllTables();
+    }
+
+    public function testKeyPairAndPassword(): void
+    {
+        self::expectException(ComponentUserException::class);
+        self::expectExceptionMessage('Both "password" and "keyPair" cannot be set at the same time.');
+
+        $config = $this->getConfig('simple');
+        $config['parameters']['db']['#keyPair'] = (string) getenv('DB_KEYPAIR');
+
+        $this->getConnection($config);
+    }
+
+    public function testEmptyKeyPairAndPassword(): void
+    {
+        self::expectException(ComponentUserException::class);
+        self::expectExceptionMessage('Either "password" or "keyPair" must be provided.');
+
+        $config = $this->getConfig('simple');
+        $config['parameters']['db']['#keyPair'] = null;
+        $config['parameters']['db']['#password'] = '';
+
+        $this->getConnection($config);
+    }
+
+    public function testKeyPair(): void
+    {
+        $config = $this->getConfig('simple');
+        $config['parameters']['db']['#password'] = '';
+        $config['parameters']['db']['#keyPair'] = (string) getenv('DB_KEYPAIR');
+
+        $connection = $this->getConnection($config);
+
+        $connection->fetchAll('SELECT 1');
+
+        $this->expectNotToPerformAssertions();
     }
 
     public function testTmpName(): void

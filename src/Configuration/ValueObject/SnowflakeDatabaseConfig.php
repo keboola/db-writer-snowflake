@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Keboola\DbWriter\Configuration\ValueObject;
 
+use Keboola\Component\UserException;
 use Keboola\DbWriterConfig\Configuration\ValueObject\DatabaseConfig;
 use Keboola\DbWriterConfig\Configuration\ValueObject\SshConfig;
 use Keboola\DbWriterConfig\Configuration\ValueObject\SslConfig;
@@ -19,10 +20,19 @@ readonly class SnowflakeDatabaseConfig extends DatabaseConfig
         private ?string $runId,
         string $user,
         ?string $password,
+        private ?string $keyPair,
         ?string $schema,
         ?SshConfig $sshConfig,
         ?SslConfig $sslConfig,
     ) {
+        if (empty($password) && $keyPair === null) {
+            throw new UserException('Either "password" or "keyPair" must be provided.');
+        }
+
+        if (!empty($password) && !empty($keyPair)) {
+            throw new UserException('Both "password" and "keyPair" cannot be set at the same time.');
+        }
+
         parent::__construct($host, $port, $database, $user, $password, $schema, $sshConfig, $sslConfig);
     }
 
@@ -39,7 +49,8 @@ readonly class SnowflakeDatabaseConfig extends DatabaseConfig
             $config['warehouse'] ?? null,
             $runId ?: null,
             $config['user'],
-            $config['#password'],
+            $config['#password'] ?? '',
+            $config['#keyPair'] ?? null,
             $config['schema'],
             $sshEnabled ? SshConfig::fromArray($config['ssh']) : null,
             $sslEnabled ? SslConfig::fromArray($config['ssl']) : null,
@@ -70,5 +81,15 @@ readonly class SnowflakeDatabaseConfig extends DatabaseConfig
             throw new PropertyNotSetException('Property "runId" is not set.');
         }
         return $this->runId;
+    }
+
+    public function hasKeyPair(): bool
+    {
+        return $this->keyPair !== null;
+    }
+
+    public function getKeyPair(): ?string
+    {
+        return $this->keyPair;
     }
 }

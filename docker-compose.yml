@@ -1,4 +1,3 @@
-version: '2'
 services:
   app: &default
     build: .
@@ -11,6 +10,7 @@ services:
       - DB_PORT
       - DB_USER
       - DB_PASSWORD
+      - DB_KEYPAIR
       - DB_DATABASE
       - DB_SCHEMA
       - DB_WAREHOUSE
@@ -20,6 +20,7 @@ services:
       - ssh-keys:/root/.ssh
 
   dev:
+    platform: linux/amd64
     <<: *default
     volumes:
       - .:/code
