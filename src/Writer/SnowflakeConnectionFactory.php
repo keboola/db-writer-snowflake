@@ -22,7 +22,7 @@ class SnowflakeConnectionFactory
             'port' => $databaseConfig->hasPort() ? $databaseConfig->getPort() : 443,
             'user' => $databaseConfig->getUser(),
             'password' => $databaseConfig->getPassword(),
-            'keyPair' => $databaseConfig->getKeyPair(),
+            'privateKey' => $databaseConfig->getPrivateKey(),
             'database' => $databaseConfig->getDatabase(),
             'schema' => $databaseConfig->getSchema(),
             'warehouse' => $databaseConfig->hasWarehouse() ? $databaseConfig->getWarehouse() : null,
