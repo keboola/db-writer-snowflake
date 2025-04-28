@@ -28,34 +28,34 @@ class SnowflakeTest extends TestCase
         $this->dropAllTables();
     }
 
-    public function testKeyPairAndPassword(): void
+    public function testPrivateKeyAndPassword(): void
     {
         self::expectException(ComponentUserException::class);
-        self::expectExceptionMessage('Both "password" and "keyPair" cannot be set at the same time.');
+        self::expectExceptionMessage('Both "password" and "privateKey" cannot be set at the same time.');
 
         $config = $this->getConfig('simple');
-        $config['parameters']['db']['#keyPair'] = (string) getenv('DB_KEYPAIR');
+        $config['parameters']['db']['#privateKey'] = (string) getenv('DB_PRIVATEKEY');
 
         $this->getConnection($config);
     }
 
-    public function testEmptyKeyPairAndPassword(): void
+    public function testEmptyPrivateKeyAndPassword(): void
     {
         self::expectException(ComponentUserException::class);
-        self::expectExceptionMessage('Either "password" or "keyPair" must be provided.');
+        self::expectExceptionMessage('Either "password" or "privateKey" must be provided.');
 
         $config = $this->getConfig('simple');
-        $config['parameters']['db']['#keyPair'] = null;
+        $config['parameters']['db']['#privateKey'] = null;
         $config['parameters']['db']['#password'] = '';
 
         $this->getConnection($config);
     }
 
-    public function testKeyPair(): void
+    public function testPrivateKey(): void
     {
         $config = $this->getConfig('simple');
         $config['parameters']['db']['#password'] = '';
-        $config['parameters']['db']['#keyPair'] = (string) getenv('DB_KEYPAIR');
+        $config['parameters']['db']['#privateKey'] = (string) getenv('DB_PRIVATEKEY');
 
         $connection = $this->getConnection($config);
 

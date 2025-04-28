@@ -20,17 +20,17 @@ readonly class SnowflakeDatabaseConfig extends DatabaseConfig
         private ?string $runId,
         string $user,
         ?string $password,
-        private ?string $keyPair,
+        private ?string $privateKey,
         ?string $schema,
         ?SshConfig $sshConfig,
         ?SslConfig $sslConfig,
     ) {
-        if (empty($password) && $keyPair === null) {
-            throw new UserException('Either "password" or "keyPair" must be provided.');
+        if (empty($password) && $privateKey === null) {
+            throw new UserException('Either "password" or "privateKey" must be provided.');
         }
 
-        if (!empty($password) && !empty($keyPair)) {
-            throw new UserException('Both "password" and "keyPair" cannot be set at the same time.');
+        if (!empty($password) && !empty($privateKey)) {
+            throw new UserException('Both "password" and "privateKey" cannot be set at the same time.');
         }
 
         parent::__construct($host, $port, $database, $user, $password, $schema, $sshConfig, $sslConfig);
@@ -50,7 +50,7 @@ readonly class SnowflakeDatabaseConfig extends DatabaseConfig
             $runId ?: null,
             $config['user'],
             $config['#password'] ?? '',
-            $config['#keyPair'] ?? null,
+            $config['#privateKey'] ?? null,
             $config['schema'],
             $sshEnabled ? SshConfig::fromArray($config['ssh']) : null,
             $sslEnabled ? SslConfig::fromArray($config['ssl']) : null,
@@ -83,13 +83,13 @@ readonly class SnowflakeDatabaseConfig extends DatabaseConfig
         return $this->runId;
     }
 
-    public function hasKeyPair(): bool
+    public function hasPrivateKey(): bool
     {
-        return $this->keyPair !== null;
+        return $this->privateKey !== null;
     }
 
-    public function getKeyPair(): ?string
+    public function getPrivateKey(): ?string
     {
-        return $this->keyPair;
+        return $this->privateKey;
     }
 }
