@@ -14,7 +14,7 @@
         "ext-PDO": "*",
         "ext-json": "*",
         "ext-mbstring": "*",
-        "keboola/db-adapter-snowflake": "^1.5",
+        "keboola/db-adapter-snowflake": "dev-marek-CT-2100-keypair-to-privatekey",
         "keboola/db-writer-adapter": "^0.1",
         "keboola/db-writer-common": "^6.2",
         "keboola/db-writer-config": "^0.1",
