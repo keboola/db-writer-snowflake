@@ -24,7 +24,7 @@ readonly class SnowflakeDatabaseConfig extends DatabaseConfig
         ?string $password,
         private ?string $privateKey,
         ?string $schema,
-//        private string $roleName = self::DEFAULT_ROLE_NAME,
+        private string $roleName = self::DEFAULT_ROLE_NAME,
         ?SshConfig $sshConfig = null,
         ?SslConfig $sslConfig = null,
     ) {
@@ -55,7 +55,7 @@ readonly class SnowflakeDatabaseConfig extends DatabaseConfig
             $config['#password'] ?? '',
             $config['#privateKey'] ?? null,
             $config['schema'],
-//            $config['roleName'] ?? self::DEFAULT_ROLE_NAME,
+            $config['roleName'] ?? self::DEFAULT_ROLE_NAME,
             $sshEnabled ? SshConfig::fromArray($config['ssh']) : null,
             $sslEnabled ? SslConfig::fromArray($config['ssl']) : null,
         );

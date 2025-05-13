@@ -377,8 +377,8 @@ class SnowflakeTest extends TestCase
         $table = 'simple';
 
         $config = $this->getConfig($table);
-//        $config['parameters']['db']['schema'] = (string) getenv('DB_SCHEMA_2');
-//        $config['parameters']['db']['roleName'] = (string) getenv('DB_ROLE_NAME');
+        $config['parameters']['db']['schema'] = (string) getenv('DB_SCHEMA_2');
+        $config['parameters']['db']['roleName'] = (string) getenv('DB_ROLE_NAME');
 
         $exportConfig = $this->getExportConfig($config);
         $adapter = $this->getWriteAdapter($config);
