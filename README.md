@@ -16,6 +16,7 @@ This component writes data to a Snowflake database.
         "password": "PASSWORD",
         "schema": "SCHEMA",
         "warehouse": "WAREHOUSE",
+        "roleName": "ROLE_NAME",
         "ssh": {
           "enabled": true,
           "keys": {
@@ -71,17 +72,27 @@ Required Snowflake resources for the writer:
 CREATE DATABASE "snowflake_writer";
 USE DATABASE "snowflake_writer";
 CREATE TRANSIENT SCHEMA "snowflake_writer";
+CREATE TRANSIENT SCHEMA "snowflake_writer_2";
 CREATE WAREHOUSE "snowflake_writer" WITH 
   WAREHOUSE_SIZE = 'XSMALL' 
   WAREHOUSE_TYPE = 'STANDARD' 
   AUTO_SUSPEND = 900 
   AUTO_RESUME = TRUE;
 CREATE ROLE "snowflake_writer";
+CREATE ROLE "snowflake_writer_2";
 GRANT USAGE ON WAREHOUSE "snowflake_writer" TO ROLE "snowflake_writer";
+GRANT USAGE ON WAREHOUSE "snowflake_writer" TO ROLE "snowflake_writer_2";
 GRANT USAGE ON DATABASE "snowflake_writer" TO ROLE "snowflake_writer";
+GRANT USAGE ON DATABASE "snowflake_writer" TO ROLE "snowflake_writer_2";
+
 GRANT ALL ON SCHEMA "snowflake_writer" TO ROLE "snowflake_writer";
 GRANT ALL ON FUTURE TABLES IN SCHEMA "snowflake_writer" TO ROLE "snowflake_writer";
 GRANT ALL ON FUTURE VIEWS IN SCHEMA "snowflake_writer" TO ROLE "snowflake_writer";
+
+GRANT ALL ON SCHEMA "snowflake_writer_2" TO ROLE "snowflake_writer_2";
+GRANT ALL ON FUTURE TABLES IN SCHEMA "snowflake_writer_2" TO ROLE "snowflake_writer_2";
+GRANT ALL ON FUTURE VIEWS IN SCHEMA "snowflake_writer_2" TO ROLE "snowflake_writer_2";
+
 CREATE USER "snowflake_writer" 
   PASSWORD = 'password' 
   DEFAULT_ROLE = "snowflake_writer" 
@@ -110,6 +121,7 @@ DB_USER=
 DB_PASSWORD=
 DB_SCHEMA=
 DB_WAREHOUSE=
+DB_ROLE_NAME=
 ```
 5. Run docker-compose, which will trigger PHPUnit: `docker-compose run --rm app`
 

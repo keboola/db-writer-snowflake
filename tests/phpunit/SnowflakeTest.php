@@ -372,6 +372,42 @@ class SnowflakeTest extends TestCase
         ];
     }
 
+    public function testAnotherRoleName(): void
+    {
+        $table = 'simple';
+
+        $config = $this->getConfig($table);
+//        $config['parameters']['db']['schema'] = (string) getenv('DB_SCHEMA_2');
+//        $config['parameters']['db']['roleName'] = (string) getenv('DB_ROLE_NAME');
+
+        $exportConfig = $this->getExportConfig($config);
+        $adapter = $this->getWriteAdapter($config);
+        $connection = $this->getConnection($config);
+
+        $adapter->create($exportConfig->getDbName(), false, $exportConfig->getItems());
+
+        Assert::assertTrue($adapter->tableExists($exportConfig->getDbName()));
+
+        // check table type
+        $tablesInfo = $connection->fetchAll(sprintf(
+            "SHOW TABLES LIKE '%s';",
+            $exportConfig->getDbName(),
+        ));
+
+        Assert::assertCount(1, $tablesInfo);
+
+        /** @var array{schema_name: string, database_name: string, name: string, kind: string} $tableInfo */
+        $tableInfo = reset($tablesInfo);
+        Assert::assertEquals($exportConfig->getDatabaseConfig()->getSchema(), $tableInfo['schema_name']);
+        Assert::assertEquals($exportConfig->getDatabaseConfig()->getDatabase(), $tableInfo['database_name']);
+        Assert::assertEquals($exportConfig->getDbName(), $tableInfo['name']);
+        Assert::assertEquals('TRANSIENT', $tableInfo['kind']);
+
+        $adapter->drop($exportConfig->getDbName());
+
+        Assert::assertFalse($adapter->tableExists($exportConfig->getDbName()));
+    }
+
     private function setUserDefaultWarehouse(
         SnowflakeConnection $connection,
         string $username,

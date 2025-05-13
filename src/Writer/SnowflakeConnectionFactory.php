@@ -29,6 +29,7 @@ class SnowflakeConnectionFactory
             'clientSessionKeepAlive' => true,
             'application' => self::SNOWFLAKE_APPLICATION,
             'loginTimeout' => 30,
+//            'roleName' => $databaseConfig->getRoleName(),
         ];
 
         return new SnowflakeConnection(

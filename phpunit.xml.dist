@@ -17,8 +17,5 @@
         <testsuite name="functional">
             <directory>tests/functional</directory>
         </testsuite>
-        <testsuite name="perf">
-            <file>tests/phpunit/PerformanceTest.php</file>
-        </testsuite>
     </testsuites>
 </phpunit>

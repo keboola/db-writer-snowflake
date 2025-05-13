@@ -12,6 +12,8 @@ use Keboola\DbWriterConfig\Exception\PropertyNotSetException;
 
 readonly class SnowflakeDatabaseConfig extends DatabaseConfig
 {
+    public const DEFAULT_ROLE_NAME = 'defaultrolename';
+
     public function __construct(
         ?string $host,
         ?string $port,
@@ -22,8 +24,9 @@ readonly class SnowflakeDatabaseConfig extends DatabaseConfig
         ?string $password,
         private ?string $privateKey,
         ?string $schema,
-        ?SshConfig $sshConfig,
-        ?SslConfig $sslConfig,
+//        private string $roleName = self::DEFAULT_ROLE_NAME,
+        ?SshConfig $sshConfig = null,
+        ?SslConfig $sslConfig = null,
     ) {
         if (empty($password) && $privateKey === null) {
             throw new UserException('Either "password" or "privateKey" must be provided.');
@@ -52,6 +55,7 @@ readonly class SnowflakeDatabaseConfig extends DatabaseConfig
             $config['#password'] ?? '',
             $config['#privateKey'] ?? null,
             $config['schema'],
+//            $config['roleName'] ?? self::DEFAULT_ROLE_NAME,
             $sshEnabled ? SshConfig::fromArray($config['ssh']) : null,
             $sslEnabled ? SslConfig::fromArray($config['ssl']) : null,
         );
@@ -91,5 +95,10 @@ readonly class SnowflakeDatabaseConfig extends DatabaseConfig
     public function getPrivateKey(): ?string
     {
         return $this->privateKey;
+    }
+
+    public function getRoleName(): string
+    {
+        return $this->roleName;
     }
 }

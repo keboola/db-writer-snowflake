@@ -18,6 +18,7 @@ class SnowflakeDbNode extends DbNode
         $this->addWarehouseNode($nodeBuilder);
         $this->addPrivateKeyNode($nodeBuilder);
         $this->addRunIdNode($nodeBuilder);
+        $this->addRoleNode($nodeBuilder);
     }
 
     protected function addHostNode(NodeBuilder $builder): void
@@ -69,5 +70,10 @@ class SnowflakeDbNode extends DbNode
         });
 
         $builder->scalarNode('#privateKey');
+    }
+
+    protected function addRoleNode(NodeBuilder $builder): void
+    {
+        $builder->scalarNode('roleName');
     }
 }
