@@ -31,6 +31,10 @@ class SnowflakeConnectionFactory
             'loginTimeout' => 30,
         ];
 
+        if (!empty($databaseConfig->getRoleName())) {
+            $options['roleName'] = $databaseConfig->getRoleName();
+        }
+
         return new SnowflakeConnection(
             $logger,
             DSNBuilder::build($options),
