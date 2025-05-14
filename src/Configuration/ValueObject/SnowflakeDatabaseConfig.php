@@ -17,6 +17,7 @@ readonly class SnowflakeDatabaseConfig extends DatabaseConfig
         ?string $port,
         string $database,
         private ?string $warehouse,
+        private ?string $roleName,
         private ?string $runId,
         string $user,
         ?string $password,
@@ -47,6 +48,7 @@ readonly class SnowflakeDatabaseConfig extends DatabaseConfig
             $config['port'] ?? null,
             $config['database'],
             $config['warehouse'] ?? null,
+            $config['roleName'] ?? null,
             $runId ?: null,
             $config['user'],
             $config['#password'] ?? '',
@@ -91,5 +93,10 @@ readonly class SnowflakeDatabaseConfig extends DatabaseConfig
     public function getPrivateKey(): ?string
     {
         return $this->privateKey;
+    }
+
+    public function getRoleName(): ?string
+    {
+        return $this->roleName;
     }
 }

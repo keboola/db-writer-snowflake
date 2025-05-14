@@ -24,6 +24,7 @@ env:
   DB_PRIVATEKEY: ${{ secrets.SNOWFLAKE_DB_PRIVATEKEY }}
   DB_DATABASE: snowflake_writer
   DB_WAREHOUSE: snowflake_writer
+  DB_ROLE_NAME: snowflake_writer
 
   # Testing staging storage projects
   KBC_RUNID: "1234"
