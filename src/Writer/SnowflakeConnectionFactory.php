@@ -26,11 +26,14 @@ class SnowflakeConnectionFactory
             'database' => $databaseConfig->getDatabase(),
             'schema' => $databaseConfig->getSchema(),
             'warehouse' => $databaseConfig->hasWarehouse() ? $databaseConfig->getWarehouse() : null,
-            'roleName' => $databaseConfig->getRoleName(),
             'clientSessionKeepAlive' => true,
             'application' => self::SNOWFLAKE_APPLICATION,
             'loginTimeout' => 30,
         ];
+
+        if (!empty($databaseConfig->getRoleName())) {
+            $options['roleName'] = $databaseConfig->getRoleName();
+        }
 
         return new SnowflakeConnection(
             $logger,
