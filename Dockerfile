@@ -1,4 +1,4 @@
-FROM php:8.2-cli-buster
+FROM php:8.2-cli-bullseye
 
 ENV DEBIAN_FRONTEND noninteractive
 ARG SNOWFLAKE_ODBC_VERSION=3.4.1
