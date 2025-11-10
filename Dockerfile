@@ -1,8 +1,8 @@
-FROM php:8.2-cli-buster
+FROM php:8.2-cli-trixie
 
 ENV DEBIAN_FRONTEND noninteractive
-ARG SNOWFLAKE_ODBC_VERSION=3.4.1
-ARG SNOWFLAKE_GPG_KEY=630D9F3CAB551AF3
+ARG SNOWFLAKE_ODBC_VERSION=3.10.0
+ARG SNOWFLAKE_GPG_KEY=2A3149C82551A34A
 ARG COMPOSER_FLAGS="--prefer-dist --no-interaction"
 ENV COMPOSER_ALLOW_SUPERUSER=1
 ENV COMPOSER_PROCESS_TIMEOUT 3600
@@ -40,7 +40,9 @@ RUN docker-php-ext-configure intl \
     && docker-php-ext-install intl
 
 # Verify and install snowflake odbc driver
-RUN mkdir -p ~/.gnupg \
+RUN mkdir -p /etc/gnupg \
+    && echo "allow-weak-digest-algos" >> /etc/gnupg/gpg.conf \
+    && mkdir -p ~/.gnupg \
     && chmod 700 ~/.gnupg \
     && echo "disable-ipv6" >> ~/.gnupg/dirmngr.conf \
     && mkdir -p /usr/share/debsig/keyrings/$SNOWFLAKE_GPG_KEY \
@@ -52,6 +54,9 @@ RUN mkdir -p ~/.gnupg \
     && gpg --batch --delete-key --yes $SNOWFLAKE_GPG_KEY \
     && dpkg -i /tmp/snowflake-odbc.deb \
     && rm /tmp/snowflake-odbc.deb
+
+# Copy ODBC driver configuration
+COPY driver/odbcinst.ini /etc/odbcinst.ini
 
 # Install PHP odbc extension
 # https://github.com/docker-library/php/issues/103
