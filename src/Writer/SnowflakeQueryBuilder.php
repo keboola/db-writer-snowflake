@@ -191,24 +191,25 @@ class SnowflakeQueryBuilder extends DefaultQueryBuilder
 
         /** @var ItemConfig $item */
         foreach ($items as $item) {
-            $type = strtolower($item->getType());
+            // Normalize type to lowercase for case-insensitive comparisons against TYPES_WITH_SIZE and 'text'
+            $normalizedType = strtolower($item->getType());
 
-            if ($type === 'ignore') {
+            if ($normalizedType === 'ignore') {
                 continue;
             }
             $sqlItems[] = sprintf(
                 '%s %s%s %s %s',
                 $connection->quoteIdentifier($item->getDbName()),
-                strtoupper($type),
-                $item->hasSize() && in_array($type, self::TYPES_WITH_SIZE) ?
+                strtoupper($normalizedType),
+                $item->hasSize() && in_array($normalizedType, self::TYPES_WITH_SIZE) ?
                     sprintf('(%s)', $item->getSize()) :
                     '',
                 $item->getNullable() ? 'NULL' : 'NOT NULL',
-                $item->hasDefault() && $type !== 'text' ?
+                $item->hasDefault() && $normalizedType !== 'text' ?
                     sprintf(
                         'DEFAULT CAST(%s AS %s)',
                         $connection->quote($item->getDefault()),
-                        strtoupper($type),
+                        strtoupper($normalizedType),
                     ) :
                     '',
             );
