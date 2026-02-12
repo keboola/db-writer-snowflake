@@ -191,22 +191,24 @@ class SnowflakeQueryBuilder extends DefaultQueryBuilder
 
         /** @var ItemConfig $item */
         foreach ($items as $item) {
-            if (strtolower($item->getType()) === 'ignore') {
+            $type = strtolower($item->getType());
+
+            if ($type === 'ignore') {
                 continue;
             }
             $sqlItems[] = sprintf(
                 '%s %s%s %s %s',
                 $connection->quoteIdentifier($item->getDbName()),
-                strtoupper($item->getType()),
-                $item->hasSize() && in_array($item->getType(), self::TYPES_WITH_SIZE) ?
+                strtoupper($type),
+                $item->hasSize() && in_array($type, self::TYPES_WITH_SIZE) ?
                     sprintf('(%s)', $item->getSize()) :
                     '',
                 $item->getNullable() ? 'NULL' : 'NOT NULL',
-                $item->hasDefault() && $item->getType() !== 'TEXT' ?
+                $item->hasDefault() && $type !== 'text' ?
                     sprintf(
                         'DEFAULT CAST(%s AS %s)',
                         $connection->quote($item->getDefault()),
-                        $item->getType(),
+                        strtoupper($type),
                     ) :
                     '',
             );

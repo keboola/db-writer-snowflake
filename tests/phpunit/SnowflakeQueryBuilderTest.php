@@ -252,11 +252,11 @@ class SnowflakeQueryBuilderTest extends TestCase
             'size' => '10',
             'expectedQuery' => 'CREATE TEMPORARY TABLE "test_table" ("col1" DATE NOT NULL )',
         ];
-        // Case-sensitive: uppercase VARCHAR not in lowercase constant — size dropped
+        // Case-insensitive: uppercase VARCHAR now correctly matches — size applied
         yield 'VARCHAR uppercase' => [
             'type' => 'VARCHAR',
             'size' => '255',
-            'expectedQuery' => 'CREATE TEMPORARY TABLE "test_table" ("col1" VARCHAR NOT NULL )',
+            'expectedQuery' => 'CREATE TEMPORARY TABLE "test_table" ("col1" VARCHAR(255) NOT NULL )',
         ];
     }
 
@@ -338,13 +338,13 @@ class SnowflakeQueryBuilderTest extends TestCase
             'type' => 'varchar',
             'default' => 'test_value',
             'expectedQuery' => 'CREATE TEMPORARY TABLE "test_table"'
-                . ' ("col1" VARCHAR NOT NULL DEFAULT CAST(\'test_value\' AS varchar))',
+                . ' ("col1" VARCHAR NOT NULL DEFAULT CAST(\'test_value\' AS VARCHAR))',
         ];
         yield 'int with default' => [
             'type' => 'int',
             'default' => '42',
             'expectedQuery' => 'CREATE TEMPORARY TABLE "test_table"'
-                . ' ("col1" INT NOT NULL DEFAULT CAST(\'42\' AS int))',
+                . ' ("col1" INT NOT NULL DEFAULT CAST(\'42\' AS INT))',
         ];
         yield 'TEXT type excluded' => [
             'type' => 'TEXT',
@@ -356,11 +356,10 @@ class SnowflakeQueryBuilderTest extends TestCase
             'default' => null,
             'expectedQuery' => 'CREATE TEMPORARY TABLE "test_table" ("col1" VARCHAR NOT NULL )',
         ];
-        yield 'lowercase text gets default (case-sensitive)' => [
+        yield 'lowercase text excluded (case-insensitive)' => [
             'type' => 'text',
             'default' => 'value',
-            'expectedQuery' => 'CREATE TEMPORARY TABLE "test_table"'
-                . ' ("col1" TEXT NOT NULL DEFAULT CAST(\'value\' AS text))',
+            'expectedQuery' => 'CREATE TEMPORARY TABLE "test_table" ("col1" TEXT NOT NULL )',
         ];
     }
 
@@ -385,7 +384,7 @@ class SnowflakeQueryBuilderTest extends TestCase
         self::assertSame(
             'CREATE TABLE IF NOT EXISTS "my_table"'
             . ' ("id" NUMBER(38,0) NOT NULL '
-            . ', "name" VARCHAR(255) NULL DEFAULT CAST(\'unknown\' AS varchar)'
+            . ', "name" VARCHAR(255) NULL DEFAULT CAST(\'unknown\' AS VARCHAR)'
             . ', "description" TEXT(1000) NULL '
             . ', "active" BOOLEAN NOT NULL '
             . ', PRIMARY KEY("id"))',
