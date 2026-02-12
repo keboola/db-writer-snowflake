@@ -207,7 +207,7 @@ class SnowflakeQueryBuilder extends DefaultQueryBuilder
                     sprintf(
                         'DEFAULT CAST(%s AS %s)',
                         $connection->quote($item->getDefault()),
-                        $type,
+                        strtoupper($type),
                     ) :
                     '',
             );

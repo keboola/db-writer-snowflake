@@ -167,7 +167,7 @@ class SnowflakeQueryBuilderTest extends TestCase
 
         $sql = $queryBuilder->createQueryStatement($connection, 'test_table', false, $items);
 
-        Assert::assertStringContainsString('DEFAULT CAST(\'some_default\' AS varchar)', $sql);
+        Assert::assertStringContainsString('DEFAULT CAST(\'some_default\' AS VARCHAR)', $sql);
     }
 
     /**
