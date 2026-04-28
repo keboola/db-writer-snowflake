@@ -4,6 +4,16 @@
 
 This component writes data to a Snowflake database.
 
+### Column length / precision
+
+The `size` column property is rendered into DDL for the following types:
+
+- `NUMBER`, `DECIMAL`, `NUMERIC` — `(precision, scale)`, e.g. `"size": "38,0"`
+- `CHAR`, `CHARACTER`, `VARCHAR`, `STRING`, `TEXT`, `BINARY` — `(length)`, e.g. `"size": "255"`
+- `TIME`, `DATETIME`, `TIMESTAMP`, `TIMESTAMP_NTZ`, `TIMESTAMP_LTZ`, `TIMESTAMP_TZ` — `(precision)`, an integer 0–9, e.g. `"size": "9"`
+
+For all other types `size` is ignored. Invalid precision values are surfaced by Snowflake at DDL execution time.
+
 ## Example Configuration
 
 ```json

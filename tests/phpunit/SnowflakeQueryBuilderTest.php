@@ -231,6 +231,41 @@ class SnowflakeQueryBuilderTest extends TestCase
             'size' => '100',
             'expectedQuery' => 'CREATE TEMPORARY TABLE "test_table" ("col1" BINARY(100) NOT NULL )',
         ];
+        yield 'time' => [
+            'type' => 'time',
+            'size' => '9',
+            'expectedQuery' => 'CREATE TEMPORARY TABLE "test_table" ("col1" TIME(9) NOT NULL )',
+        ];
+        yield 'datetime' => [
+            'type' => 'datetime',
+            'size' => '6',
+            'expectedQuery' => 'CREATE TEMPORARY TABLE "test_table" ("col1" DATETIME(6) NOT NULL )',
+        ];
+        yield 'timestamp' => [
+            'type' => 'timestamp',
+            'size' => '9',
+            'expectedQuery' => 'CREATE TEMPORARY TABLE "test_table" ("col1" TIMESTAMP(9) NOT NULL )',
+        ];
+        yield 'timestamp_ntz' => [
+            'type' => 'timestamp_ntz',
+            'size' => '9',
+            'expectedQuery' => 'CREATE TEMPORARY TABLE "test_table" ("col1" TIMESTAMP_NTZ(9) NOT NULL )',
+        ];
+        yield 'timestamp_ltz' => [
+            'type' => 'timestamp_ltz',
+            'size' => '9',
+            'expectedQuery' => 'CREATE TEMPORARY TABLE "test_table" ("col1" TIMESTAMP_LTZ(9) NOT NULL )',
+        ];
+        yield 'timestamp_tz' => [
+            'type' => 'timestamp_tz',
+            'size' => '3',
+            'expectedQuery' => 'CREATE TEMPORARY TABLE "test_table" ("col1" TIMESTAMP_TZ(3) NOT NULL )',
+        ];
+        yield 'TIMESTAMP_NTZ uppercase' => [
+            'type' => 'TIMESTAMP_NTZ',
+            'size' => '9',
+            'expectedQuery' => 'CREATE TEMPORARY TABLE "test_table" ("col1" TIMESTAMP_NTZ(9) NOT NULL )',
+        ];
         // Types NOT in TYPES_WITH_SIZE — size not applied
         yield 'int' => [
             'type' => 'int',
@@ -277,6 +312,55 @@ class SnowflakeQueryBuilderTest extends TestCase
             'CREATE TEMPORARY TABLE "test_table" ("col1" VARCHAR NOT NULL )',
             $result,
         );
+    }
+
+    /**
+     * @dataProvider noSizeTimestampDataProvider
+     */
+    public function testCreateQueryStatementTimestampWithoutSize(
+        string $type,
+        string $expectedQuery,
+    ): void {
+        $items = [
+            $this->createItemConfig('col1', $type, null, false, null),
+        ];
+
+        $result = $this->queryBuilder->createQueryStatement(
+            $this->connection,
+            'test_table',
+            true,
+            $items,
+        );
+
+        self::assertSame($expectedQuery, $result);
+    }
+
+    public static function noSizeTimestampDataProvider(): Generator
+    {
+        yield 'time without size' => [
+            'type' => 'time',
+            'expectedQuery' => 'CREATE TEMPORARY TABLE "test_table" ("col1" TIME NOT NULL )',
+        ];
+        yield 'datetime without size' => [
+            'type' => 'datetime',
+            'expectedQuery' => 'CREATE TEMPORARY TABLE "test_table" ("col1" DATETIME NOT NULL )',
+        ];
+        yield 'timestamp without size' => [
+            'type' => 'timestamp',
+            'expectedQuery' => 'CREATE TEMPORARY TABLE "test_table" ("col1" TIMESTAMP NOT NULL )',
+        ];
+        yield 'timestamp_ntz without size' => [
+            'type' => 'timestamp_ntz',
+            'expectedQuery' => 'CREATE TEMPORARY TABLE "test_table" ("col1" TIMESTAMP_NTZ NOT NULL )',
+        ];
+        yield 'timestamp_ltz without size' => [
+            'type' => 'timestamp_ltz',
+            'expectedQuery' => 'CREATE TEMPORARY TABLE "test_table" ("col1" TIMESTAMP_LTZ NOT NULL )',
+        ];
+        yield 'timestamp_tz without size' => [
+            'type' => 'timestamp_tz',
+            'expectedQuery' => 'CREATE TEMPORARY TABLE "test_table" ("col1" TIMESTAMP_TZ NOT NULL )',
+        ];
     }
 
     /**
