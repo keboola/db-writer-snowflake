@@ -13,7 +13,7 @@ This component writes data to a Snowflake database.
         "port": "PORT",
         "database": "DATABASE",
         "user": "USERNAME",
-        "password": "PASSWORD",
+        "#privateKey": "PRIVATE_KEY",
         "schema": "SCHEMA",
         "warehouse": "WAREHOUSE",
         "ssh": {
@@ -82,12 +82,11 @@ GRANT USAGE ON DATABASE "snowflake_writer" TO ROLE "snowflake_writer";
 GRANT ALL ON SCHEMA "snowflake_writer" TO ROLE "snowflake_writer";
 GRANT ALL ON FUTURE TABLES IN SCHEMA "snowflake_writer" TO ROLE "snowflake_writer";
 GRANT ALL ON FUTURE VIEWS IN SCHEMA "snowflake_writer" TO ROLE "snowflake_writer";
-CREATE USER "snowflake_writer" 
-  PASSWORD = 'password' 
-  DEFAULT_ROLE = "snowflake_writer" 
-  DEFAULT_WAREHOUSE = "snowflake_writer" 
-  DEFAULT_NAMESPACE = "snowflake_writer"."snowflake_writer" 
-  MUST_CHANGE_PASSWORD = FALSE;
+CREATE USER "snowflake_writer"
+  RSA_PUBLIC_KEY = 'PUBLIC_KEY'
+  DEFAULT_ROLE = "snowflake_writer"
+  DEFAULT_WAREHOUSE = "snowflake_writer"
+  DEFAULT_NAMESPACE = "snowflake_writer"."snowflake_writer";
 GRANT ROLE "snowflake_writer" TO USER "snowflake_writer";
 ```
 
@@ -107,7 +106,7 @@ DB_HOST=
 DB_PORT=
 DB_DATABASE=
 DB_USER=
-DB_PASSWORD=
+DB_PRIVATEKEY=
 DB_SCHEMA=
 DB_WAREHOUSE=
 ```
