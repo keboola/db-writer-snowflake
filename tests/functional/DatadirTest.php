@@ -218,7 +218,7 @@ class DatadirTest extends AbstractDatadirTestCase
             'database' => getenv('DB_DATABASE'),
             'user' => getenv('DB_USER'),
             'schema' => getenv('DB_SCHEMA'),
-            '#password' => getenv('DB_PASSWORD'),
+            '#privateKey' => getenv('DB_PRIVATEKEY'),
             'warehouse' => getenv('DB_WAREHOUSE'),
         ];
 
