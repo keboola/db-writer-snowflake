@@ -447,6 +447,66 @@ class SnowflakeQueryBuilderTest extends TestCase
         ];
     }
 
+    /**
+     * Regression coverage for keboola/db-writer-config 0.1.3, which fixed ItemConfig::hasSize() and
+     * hasDefault() to treat the string '0' as a present value. Before the fix these used !empty(),
+     * so a '0' size (a valid precision for TIME/TIMESTAMP variants) and a '0' default were silently
+     * dropped from the generated DDL.
+     *
+     * @dataProvider zeroValueDataProvider
+     */
+    public function testCreateQueryStatementZeroValues(
+        string $type,
+        ?string $size,
+        ?string $default,
+        string $expectedQuery,
+    ): void {
+        $items = [
+            $this->createItemConfig('col1', $type, $size, false, $default),
+        ];
+
+        $result = $this->queryBuilder->createQueryStatement(
+            $this->connection,
+            'test_table',
+            true,
+            $items,
+        );
+
+        self::assertSame($expectedQuery, $result);
+    }
+
+    public static function zeroValueDataProvider(): Generator
+    {
+        // size '0' — a valid precision for TIME/TIMESTAMP variants — must be rendered into DDL
+        yield 'timestamp_ntz size 0' => [
+            'type' => 'timestamp_ntz',
+            'size' => '0',
+            'default' => null,
+            'expectedQuery' => 'CREATE TEMPORARY TABLE "test_table" ("col1" TIMESTAMP_NTZ(0) NOT NULL )',
+        ];
+        yield 'time size 0' => [
+            'type' => 'time',
+            'size' => '0',
+            'default' => null,
+            'expectedQuery' => 'CREATE TEMPORARY TABLE "test_table" ("col1" TIME(0) NOT NULL )',
+        ];
+        // default '0' must be rendered into DDL
+        yield 'int default 0' => [
+            'type' => 'int',
+            'size' => null,
+            'default' => '0',
+            'expectedQuery' => 'CREATE TEMPORARY TABLE "test_table"'
+                . ' ("col1" INT NOT NULL DEFAULT CAST(\'0\' AS INT))',
+        ];
+        yield 'number default 0' => [
+            'type' => 'number',
+            'size' => null,
+            'default' => '0',
+            'expectedQuery' => 'CREATE TEMPORARY TABLE "test_table"'
+                . ' ("col1" NUMBER NOT NULL DEFAULT CAST(\'0\' AS NUMBER))',
+        ];
+    }
+
     public function testCreateQueryStatementComplexMultipleItems(): void
     {
         $items = [
