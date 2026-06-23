@@ -27,7 +27,7 @@ readonly class SnowflakeItemConfig extends ItemConfig
             $config['name'],
             $config['dbName'],
             $config['type'],
-            $config['size'] ? (string) $config['size'] : null,
+            $config['size'] !== null && $config['size'] !== '' ? (string) $config['size'] : null,
             $config['nullable'] ?? null,
             $config['default'] ?? null,
             $config['foreignKeyTable'] ?? null,
