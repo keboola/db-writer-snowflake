@@ -1,8 +1,10 @@
 FROM php:8.2-cli-trixie
 
 ENV DEBIAN_FRONTEND noninteractive
-ARG SNOWFLAKE_ODBC_VERSION=3.10.0
-ARG SNOWFLAKE_GPG_KEY=2A3149C82551A34A
+ARG SNOWFLAKE_ODBC_VERSION=3.18.0
+# Full 40-char fingerprint of the Snowflake signing key for 3.18.0 (key id
+# 3C98F63C9292CE02); trixie's debsig-verify resolves the policy dir by full fingerprint
+ARG SNOWFLAKE_GPG_KEY=6C983AB7AFE2E5951C6C47B13C98F63C9292CE02
 ARG COMPOSER_FLAGS="--prefer-dist --no-interaction"
 ENV COMPOSER_ALLOW_SUPERUSER=1
 ENV COMPOSER_PROCESS_TIMEOUT 3600
@@ -25,6 +27,8 @@ RUN  apt-get update && apt-get install -y --no-install-recommends \
         git \
         unixodbc \
         unixodbc-dev \
+        # runtime dependency of snowflake-odbc 3.18.0 (Depends: odbcinst)
+        odbcinst \
         libpq-dev \
         debsig-verify \
         dirmngr \
