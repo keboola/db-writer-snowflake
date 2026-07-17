@@ -27,7 +27,6 @@ RUN  apt-get update && apt-get install -y --no-install-recommends \
         git \
         unixodbc \
         unixodbc-dev \
-        # runtime dependency of snowflake-odbc 3.18.0 (Depends: odbcinst)
         odbcinst \
         libpq-dev \
         debsig-verify \
