@@ -4,7 +4,7 @@
       "host": "%env(string:DB_HOST)%",
       "port": "%env(string:DB_PORT)%",
       "user": "%env(string:DB_USER)%",
-      "#password": "%env(string:DB_PASSWORD)%",
+      "#privateKey": "%env(string:DB_PRIVATEKEY)%",
       "database": "%env(string:DB_DATABASE)%",
       "schema": "%env(string:DB_SCHEMA)%",
       "warehouse": "%env(string:DB_WAREHOUSE)%",

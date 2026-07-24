@@ -20,21 +20,16 @@ readonly class SnowflakeDatabaseConfig extends DatabaseConfig
         private ?string $roleName,
         private ?string $runId,
         string $user,
-        ?string $password,
         private ?string $privateKey,
         ?string $schema,
         ?SshConfig $sshConfig,
         ?SslConfig $sslConfig,
     ) {
-        if (empty($password) && $privateKey === null) {
-            throw new UserException('Either "password" or "privateKey" must be provided.');
+        if ($privateKey === null || $privateKey === '') {
+            throw new UserException('Property "privateKey" must be provided.');
         }
 
-        if (!empty($password) && !empty($privateKey)) {
-            throw new UserException('Both "password" and "privateKey" cannot be set at the same time.');
-        }
-
-        parent::__construct($host, $port, $database, $user, $password, $schema, $sshConfig, $sslConfig);
+        parent::__construct($host, $port, $database, $user, null, $schema, $sshConfig, $sslConfig);
     }
 
     public static function fromArray(array $config): self
@@ -51,7 +46,6 @@ readonly class SnowflakeDatabaseConfig extends DatabaseConfig
             $config['roleName'] ?? null,
             $runId ?: null,
             $config['user'],
-            $config['#password'] ?? '',
             $config['#privateKey'] ?? null,
             $config['schema'],
             $sshEnabled ? SshConfig::fromArray($config['ssh']) : null,

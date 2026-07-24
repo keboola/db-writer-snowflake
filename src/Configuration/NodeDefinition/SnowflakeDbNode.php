@@ -53,15 +53,7 @@ class SnowflakeDbNode extends DbNode
 
     protected function addPasswordNode(NodeBuilder $builder): void
     {
-        $this->beforeNormalization()->always(function (array $v) {
-            if (isset($v['password'])) {
-                $v['#password'] = $v['password'];
-                unset($v['password']);
-            }
-            return $v;
-        });
-
-        $builder->scalarNode('#password');
+        // Password authentication is not supported; Snowflake uses key-pair auth only.
     }
 
     protected function addPrivateKeyNode(NodeBuilder $builder): void

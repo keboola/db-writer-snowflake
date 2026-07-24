@@ -20,7 +20,6 @@ env:
   DB_HOST: kebooladev.snowflakecomputing.com
   DB_PORT: 443
   DB_USER: snowflake_writer
-  DB_PASSWORD: ${{ secrets.SNOWFLAKE_DB_PASSWORD }}
   DB_PRIVATEKEY: ${{ secrets.SNOWFLAKE_DB_PRIVATEKEY }}
   DB_DATABASE: snowflake_writer
   DB_WAREHOUSE: snowflake_writer
