@@ -15,6 +15,9 @@ class SnowflakeQueryBuilder extends DefaultQueryBuilder
     private const TYPES_WITH_SIZE = [
         'number', 'decimal', 'numeric',
         'char', 'character', 'varchar', 'string', 'text', 'binary',
+        'time',
+        'datetime',
+        'timestamp', 'timestamp_ntz', 'timestamp_ltz', 'timestamp_tz',
     ];
 
     public function __construct(readonly private SnowflakeDatabaseConfig $databaseConfig)

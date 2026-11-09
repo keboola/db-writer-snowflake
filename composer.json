@@ -17,7 +17,7 @@
         "keboola/db-adapter-snowflake": "^1.5",
         "keboola/db-writer-adapter": "^0.1",
         "keboola/db-writer-common": "^6.2",
-        "keboola/db-writer-config": "^0.1",
+        "keboola/db-writer-config": "^0.1.3",
         "keboola/php-file-storage-utils": "^0.2",
         "microsoft/azure-storage-blob": "^1.5.4",
         "symfony/config": "^6.0"

@@ -11,6 +11,7 @@ use Keboola\DbWriterAdapter\Connection\Connection;
 use Keboola\DbWriterAdapter\WriteAdapter;
 use Keboola\DbWriterConfig\Configuration\ValueObject\DatabaseConfig;
 use Keboola\DbWriterConfig\Configuration\ValueObject\ExportConfig;
+use Keboola\SnowflakeDbAdapter\Exception\PrivateKeyIsNotValid;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -102,7 +103,16 @@ class Snowflake extends BaseWriter
     protected function createConnection(DatabaseConfig $databaseConfig): Connection
     {
         $connectionFactory = new SnowflakeConnectionFactory();
-        $connection = $connectionFactory->create($databaseConfig, $this->logger);
+        try {
+            $connection = $connectionFactory->create($databaseConfig, $this->logger);
+        } catch (PrivateKeyIsNotValid $e) {
+            throw new UserException(
+                'The provided private key is not valid. Please check the key-pair '
+                . 'authentication credentials in the writer configuration.',
+                0,
+                $e,
+            );
+        }
 
         $warehouse = $databaseConfig->hasWarehouse() ? $databaseConfig->getWarehouse() : null;
         $this->validateAndSetWarehouse($connection, $warehouse);
