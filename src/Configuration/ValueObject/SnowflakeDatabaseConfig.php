@@ -53,6 +53,20 @@ readonly class SnowflakeDatabaseConfig extends DatabaseConfig
         );
     }
 
+    /**
+     * The SSH tunnel rebuilds the config via toArray() -> fromArray(), so every
+     * Snowflake-specific property (above all the private key) must survive it.
+     */
+    public function toArray(): array
+    {
+        return parent::toArray() + [
+            'warehouse' => $this->warehouse,
+            'roleName' => $this->roleName,
+            'runId' => $this->runId,
+            '#privateKey' => $this->privateKey,
+        ];
+    }
+
     public function hasWarehouse(): bool
     {
         return $this->warehouse !== null;
