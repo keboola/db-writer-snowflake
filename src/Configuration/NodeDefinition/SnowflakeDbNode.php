@@ -54,6 +54,12 @@ class SnowflakeDbNode extends DbNode
     protected function addPasswordNode(NodeBuilder $builder): void
     {
         // Password authentication is not supported; Snowflake uses key-pair auth only.
+        // Stored configs may still carry a (possibly empty) password; drop it so that
+        // sync actions, which do not ignore extra keys, behave the same as the run.
+        $this->beforeNormalization()->always(function (array $v) {
+            unset($v['password'], $v['#password']);
+            return $v;
+        });
     }
 
     protected function addPrivateKeyNode(NodeBuilder $builder): void
