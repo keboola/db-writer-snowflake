@@ -1,0 +1,11 @@
+{
+  "table": "Incremental table",
+  "columns": {
+    "name": "Name column",
+    "int": "Existing int comment",
+    "float": "Existing float comment",
+    "date": "Date column",
+    "datetime": null,
+    "timestamp": null
+  }
+}

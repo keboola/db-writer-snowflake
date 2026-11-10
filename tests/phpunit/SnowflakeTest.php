@@ -34,7 +34,7 @@ class SnowflakeTest extends TestCase
         self::expectExceptionMessage('Both "password" and "privateKey" cannot be set at the same time.');
 
         $config = $this->getConfig('simple');
-        $config['parameters']['db']['#privateKey'] = (string) getenv('DB_PRIVATEKEY');
+        $config['parameters']['db']['#password'] = 'password';
 
         $this->getConnection($config);
     }
@@ -502,7 +502,7 @@ class SnowflakeTest extends TestCase
             'database' => (string) getenv('DB_DATABASE'),
             'schema' => (string) getenv('DB_SCHEMA'),
             'user' => (string) getenv('DB_USER'),
-            '#password' => (string) getenv('DB_PASSWORD'),
+            '#privateKey' => (string) getenv('DB_PRIVATEKEY'),
             'warehouse' => (string) getenv('DB_WAREHOUSE'),
         ];
 
