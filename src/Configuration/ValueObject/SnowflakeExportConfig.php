@@ -35,6 +35,7 @@ readonly class SnowflakeExportConfig extends ExportConfig
             !empty($config['primaryKey']) ? $config['primaryKey'] : null,
             array_map(fn($v) => SnowflakeItemConfig::fromArray($v), $config['items']),
             $tableFilePath,
+            $config['propagateDescriptions'] ?? true,
         );
     }
 }

@@ -10,14 +10,16 @@ use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Writer\Strategy\AbsWriteStrategy;
 use Keboola\DbWriter\Writer\Strategy\S3WriteStrategy;
 use Keboola\DbWriter\Writer\Strategy\WriteStrategy;
+use Keboola\DbWriterAdapter\DescriptionWriteAdapter;
 use Keboola\DbWriterAdapter\ODBC\OdbcWriteAdapter;
+use Keboola\DbWriterAdapter\ValueObject\TableDescriptions;
 use Keboola\DbWriterConfig\Configuration\ValueObject\ExportConfig;
 use Keboola\DbWriterConfig\Configuration\ValueObject\ItemConfig;
 
 /**
  * @property-read SnowflakeQueryBuilder $queryBuilder
  */
-class SnowflakeWriteAdapter extends OdbcWriteAdapter
+class SnowflakeWriteAdapter extends OdbcWriteAdapter implements DescriptionWriteAdapter
 {
     public function writeData(string $tableName, ExportConfig $exportConfig): void
     {
@@ -78,6 +80,29 @@ class SnowflakeWriteAdapter extends OdbcWriteAdapter
             $this->connection->quoteIdentifier($stagingTableName),
             $this->connection->quoteIdentifier($tableName),
         ));
+    }
+
+    public function applyDescriptions(string $tableName, TableDescriptions $descriptions): void
+    {
+        $table = $descriptions->getTable();
+        if ($table !== null && $table !== '') {
+            $this->logger->info(sprintf('Setting comment on table "%s"', $tableName));
+            $this->connection->exec(sprintf(
+                'COMMENT ON TABLE %s IS %s',
+                $this->connection->quoteIdentifier($tableName),
+                $this->connection->quote($table),
+            ));
+        }
+
+        foreach ($descriptions->getColumns() as $column => $description) {
+            $this->logger->info(sprintf('Setting comment on column "%s" in table "%s"', $column, $tableName));
+            $this->connection->exec(sprintf(
+                'COMMENT ON COLUMN %s.%s IS %s',
+                $this->connection->quoteIdentifier($tableName),
+                $this->connection->quoteIdentifier((string) $column),
+                $this->connection->quote($description),
+            ));
+        }
     }
 
     /**
