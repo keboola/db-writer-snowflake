@@ -71,6 +71,55 @@ class SnowflakeItemConfigTest extends TestCase
         self::assertFalse($itemConfig->hasSize());
     }
 
+    public function testSizeKeyMissingMeansNoSize(): void
+    {
+        // The "size" key is optional in the items config definition, so it can be absent
+        // entirely. Reading it unguarded raised "Undefined array key \"size\"", which the
+        // error handler turned into an uncaught ErrorException => opaque internal error.
+        $config = [
+            'name' => 'col',
+            'dbName' => 'col',
+            'type' => 'boolean',
+            'nullable' => false,
+        ];
+
+        $itemConfig = SnowflakeItemConfig::fromArray($config);
+
+        self::assertFalse($itemConfig->hasSize());
+    }
+
+    public function testSizeIntegerIsCastToString(): void
+    {
+        $config = [
+            'name' => 'col',
+            'dbName' => 'col',
+            'type' => 'varchar',
+            'size' => 255,
+            'nullable' => false,
+        ];
+
+        $itemConfig = SnowflakeItemConfig::fromArray($config);
+
+        self::assertTrue($itemConfig->hasSize());
+        self::assertSame('255', $itemConfig->getSize());
+    }
+
+    public function testSizeIntegerZeroIsPreserved(): void
+    {
+        $config = [
+            'name' => 'col',
+            'dbName' => 'col',
+            'type' => 'timestamp_ntz',
+            'size' => 0,
+            'nullable' => false,
+        ];
+
+        $itemConfig = SnowflakeItemConfig::fromArray($config);
+
+        self::assertTrue($itemConfig->hasSize());
+        self::assertSame('0', $itemConfig->getSize());
+    }
+
     public function testDefaultZeroIsPreserved(): void
     {
         $config = [
