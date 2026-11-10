@@ -29,7 +29,6 @@ class PrivateKeyValidationTest extends TestCase
             null,
             null,
             'testuser',
-            '',
             'this-is-not-a-valid-private-key',
             'testschema',
             null,
