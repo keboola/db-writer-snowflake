@@ -38,7 +38,7 @@ class SnowflakeExportConfigTest extends TestCase
                 'host' => 'host',
                 'database' => 'database',
                 'user' => 'user',
-                '#password' => 'password',
+                '#privateKey' => 'private-key',
                 'schema' => 'schema',
             ],
             'tableId' => 'in.c-main.table',

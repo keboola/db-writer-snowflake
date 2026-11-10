@@ -21,7 +21,6 @@ class SnowflakeConnectionFactory
             'host' => $databaseConfig->getHost(),
             'port' => $databaseConfig->hasPort() ? $databaseConfig->getPort() : 443,
             'user' => $databaseConfig->getUser(),
-            'password' => $databaseConfig->getPassword(),
             'privateKey' => $databaseConfig->getPrivateKey(),
             'database' => $databaseConfig->getDatabase(),
             'schema' => $databaseConfig->getSchema(),
@@ -39,7 +38,7 @@ class SnowflakeConnectionFactory
             $logger,
             DSNBuilder::build($options),
             $databaseConfig->getUser(),
-            self::escapePassword($databaseConfig->getPassword()),
+            '',
             function ($connection) use ($databaseConfig) {
                 if ($databaseConfig->hasRunId()) {
                     $queryTag = [
@@ -55,14 +54,5 @@ class SnowflakeConnectionFactory
                 }
             },
         );
-    }
-
-    public static function escapePassword(string $password): string
-    {
-        if (is_int(strpos($password, ';'))) {
-            return '{' . str_replace('}', '}}', $password) . '}';
-        }
-
-        return $password;
     }
 }
